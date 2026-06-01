@@ -1,0 +1,10 @@
+pandas
+numpy
+openpyxl
+streamlit
+python-dotenv
+pytest
+yfinance
+kiteconnect
+ruff
+mypy

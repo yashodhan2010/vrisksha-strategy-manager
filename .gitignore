@@ -1,0 +1,13 @@
+.env
+__pycache__/
+.pytest_cache/
+.test_tmp/
+.mypy_cache/
+.ruff_cache/
+*.pyc
+logs/*.log
+data/dual_momentum.db
+data/reference/nifty500_universe.xlsx
+data/reference/nifty500_universe.json
+data/output/*
+!data/output/.gitkeep
