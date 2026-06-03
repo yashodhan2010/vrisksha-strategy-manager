@@ -67,6 +67,31 @@ def test_backtest_engine_rejects_zero_initial_capital(tmp_path: Path) -> None:
         BacktestEngine(1, date(2024, 1, 1), date(2024, 12, 31), 0, tmp_path / "x.db")
 
 
+def test_rebalance_dates_can_run_more_than_once_per_month(monkeypatch, tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2024, 1, 1), date(2024, 2, 29), 100_000, tmp_path / "x.db")
+    dates = _business_dates(date(2024, 1, 1), 44)
+    prices = pd.DataFrame({"AAA": [100.0 + index for index in range(len(dates))]}, index=dates)
+    monkeypatch.setattr("app.backtest.engine.config.BACKTEST_REBALANCES_PER_MONTH", 2)
+
+    rebalance_dates = engine._rebalance_dates(prices)
+
+    assert rebalance_dates == [
+        date(2024, 1, 1),
+        date(2024, 1, 16),
+        date(2024, 2, 1),
+        date(2024, 2, 15),
+    ]
+
+
+def test_rebalance_dates_reject_invalid_frequency(monkeypatch, tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2024, 1, 1), date(2024, 1, 31), 100_000, tmp_path / "x.db")
+    prices = pd.DataFrame({"AAA": [100.0]}, index=[date(2024, 1, 1)])
+    monkeypatch.setattr("app.backtest.engine.config.BACKTEST_REBALANCES_PER_MONTH", 0)
+
+    with pytest.raises(ValueError, match="BACKTEST_REBALANCES_PER_MONTH"):
+        engine._rebalance_dates(prices)
+
+
 def test_rank_on_date_skips_zero_lookback_price(monkeypatch, tmp_path: Path) -> None:
     engine = BacktestEngine(1, date(2023, 1, 1), date(2024, 12, 31), 100_000, tmp_path / "x.db")
     dates = _business_dates(date(2023, 1, 2), 260)

@@ -5,6 +5,8 @@ import json
 from datetime import date, datetime, timedelta
 
 from app import config
+from app.automation.kite_selenium import capture_request_token
+from app.automation.schedule import is_rebalance_day, parse_target_days, rebalance_dates_for_month
 from app.backtest.engine import BacktestEngine
 from app.data.trading_calendar import WeekdayTradingCalendar
 from app.data.price_ingestion import fetch_and_store_history
@@ -127,6 +129,7 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         "years": args.years,
         "requested_at": datetime.now().isoformat(),
         "initial_capital": args.initial_capital,
+        "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
     }
     run_id = create_backtest_run(
         start_date,
@@ -210,6 +213,7 @@ def cmd_run_backtest(args: argparse.Namespace) -> int:
             "orchestrated": True,
             "requested_at": datetime.now().isoformat(),
             "initial_capital": args.initial_capital,
+            "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
             "history_start_date": history_start_date.isoformat(),
             "requested_start_date": start_date.isoformat(),
             "requested_end_date": end_date.isoformat(),
@@ -320,6 +324,70 @@ def cmd_kite_save_token(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_kite_selenium_token(args: argparse.Namespace) -> int:
+    try:
+        request_token = capture_request_token(args.timeout_seconds)
+        access_token = exchange_request_token(request_token)
+        save_access_token_to_env(access_token)
+    except (ImportError, ValueError) as exc:
+        print(f"Kite Selenium token flow failed: {exc}")
+        return 1
+    print("Kite access token saved to .env via Selenium login.")
+    return 0
+
+
+def cmd_auto_daily_run(args: argparse.Namespace) -> int:
+    initialize_database()
+    if args.history_lookback_days <= 0:
+        print("--history-lookback-days must be greater than zero.")
+        return 2
+    today = date.today()
+    calendar = WeekdayTradingCalendar()
+    target_days = parse_target_days(config.AUTO_REBALANCE_TARGET_DAYS)
+    rebalance_dates = rebalance_dates_for_month(today.year, today.month, target_days, calendar)
+    print(f"Automation date: {today.isoformat()}")
+    print(f"This month's rebalance dates: {', '.join(item.isoformat() for item in rebalance_dates)}")
+
+    if not calendar.is_trading_day(today):
+        print("Skipped: today is not a trading day under the provisional weekday calendar.")
+        return 0
+
+    try:
+        if args.selenium_token and not is_saved_access_token_for_today():
+            print("No saved Kite token for today. Opening Selenium login...")
+            request_token = capture_request_token(args.timeout_seconds)
+            access_token = exchange_request_token(request_token)
+            save_access_token_to_env(access_token)
+            print("Kite access token saved for today.")
+
+        print("Syncing universe...")
+        report = sync_universe()
+        print(f"Universe ready: {report['active_rows']} active symbols.")
+
+        history_start_date = today - timedelta(days=args.history_lookback_days)
+        print(f"Fetching recent Kite history from {history_start_date} to {today}...")
+        fetch_result = fetch_and_store_history(
+            start_date=history_start_date,
+            end_date=today,
+            symbols=args.symbols if args.symbols else None,
+            include_benchmark=not args.no_benchmark,
+        )
+        print(
+            f"Historical data refreshed: {fetch_result.stored_rows} rows stored "
+            f"for {fetch_result.requested_symbols} requested symbols."
+        )
+    except (FileNotFoundError, ImportError, UniverseSyncError, ValueError) as exc:
+        print(f"Daily automation failed: {exc}")
+        return 1
+
+    if is_rebalance_day(today, target_days, calendar):
+        print("Today is a configured rebalance day. Running scheduled rebalance workflow...")
+        return cmd_monthly_run(argparse.Namespace())
+
+    print("Today is not a configured rebalance day. Data refresh complete; no rebalance run started.")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="dual-momentum")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -360,6 +428,18 @@ def build_parser() -> argparse.ArgumentParser:
     kite_save_token = subparsers.add_parser("kite-save-token")
     kite_save_token.add_argument("--request-token", required=True)
     kite_save_token.set_defaults(func=cmd_kite_save_token)
+
+    kite_selenium = subparsers.add_parser("kite-selenium-token")
+    kite_selenium.add_argument("--timeout-seconds", type=int, default=config.SELENIUM_LOGIN_TIMEOUT_SECONDS)
+    kite_selenium.set_defaults(func=cmd_kite_selenium_token)
+
+    auto_daily = subparsers.add_parser("auto-daily-run")
+    auto_daily.add_argument("--selenium-token", action="store_true")
+    auto_daily.add_argument("--timeout-seconds", type=int, default=config.SELENIUM_LOGIN_TIMEOUT_SECONDS)
+    auto_daily.add_argument("--history-lookback-days", type=int, default=config.AUTOMATION_HISTORY_LOOKBACK_DAYS)
+    auto_daily.add_argument("--symbols", nargs="*")
+    auto_daily.add_argument("--no-benchmark", action="store_true")
+    auto_daily.set_defaults(func=cmd_auto_daily_run)
     return parser
 
 

@@ -98,6 +98,16 @@ KITE_MAX_RETRIES=5
 KITE_RETRY_BACKOFF_SECONDS=2.0
 ```
 
+Daily laptop-start automation uses Selenium to open Kite login when today's access token is missing, refresh recent history, and run the scheduled rebalance workflow only on configured rebalance dates:
+
+```text
+SELENIUM_LOGIN_TIMEOUT_SECONDS=180
+AUTO_REBALANCE_TARGET_DAYS=1,15
+AUTOMATION_HISTORY_LOOKBACK_DAYS=10
+```
+
+`AUTO_REBALANCE_TARGET_DAYS=1,15` means the rebalance workflow runs twice per month: on the first trading/pricing day on or after the 1st, and on the first trading/pricing day on or after the 15th. The current calendar is still the provisional weekday calendar, so NSE holiday support remains a future improvement.
+
 Get a Kite login URL:
 
 ```bash
@@ -108,6 +118,12 @@ After Kite redirects, copy the `request_token` from the browser URL and run:
 
 ```bash
 python -m app.main kite-save-token --request-token YOUR_REQUEST_TOKEN
+```
+
+Or use Selenium to open the Kite login page and capture the redirect token after you complete login in the browser:
+
+```bash
+python -m app.main kite-selenium-token
 ```
 
 Or save the token and fetch historical data in one command:
@@ -135,6 +151,14 @@ python -m app.main backtest --years 10
 python -m app.main backtest --start-date 2016-01-01 --end-date 2025-12-31
 ```
 
+Backtest rebalance frequency is configurable from `.env`:
+
+```text
+BACKTEST_REBALANCES_PER_MONTH=1
+```
+
+The default `1` rebalances on the first available trading/pricing day of each month. Set `2` for start-of-month plus mid-month rebalances, or `4` for roughly weekly rebalances within each month.
+
 Open dashboards:
 
 ```bash
@@ -156,9 +180,20 @@ Windows batch shortcuts:
 scripts\run_manual.bat
 scripts\run_monthly.bat
 scripts\run_backtest.bat
+scripts\run_auto_daily.bat
+scripts\install_auto_daily_startup.bat
 scripts\run_live_dashboard.bat
 scripts\run_backtest_dashboard.bat
 ```
+
+To make the automation run when you log in to Windows, run:
+
+```bat
+scripts\install_auto_daily_startup.bat
+```
+
+After that, Windows launches `scripts\run_auto_daily.bat` at login. Output is appended to `logs\auto_daily.log`.
+The batch file attempts to activate the `dual-momentum` Conda environment from common Miniconda/Anaconda install paths before running Python.
 
 ## Full CLI Reference
 
@@ -175,9 +210,11 @@ python -m app.main fetch-history --start-date 2024-01-01 --end-date 2024-12-31 -
 python -m app.main fetch-history --start-date 2024-01-01 --end-date 2024-12-31 --request-token YOUR_REQUEST_TOKEN
 python -m app.main kite-login-url
 python -m app.main kite-save-token --request-token YOUR_REQUEST_TOKEN
+python -m app.main kite-selenium-token
+python -m app.main auto-daily-run --selenium-token
 ```
 
-`manual-run` and `monthly-run` are safe placeholders. `backtest` now runs a local historical simulation from stored `market_prices`; it still never places live orders.
+`manual-run`, `monthly-run`, and the scheduled rebalance step inside `auto-daily-run` are safe placeholders. `backtest` now runs a local historical simulation from stored `market_prices`; it still never places live orders.
 
 Historical price ingestion uses Kite Connect by default and stores daily OHLCV rows in SQLite:
 
@@ -215,7 +252,7 @@ python -m app.main fetch-history --start-date 2015-01-01 --end-date 2025-12-31
 python -m app.main backtest --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
 ```
 
-The current simulation uses stored daily prices, first available trading day of each month, 3M/6M/12M momentum, the 52-week-high filter, beta-adjusted scores, and capped equal allocation with residual allocation treated as cash/LIQUIDBEES.
+The current simulation uses stored daily prices, configurable in-month rebalance dates, 3M/6M/12M momentum, the 52-week-high filter, beta-adjusted scores, and capped equal allocation with residual allocation treated as cash/LIQUIDBEES. `BACKTEST_REBALANCES_PER_MONTH=1` preserves the original monthly behavior.
 
 ## Next Sprint
 

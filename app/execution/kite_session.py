@@ -39,10 +39,11 @@ def is_saved_access_token_for_today() -> bool:
 def save_access_token_to_env(access_token: str, env_path: str | Path = ".env") -> None:
     """Persist KITE_ACCESS_TOKEN in the local .env file."""
     path = Path(env_path)
+    token_date = date.today().isoformat()
     lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
     replacements = {
         "KITE_ACCESS_TOKEN": access_token,
-        "KITE_ACCESS_TOKEN_DATE": date.today().isoformat(),
+        "KITE_ACCESS_TOKEN_DATE": token_date,
     }
     seen: set[str] = set()
     output: list[str] = []
@@ -57,3 +58,5 @@ def save_access_token_to_env(access_token: str, env_path: str | Path = ".env") -
         if key not in seen:
             output.append(f"{key}={value}")
     path.write_text("\n".join(output) + "\n", encoding="utf-8")
+    config.KITE_ACCESS_TOKEN = access_token
+    config.KITE_ACCESS_TOKEN_DATE = token_date

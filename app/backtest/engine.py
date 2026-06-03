@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -129,7 +130,8 @@ class BacktestEngine:
             "annualized_return": annualized_return,
             "max_drawdown": max_drawdown,
             "rebalance_count": len(rebalance_dates) - 1,
-            "methodology": "Monthly dual momentum prototype using stored prices, beta-adjusted 3M/6M/12M returns, 52-week-high filter, and capped equal allocation.",
+            "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
+            "methodology": "Configurable-period dual momentum prototype using stored prices, beta-adjusted 3M/6M/12M returns, 52-week-high filter, and capped equal allocation.",
         }
         update_backtest_run_result(
             self.backtest_run_id,
@@ -179,13 +181,23 @@ class BacktestEngine:
         return series.pct_change()
 
     def _rebalance_dates(self, price_pivot: pd.DataFrame) -> list[date]:
+        rebalances_per_month = config.BACKTEST_REBALANCES_PER_MONTH
+        if rebalances_per_month <= 0:
+            raise ValueError("BACKTEST_REBALANCES_PER_MONTH must be greater than zero.")
+
         dates = pd.Index(price_pivot.index)
         months = sorted({(item.year, item.month) for item in dates})
         result: list[date] = []
         for year, month in months:
             month_dates = [item for item in dates if item.year == year and item.month == month]
-            if month_dates:
-                result.append(month_dates[0])
+            if not month_dates:
+                continue
+            _, days_in_month = calendar.monthrange(year, month)
+            for offset in range(rebalances_per_month):
+                target_day = 1 + (offset * days_in_month // rebalances_per_month)
+                candidates = [item for item in month_dates if item.day >= target_day]
+                if candidates and candidates[0] not in result:
+                    result.append(candidates[0])
         return result
 
     def _rank_on_date(

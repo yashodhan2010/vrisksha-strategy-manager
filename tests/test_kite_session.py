@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from app import config
 from app.execution.kite_session import save_access_token_to_env
 
 
@@ -15,4 +16,4 @@ def test_save_access_token_to_env_adds_token_and_date(tmp_path: Path) -> None:
     assert "KITE_API_KEY=abc" in content
     assert "KITE_ACCESS_TOKEN=token123" in content
     assert "KITE_ACCESS_TOKEN_DATE=" in content
-
+    assert config.KITE_ACCESS_TOKEN == "token123"
