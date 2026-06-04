@@ -16,8 +16,8 @@ from app.storage.repositories import (
     insert_portfolio_snapshot,
     update_backtest_run_result,
 )
-from app.strategy.allocation import allocate_equal_weight_with_cap
 from app.strategy.models import RunStatus
+from app.strategy.selection import allocate_from_ranking
 
 
 @dataclass(frozen=True)
@@ -76,8 +76,9 @@ class BacktestEngine:
         for index, rebalance_date in enumerate(rebalance_dates[:-1], start=1):
             next_date = rebalance_dates[index]
             ranking = self._rank_on_date(price_pivot, benchmark_returns, rebalance_date)
-            selected = ranking["symbol"].tolist()
-            allocation = allocate_equal_weight_with_cap(selected)
+            strategy_allocation = allocate_from_ranking(ranking)
+            allocation = strategy_allocation.allocation
+            selected = strategy_allocation.selected_symbols
             month_return = self._portfolio_period_return(price_pivot, rebalance_date, next_date, allocation.stock_weights)
             previous_nav = nav
             nav = nav * (1.0 + month_return)
@@ -131,7 +132,15 @@ class BacktestEngine:
             "max_drawdown": max_drawdown,
             "rebalance_count": len(rebalance_dates) - 1,
             "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
-            "methodology": "Configurable-period dual momentum prototype using stored prices, beta-adjusted 3M/6M/12M returns, 52-week-high filter, and capped equal allocation.",
+            "strategy_ranking_method": config.STRATEGY_RANKING_METHOD,
+            "ranking_momentum_weight": config.RANKING_MOMENTUM_WEIGHT,
+            "ranking_beta_weight": config.RANKING_BETA_WEIGHT,
+            "ranking_volatility_weight": config.RANKING_VOLATILITY_WEIGHT,
+            "strategy_allocation_mode": config.STRATEGY_ALLOCATION_MODE,
+            "strategy_top_n": config.STRATEGY_TOP_N,
+            "dynamic_min_weight": config.DYNAMIC_MIN_WEIGHT,
+            "dynamic_max_weight": config.DYNAMIC_MAX_WEIGHT,
+            "methodology": "Configurable-period dual momentum prototype using stored prices, 3M/6M/12M momentum, beta, volatility, 52-week-high filter, configured ranking method, and configured allocation mode.",
         }
         update_backtest_run_result(
             self.backtest_run_id,
@@ -178,7 +187,7 @@ class BacktestEngine:
             self.warnings.append("Benchmark prices not found; beta adjustment used beta=1.0.")
             return None
         series = benchmark.pivot_table(index="price_date", values="price", aggfunc="last").sort_index()["price"].ffill()
-        return series.pct_change()
+        return series.pct_change(fill_method=None).replace([float("inf"), float("-inf")], pd.NA).dropna()
 
     def _rebalance_dates(self, price_pivot: pd.DataFrame) -> list[date]:
         rebalances_per_month = config.BACKTEST_REBALANCES_PER_MONTH
@@ -229,12 +238,15 @@ class BacktestEngine:
             if not returns:
                 continue
             beta = self._beta(series, benchmark_returns)
-            adjusted = [value / max(beta, config.BETA_FLOOR) for value in returns]
+            stock_returns = series.pct_change(fill_method=None).dropna()
+            volatility = float(stock_returns.tail(config.BETA_LOOKBACK_DAYS).std(ddof=0) * (252**0.5)) if len(stock_returns) else None
+            momentum_score = sum(returns) / len(returns)
             rows.append(
                 {
                     "symbol": symbol,
-                    "score": sum(adjusted) / len(adjusted),
+                    "momentum_score": momentum_score,
                     "beta": beta,
+                    "volatility": volatility,
                     "return_3m": returns[0],
                     "return_6m": returns[1],
                     "return_12m": returns[2],
@@ -242,23 +254,56 @@ class BacktestEngine:
             )
         if not rows:
             return pd.DataFrame(columns=["symbol", "score", "rank"])
-        frame = pd.DataFrame(rows).sort_values("score", ascending=False).reset_index(drop=True)
+        frame = pd.DataFrame(rows).dropna(subset=["momentum_score", "beta", "volatility"])
+        if frame.empty:
+            return pd.DataFrame(columns=["symbol", "score", "rank"])
+        frame["score"] = self._ranking_score(frame)
+        frame = frame.sort_values("score", ascending=False).reset_index(drop=True)
         frame["rank"] = frame.index + 1
         return frame
+
+    def _ranking_score(self, frame: pd.DataFrame) -> pd.Series:
+        method = config.STRATEGY_RANKING_METHOD.strip().upper()
+        if method == "MOMENTUM":
+            return frame["momentum_score"]
+        if method == "BETA_ADJUSTED":
+            return frame["momentum_score"] / frame["beta"].clip(lower=config.BETA_FLOOR)
+        if method == "VOLATILITY_ADJUSTED":
+            return frame["momentum_score"] / frame["volatility"].clip(lower=0.01)
+        if method == "COMBINED_RANK":
+            total = config.RANKING_MOMENTUM_WEIGHT + config.RANKING_BETA_WEIGHT + config.RANKING_VOLATILITY_WEIGHT
+            if total <= 0:
+                raise ValueError("RANKING_MOMENTUM_WEIGHT + RANKING_BETA_WEIGHT + RANKING_VOLATILITY_WEIGHT must be greater than zero.")
+            momentum_weight = config.RANKING_MOMENTUM_WEIGHT / total
+            beta_weight = config.RANKING_BETA_WEIGHT / total
+            volatility_weight = config.RANKING_VOLATILITY_WEIGHT / total
+            momentum_percentile = frame["momentum_score"].rank(pct=True, ascending=True)
+            low_beta_percentile = (-frame["beta"]).rank(pct=True, ascending=True)
+            low_volatility_percentile = (-frame["volatility"]).rank(pct=True, ascending=True)
+            return (
+                momentum_weight * momentum_percentile
+                + beta_weight * low_beta_percentile
+                + volatility_weight * low_volatility_percentile
+            )
+        raise ValueError("STRATEGY_RANKING_METHOD must be MOMENTUM, BETA_ADJUSTED, VOLATILITY_ADJUSTED, or COMBINED_RANK.")
 
     def _beta(self, stock_prices: pd.Series, benchmark_returns: pd.Series | None) -> float:
         if benchmark_returns is None:
             return 1.0
-        stock_returns = stock_prices.pct_change().dropna()
-        aligned = pd.concat([stock_returns, benchmark_returns], axis=1, join="inner").dropna()
+        stock_returns = stock_prices.pct_change(fill_method=None)
+        aligned = pd.concat([stock_returns, benchmark_returns], axis=1, join="inner")
+        aligned = aligned.replace([float("inf"), float("-inf")], pd.NA).dropna()
         if len(aligned) < 30:
             return 1.0
         stock = aligned.iloc[:, 0]
         benchmark = aligned.iloc[:, 1]
         variance = benchmark.var()
-        if variance == 0:
+        if pd.isna(variance) or variance <= 0:
             return 1.0
-        beta = float(stock.cov(benchmark) / variance)
+        covariance = stock.cov(benchmark)
+        if pd.isna(covariance):
+            return 1.0
+        beta = float(covariance / variance)
         return beta if beta > 0 else config.BETA_FLOOR
 
     def _portfolio_period_return(

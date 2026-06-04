@@ -36,6 +36,30 @@ def is_saved_access_token_for_today() -> bool:
     return bool(config.KITE_ACCESS_TOKEN and config.KITE_ACCESS_TOKEN_DATE == date.today().isoformat())
 
 
+def get_kite_client(access_token: str | None = None) -> object:
+    if not config.KITE_API_KEY:
+        raise ValueError("KITE_API_KEY is not configured.")
+    from kiteconnect import KiteConnect
+
+    kite = KiteConnect(api_key=config.KITE_API_KEY)
+    token = access_token or config.KITE_ACCESS_TOKEN
+    if token:
+        kite.set_access_token(token)
+    return kite
+
+
+def validate_saved_access_token() -> tuple[bool, str]:
+    """Verify today's saved Kite access token by calling profile()."""
+    if not is_saved_access_token_for_today():
+        return False, "No saved Kite access token for today."
+    try:
+        profile = get_kite_client().profile()
+    except Exception as exc:
+        return False, f"Saved Kite access token is invalid: {exc}"
+    user_name = profile.get("user_name") or profile.get("user_id") or "user"
+    return True, f"Saved Kite access token is valid for {user_name}."
+
+
 def save_access_token_to_env(access_token: str, env_path: str | Path = ".env") -> None:
     """Persist KITE_ACCESS_TOKEN in the local .env file."""
     path = Path(env_path)

@@ -11,7 +11,7 @@ from app.backtest.engine import BacktestEngine
 from app.data.trading_calendar import WeekdayTradingCalendar
 from app.data.price_ingestion import fetch_and_store_history
 from app.data.universe_sync import UniverseSyncError, sync_universe
-from app.execution.kite_session import exchange_request_token, get_login_url, is_saved_access_token_for_today, save_access_token_to_env
+from app.execution.kite_session import exchange_request_token, get_login_url, save_access_token_to_env, validate_saved_access_token
 from app.logging_config import get_logger
 from app.storage.database import initialize_database
 from app.storage.repositories import (
@@ -20,6 +20,7 @@ from app.storage.repositories import (
     create_backtest_run,
     create_strategy_run,
 )
+from app.strategy.rebalance import RebalanceEngine
 from app.strategy.models import RunMode, RunStatus, RunType
 
 
@@ -76,10 +77,31 @@ def cmd_manual_run(_args: argparse.Namespace) -> int:
 def cmd_monthly_run(_args: argparse.Namespace) -> int:
     initialize_database()
     logger = get_logger("scheduler.monthly")
+    try:
+        mode = RunMode(config.DEFAULT_MODE)
+    except ValueError:
+        print(f"Unsupported DEFAULT_MODE: {config.DEFAULT_MODE}")
+        return 2
     run_id = create_strategy_run(
         RunType.MONTHLY,
-        RunMode.RANK_ONLY,
-        message="Monthly placeholder run started.",
+        mode,
+        message="Scheduled rebalance run started.",
+        config_payload={
+            "target_portfolio_value": config.TARGET_PORTFOLIO_VALUE,
+            "available_purchase_funds": config.AVAILABLE_PURCHASE_FUNDS,
+            "strategy_allocation_mode": config.STRATEGY_ALLOCATION_MODE,
+            "strategy_top_n": config.STRATEGY_TOP_N,
+            "strategy_ranking_method": config.STRATEGY_RANKING_METHOD,
+            "ranking_momentum_weight": config.RANKING_MOMENTUM_WEIGHT,
+            "ranking_beta_weight": config.RANKING_BETA_WEIGHT,
+            "ranking_volatility_weight": config.RANKING_VOLATILITY_WEIGHT,
+            "dynamic_min_weight": config.DYNAMIC_MIN_WEIGHT,
+            "dynamic_max_weight": config.DYNAMIC_MAX_WEIGHT,
+            "max_stock_weight": config.MAX_STOCK_WEIGHT,
+            "high_52w_threshold": config.HIGH_52W_THRESHOLD,
+            "beta_lookback_days": config.BETA_LOOKBACK_DAYS,
+            "mode": mode.value,
+        },
     )
     today = date.today()
     calendar = WeekdayTradingCalendar()
@@ -87,11 +109,34 @@ def cmd_monthly_run(_args: argparse.Namespace) -> int:
         message = f"Skipped: {today.isoformat()} is a weekend under the provisional weekday calendar."
         status = RunStatus.SKIPPED
     else:
-        message = "Future NSE trading-calendar integration is pending; no orders were placed."
+        try:
+            result = RebalanceEngine(run_id=run_id, run_date=today).run()
+        except ValueError as exc:
+            message = f"Scheduled rebalance failed: {exc}"
+            status = RunStatus.FAILED
+            add_audit_event(run_id, "MONTHLY_REBALANCE", "ERROR", message)
+            complete_strategy_run(run_id, status, message)
+            logger.error("Monthly rebalance %s failed: %s", run_id, exc)
+            print(f"Monthly run {run_id}: {status.value}. {message}")
+            return 1
+        message = (
+            f"Scheduled rebalance completed for {result.run_date.isoformat()}: "
+            f"{result.selected_count} selected stocks, {result.proposal_count} proposed orders, "
+            f"{result.liquidbees_weight:.2%} LIQUIDBEES/cash, "
+            f"{result.buy_scaling_ratio:.2%} buy scaling."
+        )
         status = RunStatus.COMPLETED
+        if result.warnings:
+            add_audit_event(
+                run_id,
+                "MONTHLY_REBALANCE_WARNINGS",
+                "WARNING",
+                "Rebalance completed with warnings.",
+                {"warnings": result.warnings},
+            )
     add_audit_event(run_id, "MONTHLY_RUN", "INFO", message)
     complete_strategy_run(run_id, status, message)
-    logger.info("Monthly placeholder run %s ended with %s", run_id, status.value)
+    logger.info("Monthly rebalance run %s ended with %s", run_id, status.value)
     print(f"Monthly run {run_id}: {status.value}. {message}")
     return 0
 
@@ -130,6 +175,14 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         "requested_at": datetime.now().isoformat(),
         "initial_capital": args.initial_capital,
         "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
+        "strategy_allocation_mode": config.STRATEGY_ALLOCATION_MODE,
+        "strategy_top_n": config.STRATEGY_TOP_N,
+        "strategy_ranking_method": config.STRATEGY_RANKING_METHOD,
+        "ranking_momentum_weight": config.RANKING_MOMENTUM_WEIGHT,
+        "ranking_beta_weight": config.RANKING_BETA_WEIGHT,
+        "ranking_volatility_weight": config.RANKING_VOLATILITY_WEIGHT,
+        "dynamic_min_weight": config.DYNAMIC_MIN_WEIGHT,
+        "dynamic_max_weight": config.DYNAMIC_MAX_WEIGHT,
     }
     run_id = create_backtest_run(
         start_date,
@@ -214,6 +267,14 @@ def cmd_run_backtest(args: argparse.Namespace) -> int:
             "requested_at": datetime.now().isoformat(),
             "initial_capital": args.initial_capital,
             "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
+            "strategy_allocation_mode": config.STRATEGY_ALLOCATION_MODE,
+            "strategy_top_n": config.STRATEGY_TOP_N,
+            "strategy_ranking_method": config.STRATEGY_RANKING_METHOD,
+            "ranking_momentum_weight": config.RANKING_MOMENTUM_WEIGHT,
+            "ranking_beta_weight": config.RANKING_BETA_WEIGHT,
+            "ranking_volatility_weight": config.RANKING_VOLATILITY_WEIGHT,
+            "dynamic_min_weight": config.DYNAMIC_MIN_WEIGHT,
+            "dynamic_max_weight": config.DYNAMIC_MAX_WEIGHT,
             "history_start_date": history_start_date.isoformat(),
             "requested_start_date": start_date.isoformat(),
             "requested_end_date": end_date.isoformat(),
@@ -306,11 +367,24 @@ def cmd_fetch_history(args: argparse.Namespace) -> int:
 def cmd_kite_login_url(_args: argparse.Namespace) -> int:
     try:
         print(get_login_url())
-        print(f"Saved token for today: {'yes' if is_saved_access_token_for_today() else 'no'}")
+        token_valid, token_message = validate_saved_access_token()
+        print(f"Saved token valid: {'yes' if token_valid else 'no'}")
+        print(token_message)
     except (ImportError, ValueError) as exc:
         print(f"Kite login URL failed: {exc}")
         return 1
     return 0
+
+
+def cmd_kite_token_status(_args: argparse.Namespace) -> int:
+    try:
+        token_valid, token_message = validate_saved_access_token()
+    except (ImportError, ValueError) as exc:
+        print(f"Kite token status failed: {exc}")
+        return 1
+    print(f"Saved token valid: {'yes' if token_valid else 'no'}")
+    print(token_message)
+    return 0 if token_valid else 1
 
 
 def cmd_kite_save_token(args: argparse.Namespace) -> int:
@@ -353,8 +427,10 @@ def cmd_auto_daily_run(args: argparse.Namespace) -> int:
         return 0
 
     try:
-        if args.selenium_token and not is_saved_access_token_for_today():
-            print("No saved Kite token for today. Opening Selenium login...")
+        token_valid, token_message = validate_saved_access_token()
+        print(token_message)
+        if args.selenium_token and not token_valid:
+            print("Opening Selenium login to refresh Kite token...")
             request_token = capture_request_token(args.timeout_seconds)
             access_token = exchange_request_token(request_token)
             save_access_token_to_env(access_token)
@@ -424,6 +500,7 @@ def build_parser() -> argparse.ArgumentParser:
     fetch_history.set_defaults(func=cmd_fetch_history)
 
     subparsers.add_parser("kite-login-url").set_defaults(func=cmd_kite_login_url)
+    subparsers.add_parser("kite-token-status").set_defaults(func=cmd_kite_token_status)
 
     kite_save_token = subparsers.add_parser("kite-save-token")
     kite_save_token.add_argument("--request-token", required=True)

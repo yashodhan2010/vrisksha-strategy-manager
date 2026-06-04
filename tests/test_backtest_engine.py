@@ -103,3 +103,43 @@ def test_rank_on_date_skips_zero_lookback_price(monkeypatch, tmp_path: Path) -> 
     ranking = engine._rank_on_date(prices, None, dates[-1])
 
     assert ranking.empty
+
+
+def test_ranking_score_supports_combined_rank(monkeypatch, tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2023, 1, 1), date(2024, 12, 31), 100_000, tmp_path / "x.db")
+    frame = pd.DataFrame(
+        [
+            {"symbol": "HIGHMOM", "momentum_score": 0.30, "beta": 1.30, "volatility": 0.45},
+            {"symbol": "BALANCED", "momentum_score": 0.24, "beta": 0.60, "volatility": 0.18},
+            {"symbol": "LOWMOM", "momentum_score": 0.08, "beta": 0.40, "volatility": 0.12},
+        ]
+    )
+    monkeypatch.setattr("app.backtest.engine.config.STRATEGY_RANKING_METHOD", "COMBINED_RANK")
+    monkeypatch.setattr("app.backtest.engine.config.RANKING_MOMENTUM_WEIGHT", 0.40)
+    monkeypatch.setattr("app.backtest.engine.config.RANKING_BETA_WEIGHT", 0.30)
+    monkeypatch.setattr("app.backtest.engine.config.RANKING_VOLATILITY_WEIGHT", 0.30)
+
+    scores = engine._ranking_score(frame)
+
+    assert scores.loc[1] > scores.loc[0]
+
+
+def test_ranking_score_supports_legacy_beta_adjusted_mode(monkeypatch, tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2023, 1, 1), date(2024, 12, 31), 100_000, tmp_path / "x.db")
+    frame = pd.DataFrame([{"symbol": "AAA", "momentum_score": 0.20, "beta": 2.0, "volatility": 0.20}])
+    monkeypatch.setattr("app.backtest.engine.config.STRATEGY_RANKING_METHOD", "BETA_ADJUSTED")
+
+    scores = engine._ranking_score(frame)
+
+    assert scores.iloc[0] == pytest.approx(0.10)
+
+
+def test_beta_falls_back_for_constant_returns_without_warning(tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2024, 1, 1), date(2024, 12, 31), 100_000, tmp_path / "x.db")
+    dates = _business_dates(date(2024, 1, 1), 80)
+    stock_prices = pd.Series([100.0] * len(dates), index=dates)
+    benchmark_returns = pd.Series([0.0] * len(dates), index=dates)
+
+    beta = engine._beta(stock_prices, benchmark_returns)
+
+    assert beta == 1.0

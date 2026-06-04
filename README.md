@@ -104,15 +104,36 @@ Daily laptop-start automation uses Selenium to open Kite login when today's acce
 SELENIUM_LOGIN_TIMEOUT_SECONDS=180
 AUTO_REBALANCE_TARGET_DAYS=1,15
 AUTOMATION_HISTORY_LOOKBACK_DAYS=10
+TARGET_PORTFOLIO_VALUE=1000000
+AVAILABLE_PURCHASE_FUNDS=1000000
 ```
 
 `AUTO_REBALANCE_TARGET_DAYS=1,15` means the rebalance workflow runs twice per month: on the first trading/pricing day on or after the 1st, and on the first trading/pricing day on or after the 15th. The current calendar is still the provisional weekday calendar, so NSE holiday support remains a future improvement.
+On those dates, the scheduled workflow calculates the real target portfolio from stored prices, saves selected holdings/weights/quantities, and creates proposed buy/sell orders in SQLite. BUY proposals are scaled proportionally to `AVAILABLE_PURCHASE_FUNDS`, so if intended buys total 1,000,000 but available purchase funds are 500,000, every BUY is proposed at 50% of its target value. It does not submit live broker orders unattended.
 
 Get a Kite login URL:
 
 ```bash
 python -m app.main kite-login-url
 ```
+
+Check whether today's saved token is still accepted by Kite:
+
+```bash
+python -m app.main kite-token-status
+```
+
+For unattended daily login, configure Selenium auto-login in `.env`:
+
+```text
+KITE_USER_ID=YOUR_ZERODHA_CLIENT_ID
+KITE_PASSWORD=YOUR_ZERODHA_PASSWORD
+KITE_TOTP_SECRET=YOUR_BASE32_TOTP_SECRET
+```
+
+`KITE_TOTP_SECRET` is the base32 secret from your authenticator setup, not the six-digit code. With these values present, `kite-selenium-token` runs headless Chrome, enters credentials, generates the TOTP code, captures the redirect `request_token`, and saves today's `KITE_ACCESS_TOKEN`.
+
+Saved tokens are reused only when the token date is today and `kite.profile()` confirms the token is valid. If daily automation finds today's saved token is invalid, it refreshes the token through Selenium auto-login.
 
 After Kite redirects, copy the `request_token` from the browser URL and run:
 
@@ -125,6 +146,8 @@ Or use Selenium to open the Kite login page and capture the redirect token after
 ```bash
 python -m app.main kite-selenium-token
 ```
+
+If the unattended Selenium credentials above are configured, the same command runs without manual browser input. If they are missing, it falls back to the visible manual Selenium login flow.
 
 Or save the token and fetch historical data in one command:
 
@@ -158,6 +181,23 @@ BACKTEST_REBALANCES_PER_MONTH=1
 ```
 
 The default `1` rebalances on the first available trading/pricing day of each month. Set `2` for start-of-month plus mid-month rebalances, or `4` for roughly weekly rebalances within each month.
+
+Allocation mode is also configurable from `.env` and is shared by backtests plus scheduled paper/live target generation:
+
+```text
+STRATEGY_RANKING_METHOD=COMBINED_RANK
+RANKING_MOMENTUM_WEIGHT=0.60
+RANKING_BETA_WEIGHT=0.25
+RANKING_VOLATILITY_WEIGHT=0.15
+STRATEGY_ALLOCATION_MODE=TOP_N_EQUAL
+STRATEGY_TOP_N=15
+DYNAMIC_MIN_WEIGHT=0.01
+DYNAMIC_MAX_WEIGHT=0.07
+```
+
+Use `STRATEGY_RANKING_METHOD=COMBINED_RANK` to rank stocks by a weighted percentile blend of raw 3M/6M/12M momentum, low beta, and low volatility. The three `RANKING_*_WEIGHT` values are normalized internally, so you can copy optimized weights from the experiment notebook even if they do not sum to exactly 1. Other supported ranking methods are `MOMENTUM`, `BETA_ADJUSTED`, and `VOLATILITY_ADJUSTED`.
+
+Use `STRATEGY_ALLOCATION_MODE=TOP_N_EQUAL` to buy the top N ranked stocks with equal weights capped by `MAX_STOCK_WEIGHT`. Use `STRATEGY_ALLOCATION_MODE=DYNAMIC` to buy the top N positive-score stocks with weights tilted toward stronger scores and constrained by `DYNAMIC_MIN_WEIGHT` / `DYNAMIC_MAX_WEIGHT`. Any residual allocation is treated as cash/LIQUIDBEES.
 
 Open dashboards:
 
@@ -209,12 +249,13 @@ python -m app.main run-backtest --start-date 2016-01-01 --end-date 2025-12-31 --
 python -m app.main fetch-history --start-date 2024-01-01 --end-date 2024-12-31 --symbols RELIANCE TCS
 python -m app.main fetch-history --start-date 2024-01-01 --end-date 2024-12-31 --request-token YOUR_REQUEST_TOKEN
 python -m app.main kite-login-url
+python -m app.main kite-token-status
 python -m app.main kite-save-token --request-token YOUR_REQUEST_TOKEN
 python -m app.main kite-selenium-token
 python -m app.main auto-daily-run --selenium-token
 ```
 
-`manual-run`, `monthly-run`, and the scheduled rebalance step inside `auto-daily-run` are safe placeholders. `backtest` now runs a local historical simulation from stored `market_prices`; it still never places live orders.
+`monthly-run` and the scheduled rebalance step inside `auto-daily-run` calculate a real target portfolio and proposed order list from stored `market_prices`. They still never submit live broker orders. `manual-run` remains a safe placeholder.
 
 Historical price ingestion uses Kite Connect by default and stores daily OHLCV rows in SQLite:
 
@@ -252,7 +293,7 @@ python -m app.main fetch-history --start-date 2015-01-01 --end-date 2025-12-31
 python -m app.main backtest --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
 ```
 
-The current simulation uses stored daily prices, configurable in-month rebalance dates, 3M/6M/12M momentum, the 52-week-high filter, beta-adjusted scores, and capped equal allocation with residual allocation treated as cash/LIQUIDBEES. `BACKTEST_REBALANCES_PER_MONTH=1` preserves the original monthly behavior.
+The current simulation uses stored daily prices, configurable in-month rebalance dates, 3M/6M/12M momentum, beta, volatility, the 52-week-high filter, the configured ranking method, and the configured allocation mode. `BACKTEST_REBALANCES_PER_MONTH=1` preserves the original monthly cadence.
 
 ## Next Sprint
 

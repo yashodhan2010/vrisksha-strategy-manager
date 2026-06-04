@@ -7,7 +7,7 @@ from typing import Any
 
 from app import config
 from app.storage.database import get_connection
-from app.strategy.models import RunMode, RunStatus, RunType
+from app.strategy.models import OrderProposal, RunMode, RunStatus, RunType
 
 
 def _json(value: Any) -> str:
@@ -280,6 +280,73 @@ def list_order_proposals_for_run(
             (run_id,),
         ).fetchall()
         return [dict(row) for row in rows]
+
+
+def list_latest_strategy_holdings(
+    database_path: str | Path = config.DATABASE_PATH,
+) -> list[dict[str, Any]]:
+    with get_connection(database_path) as connection:
+        row = connection.execute(
+            """
+            SELECT h.run_id, h.snapshot_date
+            FROM holding_snapshots h
+            JOIN strategy_runs s ON s.id = h.run_id
+            WHERE h.selected = 1 AND s.run_type = ?
+            ORDER BY h.snapshot_date DESC, h.run_id DESC
+            LIMIT 1
+            """,
+            (RunType.MONTHLY.value,),
+        ).fetchone()
+        snapshot_date = row["snapshot_date"] if row else None
+        run_id = row["run_id"] if row else None
+        if not snapshot_date:
+            return []
+        rows = connection.execute(
+            """
+            SELECT h.*
+            FROM holding_snapshots h
+            WHERE h.selected = 1 AND h.run_id = ? AND h.snapshot_date = ?
+            ORDER BY rank, symbol
+            """,
+            (run_id, snapshot_date),
+        ).fetchall()
+        return [dict(item) for item in rows]
+
+
+def insert_order_proposals(
+    run_id: int,
+    proposals: list[OrderProposal],
+    database_path: str | Path = config.DATABASE_PATH,
+) -> int:
+    if not proposals:
+        return 0
+    with get_connection(database_path) as connection:
+        connection.executemany(
+            """
+            INSERT INTO order_proposals (
+                run_id, created_at, symbol, side, quantity, reference_price,
+                estimated_value, status, reason, broker_order_id, details_json
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    run_id,
+                    datetime.now(timezone.utc).isoformat(),
+                    proposal.symbol,
+                    proposal.side.value,
+                    proposal.quantity,
+                    proposal.reference_price,
+                    proposal.estimated_value,
+                    proposal.status.value,
+                    proposal.reason,
+                    proposal.broker_order_id,
+                    _json(proposal.details),
+                )
+                for proposal in proposals
+            ],
+        )
+    return len(proposals)
 
 
 def summarize_stock_contributions(

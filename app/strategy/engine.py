@@ -10,8 +10,8 @@ class StrategyEngine:
     Universe: local Nifty 500 Excel / JSON file.
     Signals: 3M, 6M, 12M returns.
     Filter: stock price must be within 20% of 52-week high.
-    Risk adjustment: beta-adjusted returns.
-    Score: average beta-adjusted momentum score.
+    Risk inputs: beta and realized volatility.
+    Score: configured ranking method, defaulting to combined momentum/beta/volatility rank.
     Ranking: descending score.
     Selection: every qualifying stock.
     Allocation: equal weight with maximum 5% per stock.
@@ -26,4 +26,3 @@ class StrategyEngine:
 
     def generate_target_portfolio(self) -> AllocationResult:
         raise NotImplementedError("Target portfolio generation will be implemented in a later sprint.")
-
