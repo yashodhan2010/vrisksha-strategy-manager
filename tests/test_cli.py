@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -180,4 +181,66 @@ def test_build_finalized_package_can_skip_history_fetch(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "Skipping history fetch" in result.stdout
+    assert "No market prices found" in result.stdout
+
+
+def test_build_finalized_package_uses_existing_config_when_trials_missing(tmp_path: Path) -> None:
+    finalized = tmp_path / "finalized.json"
+    finalized.write_text(
+        json.dumps(
+            {
+                "strategy_parameters": {
+                    "BACKTEST_REBALANCES_PER_MONTH": 2,
+                    "STRATEGY_RANKING_METHOD": "AVERAGE_RANK",
+                    "RANKING_MOMENTUM_WEIGHT": 0.7,
+                    "RANKING_BETA_WEIGHT": 0.15,
+                    "RANKING_VOLATILITY_WEIGHT": 0.15,
+                    "STRATEGY_ALLOCATION_MODE": "TOP_N_EQUAL",
+                    "STRATEGY_TOP_N": 40,
+                    "BUFFER_PCT": 60,
+                    "MAX_STOCK_WEIGHT": 0.05,
+                    "MAX_SECTOR_WEIGHT": 1.0,
+                    "HIGH_52W_THRESHOLD": 0.8,
+                    "SAFE_ASSET_SYMBOL": "LIQUIDBEES",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    profile = tmp_path / "strategy_profile.json"
+    profile.write_text(
+        f"""
+        {{
+          "strategy_id": "test_strategy_v1",
+          "slug": "test-strategy",
+          "name": "Test Strategy",
+          "optimization": {{
+            "results_path": "{(tmp_path / 'missing_trials.csv').as_posix()}",
+            "finalized_config_path": "{finalized.as_posix()}"
+          }},
+          "package": {{
+            "output_dir": "{(tmp_path / 'package').as_posix()}"
+          }}
+        }}
+        """,
+        encoding="utf-8",
+    )
+
+    result = _run(
+        [
+            "build-finalized-package",
+            "--strategy-profile",
+            str(profile),
+            "--start-date",
+            "2024-01-01",
+            "--end-date",
+            "2024-12-31",
+            "--no-fetch-history",
+        ],
+        tmp_path,
+    )
+
+    assert result.returncode == 1
+    assert "Using existing finalized config" in result.stdout
+    assert "Optimization results file not found" not in result.stdout
     assert "No market prices found" in result.stdout

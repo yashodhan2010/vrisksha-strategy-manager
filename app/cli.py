@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from datetime import date, datetime, timedelta
+from pathlib import Path
 
 from app import config
 from app.automation.kite_selenium import capture_request_token
@@ -499,19 +500,28 @@ def cmd_finalized_package(args: argparse.Namespace) -> int:
         input_path = args.input or config.OPTIMIZATION_RESULTS_PATH
         config_output = args.config_output or config.FINALIZED_STRATEGY_CONFIG_PATH
         package_output = args.package_output or config.STRATEGY_PACKAGE_OUTPUT_DIR
-        payload = build_finalized_config_from_results(
-            results_path=input_path,
-            objective=args.objective,
-            rank_column=args.rank_column,
-            row_index=args.row_index,
-        )
-        config_path = write_finalized_config(payload, config_output)
+        if Path(input_path).exists():
+            payload = build_finalized_config_from_results(
+                results_path=input_path,
+                objective=args.objective,
+                rank_column=args.rank_column,
+                row_index=args.row_index,
+            )
+            config_path = write_finalized_config(payload, config_output)
+            print(f"Finalized config written to {config_path}")
+        elif Path(config_output).exists() and args.input is None and args.row_index is None:
+            config_path = Path(config_output)
+            print(f"Using existing finalized config from {config_path}")
+        else:
+            raise FileNotFoundError(
+                f"Optimization results file not found: {input_path}. "
+                f"Run refresh-finalized-parameters first, or provide an existing finalized config at {config_output}."
+            )
         apply_finalized_config(config_path)
         _ensure_history_for_finalized_run(args, start_date, end_date)
     except (FileNotFoundError, ImportError, UniverseSyncError, ValueError, json.JSONDecodeError) as exc:
         print(f"Finalized package pipeline failed: {exc}")
         return 1
-    print(f"Finalized config written to {config_path}")
     backtest_args = argparse.Namespace(
         years=None,
         start_date=start_date.isoformat(),
