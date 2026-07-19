@@ -1,0 +1,32 @@
+{
+  "strategy_id": "strategy_slug_v1",
+  "slug": "strategy-slug",
+  "name": "Strategy Name",
+  "short_description": "Public-safe one-line description of the strategy.",
+  "category_labels": [
+    "Equity",
+    "Model Portfolio"
+  ],
+  "ra_entity": "Prathamesh Gupta",
+  "sebi_registration_number": "",
+  "universe": "NIFTY 500",
+  "benchmark": "NIFTY 500 TRI",
+  "min_capital_guidance": 0,
+  "backtest": {
+    "benchmark_symbol": "NIFTY500"
+  },
+  "documents": {
+    "public_methodology_path": "strategies/strategy-slug/methodology.md",
+    "internal_methodology_path": "strategies/strategy-slug/methodology_internal.md"
+  },
+  "optimization": {
+    "results_path": "data/output/strategy_slug_trials.csv",
+    "finalized_config_path": "data/output/finalized/strategy_slug_best_config.json",
+    "objective": "cagr",
+    "rank_column": "rank_by_cagr"
+  },
+  "package": {
+    "version": "1.0.0",
+    "output_dir": "data/output/packages/strategy-slug/strategy-package"
+  }
+}

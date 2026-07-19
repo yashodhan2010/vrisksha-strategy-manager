@@ -2,7 +2,7 @@
   "strategy_id": "dual_momentum_nifty500_v1",
   "slug": "dual-momentum",
   "name": "Dual Momentum",
-  "short_description": "A Nifty 500 dual-momentum model portfolio using momentum, beta, volatility, 52-week-high filters, and a holding-retention buffer.",
+  "short_description": "A Nifty 500 rules-based momentum model portfolio with built-in diversification and risk controls.",
   "category_labels": [
     "Momentum",
     "Factor Strategy",
@@ -18,7 +18,8 @@
     "benchmark_symbol": "NIFTY500"
   },
   "documents": {
-    "methodology_path": "strategies/dual-momentum/methodology.md"
+    "public_methodology_path": "strategies/dual-momentum/methodology.md",
+    "internal_methodology_path": "strategies/dual-momentum/methodology_internal.md"
   },
   "optimization": {
     "results_path": "data/output/average_rank_buffer_10y_trials_parameters_cagr.csv",

@@ -85,6 +85,13 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     assert manifest["ra_entity"] == "Prathamesh Gupta"
     assert manifest["slug"] == "dual-momentum"
     assert manifest["target_holdings"] == 2
+    assert manifest["public_methodology_file"] == "methodology.md"
+    assert manifest["internal_methodology_file"] == "methodology_internal.md"
+    assert "holding_buffer_pct" not in manifest
+    public_methodology = (path / "methodology.md").read_text(encoding="utf-8")
+    internal_methodology = (path / "methodology_internal.md").read_text(encoding="utf-8")
+    assert "exact implementation parameters" in public_methodology
+    assert "Signal Construction" in internal_methodology
     latest_rows = _read_csv(path / "latest_model_portfolio.csv")
     assert latest_rows[0]["strategy_id"] == "dual_momentum_nifty500_v1"
     assert latest_rows[0]["company_name"] == "Alpha Ltd"

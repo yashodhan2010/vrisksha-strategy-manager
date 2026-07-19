@@ -2,7 +2,7 @@
 
 Local Python foundation for Indian-equities strategy research, optimization, backtesting, model-portfolio generation, and portable Vriksha strategy-package exports.
 
-Dual Momentum is the first strategy profile in this repository. See [strategies/dual-momentum/methodology.md](strategies/dual-momentum/methodology.md) for its momentum/beta/volatility signal math, ranking methods, allocation logic, holding buffer, and rebalance mechanics. See [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
+Dual Momentum is the first strategy profile in this repository. See [strategies/dual-momentum/methodology.md](strategies/dual-momentum/methodology.md) for the public-safe methodology and [strategies/dual-momentum/methodology_internal.md](strategies/dual-momentum/methodology_internal.md) for internal implementation details. See [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
 
 This repository does not own Vriksha website accounts, payments, subscriptions, or access control.
 

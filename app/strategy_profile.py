@@ -22,6 +22,7 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     package = profile.get("package", {})
     optimization = profile.get("optimization", {})
     backtest = profile.get("backtest", {})
+    documents = profile.get("documents", {})
 
     config.STRATEGY_PROFILE_PATH = str(profile_path)
     config.STRATEGY_PACKAGE_ID = str(profile["strategy_id"])
@@ -37,6 +38,14 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     )
     config.STRATEGY_PACKAGE_MIN_CAPITAL_GUIDANCE = int(
         profile.get("min_capital_guidance") or config.STRATEGY_PACKAGE_MIN_CAPITAL_GUIDANCE
+    )
+    config.STRATEGY_PUBLIC_METHODOLOGY_PATH = str(
+        documents.get("public_methodology_path")
+        or documents.get("methodology_path")
+        or config.STRATEGY_PUBLIC_METHODOLOGY_PATH
+    )
+    config.STRATEGY_INTERNAL_METHODOLOGY_PATH = str(
+        documents.get("internal_methodology_path") or config.STRATEGY_INTERNAL_METHODOLOGY_PATH
     )
     config.STRATEGY_PACKAGE_OUTPUT_DIR = str(package.get("output_dir") or config.STRATEGY_PACKAGE_OUTPUT_DIR)
     config.STRATEGY_PACKAGE_VERSION = str(package.get("version") or config.STRATEGY_PACKAGE_VERSION)

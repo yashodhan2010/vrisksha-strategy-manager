@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 
-def methodology_md(manifest: dict[str, Any], summary: dict[str, Any]) -> str:
+def public_methodology_md(manifest: dict[str, Any]) -> str:
     return f"""# {manifest["name"]} Methodology
 
 ## Summary
@@ -12,15 +12,15 @@ def methodology_md(manifest: dict[str, Any], summary: dict[str, Any]) -> str:
 
 ## Universe
 
-The strategy uses the locally maintained {manifest["universe"]} universe. The runtime universe is synced from the reference workbook before backtests and live model-portfolio generation.
+The strategy uses the locally maintained {manifest["universe"]} universe. The runtime universe is synced from the reference data maintained by the research project before backtests and model-portfolio generation.
 
-## Signal Design
+## Strategy Design
 
-Stocks are evaluated on trailing 3-month, 6-month, and 12-month momentum, low beta, low volatility, and proximity to their 52-week high. The active ranking method is `{summary.get("strategy_ranking_method", "")}`.
+The model ranks stocks using a rules-based blend of price trend, quality of price movement, and portfolio risk controls. The exact scoring formula, optimized parameters, thresholds, buffers, and tie-break rules are proprietary and are not part of the public methodology.
 
 ## Allocation
 
-The allocation mode is `{summary.get("strategy_allocation_mode", "")}` with a target of {manifest["target_holdings"]} holdings. Existing holdings are retained while they remain within the configured holding buffer of {manifest.get("holding_buffer_pct", 0)}% beyond the target selection rank, then open slots are filled from the highest-ranked candidates. Per-stock, sector, and safe-asset/cash residual rules follow the strategy configuration captured in the backtest run.
+The strategy targets {manifest["target_holdings"]} holdings, subject to diversification and risk controls. Position weights are model-driven and may include residual cash or a cash-equivalent allocation when suitable opportunities are limited or portfolio constraints apply.
 
 ## Rebalance
 
@@ -29,6 +29,34 @@ The strategy is rebalanced {manifest["rebalance_frequency"]}. Backtest execution
 ## Cash Allocation Rules
 
 Residual allocation from stock caps, sector caps, or insufficient qualifying stocks is assigned to the configured safe asset/cash proxy.
+
+## Proprietary Details
+
+Exact ranking weights, lookback windows, buffers, thresholds, and implementation rules are retained internally by the research project and are not exposed on the public strategy page.
+"""
+
+
+def internal_methodology_md(manifest: dict[str, Any], summary: dict[str, Any]) -> str:
+    return f"""# {manifest["name"]} Internal Methodology
+
+This internal methodology is intended for Vriksha admin/research review only. It may contain proprietary strategy implementation details and should not be rendered on the public strategy page.
+
+## Summary
+
+{manifest["short_description"]}
+
+## Implementation Notes
+
+The finalized strategy configuration used for the exported backtest is captured in the research database run payload and the strategy-specific finalized config file. Treat exact scoring methods, allocation settings, buffers, thresholds, and rebalance mechanics as private strategy intellectual property.
+
+## Backtest Configuration Snapshot
+
+- Ranking method: `{summary.get("strategy_ranking_method", "")}`
+- Allocation mode: `{summary.get("strategy_allocation_mode", "")}`
+- Rebalance frequency: `{manifest["rebalance_frequency"]}`
+- Target holdings: `{manifest["target_holdings"]}`
+- Universe: `{manifest["universe"]}`
+- Benchmark: `{manifest["benchmark"]}`
 """
 
 
@@ -78,6 +106,8 @@ Rebalances are assumed to execute on the stored reference prices used by the bac
 ## Known Limitations
 
 The package does not contain website-specific logic, payments, user login, subscriptions, or subscriber access control. Minimum capital guidance and SEBI registration number may be finalized outside the beta package.
+
+Public pages should render only the manifest fields and `methodology.md`. `methodology_internal.md`, finalized configs, experiment outputs, exact ranking settings, thresholds, and buffers are internal research artifacts and should not be exposed to unsubscribed users.
 
 ## Manual Overrides Applied
 

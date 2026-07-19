@@ -16,8 +16,14 @@ app/
   storage/        SQLite schema and repositories.
 
 strategies/
+  _template/
+    strategy_profile.json
+    methodology.md
+    methodology_internal.md
   dual-momentum/
     strategy_profile.json
+    methodology.md
+    methodology_internal.md
 
 experiments/
   Research notebooks/scripts and raw experiment outputs.
@@ -26,6 +32,17 @@ data/output/
   finalized/      Final selected strategy config JSON files.
   packages/       Vriksha import packages.
 ```
+
+## Finalized Strategy Lifecycle
+
+Every strategy follows the same lifecycle:
+
+1. Run experiments/Optuna outside the package exporter and write the results CSV.
+2. Promote the best experiment row into a finalized strategy config.
+3. Run the finalized backtest and export the full Vriksha strategy package.
+4. Use the lightweight model-portfolio update command for routine subscriber updates.
+
+Public website pages should render `methodology.md` only. `methodology_internal.md`, finalized config JSON, experiment outputs, and exact parameters are private/internal artifacts.
 
 ## Dual Momentum Pipeline
 
@@ -55,12 +72,32 @@ python -m app.main build-finalized-package --strategy-profile strategies/dual-mo
 
 Use `--no-fetch-history` only when intentionally running against already stored local data.
 
+The full package is written to:
+
+```text
+data/output/packages/dual-momentum/strategy-package/
+```
+
+It includes public-safe `methodology.md` plus internal-only `methodology_internal.md`. Vriksha should use the `public_methodology_file` and `internal_methodology_file` fields in `manifest.json` to keep public and internal content separate.
+
 ## Live / Paper Model Portfolio
 
 The scheduled model-portfolio workflow also applies the strategy profile and finalized config before generating holdings:
 
 ```bash
 python -m app.main monthly-run --strategy-profile strategies/dual-momentum/strategy_profile.json
+```
+
+For Vriksha subscriber-page updates, use the command that refreshes only recent history, runs the model portfolio, and exports the update files:
+
+```bash
+python -m app.main build-model-portfolio-update --selenium-token --strategy-profile strategies/dual-momentum/strategy_profile.json
+```
+
+The update package is written to:
+
+```text
+data/output/packages/dual-momentum/model-portfolio-update/
 ```
 
 Daily automation refreshes market data and runs `monthly-run` only on configured rebalance dates:
@@ -73,11 +110,15 @@ If `data/output/finalized/dual_momentum_best_config.json` does not exist, run `f
 
 ## Adding Another Strategy
 
-1. Create `strategies/<strategy-slug>/strategy_profile.json`.
-2. Point `optimization.results_path` at that strategy's experiment/Optuna output.
-3. Point `optimization.finalized_config_path` at a strategy-specific JSON file under `data/output/finalized/`.
-4. Point `package.output_dir` at a strategy-specific package folder under `data/output/packages/`.
-5. Add or swap strategy logic under `app/strategy/` only if the new strategy's ranking/allocation rules differ from Dual Momentum.
-6. Run `build-finalized-package` with the new profile.
+1. Copy `strategies/_template/` to `strategies/<strategy-slug>/`.
+2. Update `strategy_profile.json` identity fields, public metadata, RA details, universe, benchmark, and minimum capital guidance.
+3. Write `methodology.md` as a public-safe website summary.
+4. Write `methodology_internal.md` with exact research logic and parameters for internal review only.
+5. Point `optimization.results_path` at that strategy's experiment/Optuna output.
+6. Point `optimization.finalized_config_path` at a strategy-specific JSON file under `data/output/finalized/`.
+7. Point `package.output_dir` at a strategy-specific package folder under `data/output/packages/`.
+8. Add or swap strategy logic under `app/strategy/` only if the new strategy's ranking/allocation rules differ from the current shared implementation.
+9. Run `build-finalized-package` with the new profile for the full public/import package.
+10. Run `build-model-portfolio-update` with the new profile for routine latest portfolio exports.
 
 Each generated package remains a portable artifact for Vriksha import.

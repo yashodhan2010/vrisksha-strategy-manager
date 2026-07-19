@@ -1,7 +1,11 @@
 # Strategy Profiles
 
-Each finalized strategy gets one folder here. The folder should contain a `strategy_profile.json` that tells the shared pipeline where to find optimization results, where to write the finalized config, and where to export the Vriksha package.
+Each finalized strategy gets one folder here. The folder should contain:
 
-To add another strategy, copy `dual-momentum/strategy_profile.json` into a new slug folder and update the metadata, optimization paths, and package output path.
+- `strategy_profile.json`: metadata, optimization paths, finalized config path, and package output path.
+- `methodology.md`: public-safe methodology for the Vriksha public strategy page.
+- `methodology_internal.md`: full internal research methodology, not for public rendering.
 
-The strategy profile does not contain website, payment, login, subscription, or access-control logic.
+To add another strategy, copy `strategies/_template/` into `strategies/<strategy-slug>/` and update the metadata, document text, optimization paths, finalized config path, and package output path.
+
+The strategy profile and methodology files do not contain website, payment, login, subscription, or access-control logic.

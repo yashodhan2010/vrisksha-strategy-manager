@@ -14,6 +14,7 @@ PACKAGE_FILES = [
     "sector_exposure.csv",
     "marketcap_exposure.csv",
     "methodology.md",
+    "methodology_internal.md",
     "disclosures.md",
     "import_notes.md",
 ]

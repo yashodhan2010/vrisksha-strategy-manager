@@ -11,7 +11,7 @@ import pandas as pd
 
 from app import config
 from app.data.universe_loader import load_universe
-from app.export.docs import disclosures_md, import_notes_md, methodology_md
+from app.export.docs import disclosures_md, import_notes_md, internal_methodology_md, public_methodology_md
 from app.export.schemas import CSV_HEADERS
 from app.export.validators import validate_csv_rows, validate_manifest, validate_package_files, validate_weights
 from app.export.writers import write_csv, write_json, write_markdown
@@ -70,7 +70,17 @@ def build_strategy_package(
     _write_csv(output_path, "holdings_history.csv", holdings_history)
     _write_csv(output_path, "sector_exposure.csv", sector_exposure)
     _write_csv(output_path, "marketcap_exposure.csv", marketcap_exposure)
-    write_markdown(output_path / "methodology.md", methodology_md(manifest, summary))
+    write_markdown(
+        output_path / "methodology.md",
+        _document_text(config.STRATEGY_PUBLIC_METHODOLOGY_PATH, public_methodology_md(manifest)),
+    )
+    write_markdown(
+        output_path / "methodology_internal.md",
+        _document_text(
+            config.STRATEGY_INTERNAL_METHODOLOGY_PATH,
+            internal_methodology_md(manifest, summary),
+        ),
+    )
     write_markdown(output_path / "disclosures.md", disclosures_md(manifest))
     write_markdown(output_path / "import_notes.md", import_notes_md(manifest, warnings))
     validate_package_files(output_path)
@@ -150,13 +160,15 @@ def _manifest(run: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
         "base_currency": config.STRATEGY_PACKAGE_BASE_CURRENCY,
         "backtest_start_date": run["actual_start_date"],
         "backtest_end_date": run["actual_end_date"],
-        "lookback_period": "3M / 6M / 12M momentum; 252 trading-day beta and volatility",
-        "holding_buffer_pct": float(config_payload.get("buffer_pct") or summary.get("buffer_pct") or config.BUFFER_PCT),
+        "lookback_period": "Multi-window trend and risk lookbacks; exact finalized parameters are proprietary.",
         "rebalance_frequency": _rebalance_frequency(summary),
         "target_holdings": int(config_payload.get("strategy_top_n") or summary.get("strategy_top_n") or config.STRATEGY_TOP_N),
         "min_capital_guidance": config.STRATEGY_PACKAGE_MIN_CAPITAL_GUIDANCE,
         "portfolio_as_of_date": run["actual_end_date"],
         "data_frequency": "daily",
+        "public_methodology_file": "methodology.md",
+        "internal_methodology_file": "methodology_internal.md",
+        "public_content_policy": "Do not render internal methodology, finalized config, exact ranking parameters, thresholds, or buffers on public pages.",
         "public_visibility": True,
     }
 
@@ -419,7 +431,7 @@ def _rebalance_history(strategy_id: str, holdings: list[dict[str, Any]], univers
                     "new_weight": _clean_float(new_weight),
                     "old_reference_price": _clean_float(old.get("reference_price") if old else None),
                     "new_reference_price": _clean_float(new.get("reference_price") if new else None),
-                    "rationale": "Rebalanced according to the dual-momentum ranking and allocation rules.",
+                    "rationale": f"Rebalanced according to the {config.STRATEGY_PACKAGE_NAME} model rules.",
                 }
             )
         previous = current
@@ -457,10 +469,10 @@ def _entry_dates(holdings: list[dict[str, Any]]) -> dict[str, str]:
 def _holding_note(row: dict[str, Any]) -> str:
     rank = row.get("rank")
     if rank:
-        return f"Selected by dual-momentum rank {rank}."
+        return f"Selected by model rank {rank}."
     if row.get("holding_action") == "SAFE_ASSET":
         return "Residual safe-asset/cash allocation."
-    return "Selected by dual-momentum rules."
+    return "Selected by model rules."
 
 
 def _rebalance_action(old_weight: float, new_weight: float) -> str:
@@ -490,6 +502,13 @@ def _average_holding_period_months(holdings: list[dict[str, Any]]) -> float:
 def _write_csv(output_path: Path, filename: str, rows: list[dict[str, Any]]) -> None:
     validate_csv_rows(filename, rows)
     write_csv(output_path / filename, CSV_HEADERS[filename], rows)
+
+
+def _document_text(path_value: str | Path, fallback: str) -> str:
+    path = Path(path_value)
+    if path.exists():
+        return path.read_text(encoding="utf-8")
+    return fallback
 
 
 def _clean_float(value: Any) -> float | str:
