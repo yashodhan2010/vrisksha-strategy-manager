@@ -53,6 +53,14 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     config.FINALIZED_STRATEGY_CONFIG_PATH = str(
         optimization.get("finalized_config_path") or config.FINALIZED_STRATEGY_CONFIG_PATH
     )
+    config.OPTIMIZATION_ENGINE_PATH = str(
+        optimization.get("engine_path") or config.OPTIMIZATION_ENGINE_PATH
+    )
+    config.OPTIMIZATION_ENGINE_MODULE = str(
+        optimization.get("engine_module")
+        or optimization.get("engine")
+        or config.OPTIMIZATION_ENGINE_MODULE
+    )
     if backtest.get("benchmark_symbol"):
         config.DEFAULT_BENCHMARK_SYMBOL = str(backtest["benchmark_symbol"])
     return profile

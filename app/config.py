@@ -112,6 +112,14 @@ FINALIZED_STRATEGY_CONFIG_PATH = os.getenv(
     "FINALIZED_STRATEGY_CONFIG_PATH",
     "data/output/finalized/dual_momentum_best_config.json",
 )
+OPTIMIZATION_ENGINE_PATH = os.getenv(
+    "OPTIMIZATION_ENGINE_PATH",
+    "strategies/dual-momentum/experiments/optimizer.py",
+)
+OPTIMIZATION_ENGINE_MODULE = os.getenv(
+    "OPTIMIZATION_ENGINE_MODULE",
+    "",
+)
 
 
 def ensure_runtime_directories() -> None:
@@ -177,5 +185,7 @@ def public_config() -> dict[str, str | int | float]:
         "STRATEGY_INTERNAL_METHODOLOGY_PATH": STRATEGY_INTERNAL_METHODOLOGY_PATH,
         "OPTIMIZATION_RESULTS_PATH": OPTIMIZATION_RESULTS_PATH,
         "FINALIZED_STRATEGY_CONFIG_PATH": FINALIZED_STRATEGY_CONFIG_PATH,
+        "OPTIMIZATION_ENGINE_PATH": OPTIMIZATION_ENGINE_PATH,
+        "OPTIMIZATION_ENGINE_MODULE": OPTIMIZATION_ENGINE_MODULE,
         "STRATEGY_PACKAGE_OUTPUT_DIR": STRATEGY_PACKAGE_OUTPUT_DIR,
     }

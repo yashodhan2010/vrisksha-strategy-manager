@@ -422,7 +422,8 @@ def cmd_finalize_strategy_config(args: argparse.Namespace) -> int:
 
 def cmd_refresh_finalized_parameters(args: argparse.Namespace) -> int:
     try:
-        apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        profile = apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        optimization = profile.get("optimization", {})
         results_output = args.results_output or config.OPTIMIZATION_RESULTS_PATH
         config_output = args.config_output or config.FINALIZED_STRATEGY_CONFIG_PATH
         optimization_result = run_average_rank_buffer_optimization(
@@ -432,6 +433,9 @@ def cmd_refresh_finalized_parameters(args: argparse.Namespace) -> int:
             seed=args.seed,
             results_output_path=results_output,
             experiment_output_dir=args.experiment_output_dir,
+            engine_module=optimization.get("engine_module") or optimization.get("engine"),
+            engine_path=optimization.get("engine_path"),
+            search_space=optimization.get("search_space"),
             database_path=config.DATABASE_PATH,
             universe_json_path=config.UNIVERSE_JSON_PATH,
         )

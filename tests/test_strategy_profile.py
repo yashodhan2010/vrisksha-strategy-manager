@@ -30,6 +30,8 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
         "STRATEGY_INTERNAL_METHODOLOGY_PATH",
         "OPTIMIZATION_RESULTS_PATH",
         "FINALIZED_STRATEGY_CONFIG_PATH",
+        "OPTIMIZATION_ENGINE_PATH",
+        "OPTIMIZATION_ENGINE_MODULE",
     ]:
         monkeypatch.setattr(config, name, getattr(config, name))
     path = tmp_path / "strategy_profile.json"
@@ -45,6 +47,8 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
                 "universe": "NIFTY 500",
                 "benchmark": "NIFTY 500 TRI",
                 "optimization": {
+                    "engine_path": "strategies/sample-strategy/experiments/optimizer.py",
+                    "engine_module": "sample.optimizer",
                     "results_path": "data/output/sample_trials.csv",
                     "finalized_config_path": "data/output/finalized/sample.json",
                 },
@@ -70,3 +74,5 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
     assert config.STRATEGY_INTERNAL_METHODOLOGY_PATH == "strategies/sample-strategy/methodology_internal.md"
     assert config.OPTIMIZATION_RESULTS_PATH == "data/output/sample_trials.csv"
     assert config.FINALIZED_STRATEGY_CONFIG_PATH == "data/output/finalized/sample.json"
+    assert config.OPTIMIZATION_ENGINE_PATH == "strategies/sample-strategy/experiments/optimizer.py"
+    assert config.OPTIMIZATION_ENGINE_MODULE == "sample.optimizer"

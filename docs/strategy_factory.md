@@ -20,13 +20,16 @@ strategies/
     strategy_profile.json
     methodology.md
     methodology_internal.md
+    experiments/
   dual-momentum/
     strategy_profile.json
     methodology.md
     methodology_internal.md
+    experiments/
+      optimizer.py
 
 experiments/
-  Research notebooks/scripts and raw experiment outputs.
+  Scratch research notebooks/scripts and archived raw outputs. Production optimizers should live under strategies/<slug>/experiments/.
 
 data/output/
   finalized/      Final selected strategy config JSON files.
@@ -37,7 +40,7 @@ data/output/
 
 Every strategy follows the same lifecycle:
 
-1. Run experiments/Optuna and write the results CSV.
+1. Run the strategy-local experiments/Optuna optimizer and write the results CSV.
 2. Promote the best experiment row into a finalized strategy config, or run `refresh-finalized-parameters` to do both together for strategies using the average-rank/buffer optimizer.
 3. Run the finalized backtest and export the full Vriksha strategy package.
 4. Use the lightweight model-portfolio update command for routine subscriber updates.
@@ -120,12 +123,15 @@ If `data/output/finalized/dual_momentum_best_config.json` does not exist, run `f
 2. Update `strategy_profile.json` identity fields, public metadata, RA details, universe, benchmark, and minimum capital guidance.
 3. Write `methodology.md` as a public-safe website summary.
 4. Write `methodology_internal.md` with exact research logic and parameters for internal review only.
-5. Point `optimization.results_path` at that strategy's experiment/Optuna output.
-6. Point `optimization.finalized_config_path` at a strategy-specific JSON file under `data/output/finalized/`.
-7. Point `package.output_dir` at a strategy-specific package folder under `data/output/packages/`.
-8. Add or swap strategy logic under `app/strategy/` only if the new strategy's ranking/allocation rules differ from the current shared implementation.
-9. Run `refresh-finalized-parameters` when the strategy has a tracked optimizer, or `finalize-strategy-config` when an external experiment CSV has already been produced.
-10. Run `build-finalized-package` with the new profile for the full public/import package.
-11. Run `build-model-portfolio-update` with the new profile for routine latest portfolio exports.
+5. Put that strategy's production optimizer under `strategies/<strategy-slug>/experiments/optimizer.py`.
+6. Point `optimization.engine_path` at that optimizer file.
+7. Put the tunable optimization grid in `optimization.search_space`.
+8. Point `optimization.results_path` at that strategy's experiment/Optuna output.
+9. Point `optimization.finalized_config_path` at a strategy-specific JSON file under `data/output/finalized/`.
+10. Point `package.output_dir` at a strategy-specific package folder under `data/output/packages/`.
+11. Add or swap strategy logic under `app/strategy/` only if the new strategy's ranking/allocation rules differ from the current shared implementation.
+12. Run `refresh-finalized-parameters` when the strategy has a tracked optimizer, or `finalize-strategy-config` when an external experiment CSV has already been produced.
+13. Run `build-finalized-package` with the new profile for the full public/import package.
+14. Run `build-model-portfolio-update` with the new profile for routine latest portfolio exports.
 
 Each generated package remains a portable artifact for Vriksha import.

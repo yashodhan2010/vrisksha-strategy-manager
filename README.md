@@ -11,7 +11,8 @@ This repository does not own Vriksha website accounts, payments, subscriptions, 
 ```text
 .env                              Runtime/provider settings only.
 strategies/<slug>/strategy_profile.json
-                                  Strategy identity, public metadata, optimization input, and package output path.
+                                  Strategy identity, public metadata, optimizer path/search grid, and package output path.
+strategies/<slug>/experiments/    Strategy-specific production optimizer and research scripts.
 data/output/finalized/*.json       Best parameters promoted from experiment/Optuna output.
 app/optimization/                  Converts experiment results into finalized configs.
 app/backtest/                      Runs the finalized strategy simulation.
@@ -48,6 +49,13 @@ Run these from the repository root.
 | Future strategy | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/<strategy-slug>/strategy_profile.json` |
 | Future strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
 | Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-slug>/strategy_profile.json --selenium-token` |
+
+For each strategy, optimization knobs live in that strategy's profile under `optimization.search_space`, and the production optimizer is pointed to by `optimization.engine_path`. For Dual Momentum, those are:
+
+```text
+strategies/dual-momentum/strategy_profile.json
+strategies/dual-momentum/experiments/optimizer.py
+```
 
 ## Windows Conda Setup
 
@@ -219,6 +227,18 @@ Strategy knobs are not meant to live in `.env`. The finalized package pipeline g
 
 ```text
 data/output/finalized/dual_momentum_best_config.json
+```
+
+Optimization knobs are also not meant to live in `.env`. Tweak the parameter grid here:
+
+```text
+strategies/dual-momentum/strategy_profile.json
+```
+
+Specifically, edit `optimization.search_space`. The strategy-local optimizer that consumes that grid is:
+
+```text
+strategies/dual-momentum/experiments/optimizer.py
 ```
 
 Every quarter or half-year, rerun the parameter search and promote the best corrected CAGR row with:

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -26,6 +28,9 @@ def run_average_rank_buffer_optimization(
     seed: int = 42,
     results_output_path: str | Path = config.OPTIMIZATION_RESULTS_PATH,
     experiment_output_dir: str | Path | None = None,
+    engine_module: str | None = None,
+    engine_path: str | Path | None = None,
+    search_space: dict[str, list[int | float]] | None = None,
     database_path: str | Path = config.DATABASE_PATH,
     universe_json_path: str | Path = config.UNIVERSE_JSON_PATH,
 ) -> OptimizationRunResult:
@@ -42,8 +47,10 @@ def run_average_rank_buffer_optimization(
             "Run sync-universe and fetch-history/build-finalized-package history refresh before refreshing parameters."
         )
 
-    experiment = _load_average_rank_experiment()
+    experiment = _load_average_rank_experiment(engine_module=engine_module, engine_path=engine_path)
     _bind_experiment_paths(experiment, Path(database_path), Path(universe_json_path))
+    if search_space is not None:
+        _bind_search_space(experiment, search_space)
     if experiment_output_dir is not None:
         experiment.OUTPUT_DIR = Path(experiment_output_dir)
 
@@ -64,14 +71,31 @@ def run_average_rank_buffer_optimization(
     return OptimizationRunResult(output_path, len(output), _clean_mapping(best_row))
 
 
-def _load_average_rank_experiment() -> Any:
+def _load_average_rank_experiment(engine_module: str | None = None, engine_path: str | Path | None = None) -> Any:
+    engine_path = engine_path if engine_path is not None else (None if engine_module else config.OPTIMIZATION_ENGINE_PATH)
+    if engine_path:
+        path = Path(engine_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Optimization engine file not found: {path}")
+        module_name = f"_strategy_optimizer_{path.stem}_{abs(hash(path.resolve()))}"
+        spec = importlib.util.spec_from_file_location(module_name, path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Could not load optimization engine from: {path}")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+        return module
+
+    module_name = engine_module or config.OPTIMIZATION_ENGINE_MODULE
+    if not module_name:
+        raise ImportError("No optimization engine_path or engine_module is configured.")
     try:
-        return importlib.import_module("experiments.average_rank_buffer_grid")
+        return importlib.import_module(module_name)
     except ModuleNotFoundError as exc:
         raise ImportError(
             "Average-rank/buffer experiment runner was not found. "
-            "Keep the local experiments/average_rank_buffer_grid.py folder available, "
-            "or port that strategy's optimizer into app/optimization before running this command."
+            f"Configured module '{module_name}' could not be imported. "
+            "Set optimization.engine_path in the strategy profile, or provide an importable optimization.engine_module."
         ) from exc
 
 
@@ -97,6 +121,32 @@ def _bind_experiment_paths(experiment: Any, database_path: Path, universe_json_p
 
     experiment.load_price_pivot = load_price_pivot_with_active_paths
     experiment.load_universe = load_universe_with_active_path
+
+
+def _bind_search_space(experiment: Any, search_space: dict[str, list[int | float]]) -> None:
+    expected = {
+        "rebalances_per_month",
+        "top_n",
+        "sector_cap_pct",
+        "high_cutoff_pct",
+        "momentum_weight",
+        "buffer_pct",
+    }
+    missing = sorted(expected.difference(search_space))
+    if missing:
+        raise ValueError(f"Optimization search_space is missing required keys: {', '.join(missing)}")
+    for key, values in search_space.items():
+        if not isinstance(values, list) or not values:
+            raise ValueError(f"Optimization search_space.{key} must be a non-empty list.")
+
+    def configured_search_space(momentum_weight_grid: Any = None) -> dict[str, list[int | float]]:
+        if momentum_weight_grid is None:
+            return search_space
+        output = dict(search_space)
+        output["momentum_weight"] = [float(value) for value in momentum_weight_grid]
+        return output
+
+    experiment.search_space = configured_search_space
 
 
 def _with_rank_columns(results: pd.DataFrame, years: int) -> pd.DataFrame:

@@ -22,10 +22,19 @@
     "internal_methodology_path": "strategies/dual-momentum/methodology_internal.md"
   },
   "optimization": {
-    "results_path": "data/output/average_rank_buffer_10y_trials_parameters_cagr.csv",
+    "engine_path": "strategies/dual-momentum/experiments/optimizer.py",
+    "results_path": "data/output/dual-momentum/average_rank_buffer_10y_trials_parameters_cagr.csv",
     "finalized_config_path": "data/output/finalized/dual_momentum_best_config.json",
     "objective": "cagr",
-    "rank_column": "rank_by_cagr"
+    "rank_column": "rank_by_cagr",
+    "search_space": {
+      "rebalances_per_month": [1, 2],
+      "top_n": [20, 25, 30, 35, 40],
+      "sector_cap_pct": [0, 10, 20, 25, 30],
+      "high_cutoff_pct": [25, 20, 15],
+      "momentum_weight": [0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70],
+      "buffer_pct": [40, 50, 60, 70, 80, 90, 100]
+    }
   },
   "package": {
     "version": "1.0.0",

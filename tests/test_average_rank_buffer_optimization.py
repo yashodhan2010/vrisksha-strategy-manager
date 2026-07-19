@@ -79,6 +79,7 @@ def test_run_average_rank_buffer_optimization_writes_ranked_results(monkeypatch,
         seed=7,
         results_output_path=output,
         experiment_output_dir=tmp_path / "experiment-output",
+        engine_module="experiments.average_rank_buffer_grid",
         database_path=db,
         universe_json_path=tmp_path / "universe.json",
     )
@@ -98,6 +99,74 @@ def test_run_average_rank_buffer_optimization_requires_market_prices(tmp_path: P
     with pytest.raises(ValueError, match="No market_prices rows found"):
         run_average_rank_buffer_optimization(
             results_output_path=tmp_path / "results.csv",
+            engine_module="experiments.average_rank_buffer_grid",
             database_path=tmp_path / "empty.db",
             universe_json_path=tmp_path / "universe.json",
         )
+
+
+def test_run_average_rank_buffer_optimization_loads_engine_path_and_search_space(tmp_path: Path) -> None:
+    engine_path = tmp_path / "optimizer.py"
+    engine_path.write_text(
+        """
+from pathlib import Path
+
+DATABASE_PATH = None
+UNIVERSE_JSON_PATH = None
+OUTPUT_DIR = None
+
+def search_space(momentum_weight_grid=None):
+    return {"top_n": [1]}
+
+def run_optuna_grid(years, objective_metric, n_trials, seed):
+    space = search_space()
+    assert space["top_n"] == [25]
+    assert space["buffer_pct"] == [60]
+    import pandas as pd
+    return object(), pd.DataFrame([
+        {
+            "trial": 1,
+            "rebalances_per_month": 1,
+            "top_n": 25,
+            "sector_cap_pct": 0,
+            "high_cutoff_pct": 20,
+            "momentum_weight": 0.6,
+            "beta_weight": 0.2,
+            "volatility_weight": 0.2,
+            "buffer_pct": 60,
+            "cagr": 0.18,
+        }
+    ]), {}
+""",
+        encoding="utf-8",
+    )
+    db = tmp_path / "research.db"
+    initialize_database(db)
+    with get_connection(db) as connection:
+        connection.execute(
+            """
+            INSERT INTO market_prices (
+                symbol, price_date, open, high, low, close, adjusted_close, volume, source, fetched_at
+            )
+            VALUES ('AAA', '2024-01-01', 1, 1, 1, 1, 1, 1, 'TEST', 'now')
+            """
+        )
+
+    output = tmp_path / "results.csv"
+    result = run_average_rank_buffer_optimization(
+        results_output_path=output,
+        engine_path=engine_path,
+        search_space={
+            "rebalances_per_month": [1],
+            "top_n": [25],
+            "sector_cap_pct": [0],
+            "high_cutoff_pct": [20],
+            "momentum_weight": [0.6],
+            "buffer_pct": [60],
+        },
+        database_path=db,
+        universe_json_path=tmp_path / "universe.json",
+    )
+
+    assert result.rows == 1
+    assert result.best_row["top_n"] == 25
