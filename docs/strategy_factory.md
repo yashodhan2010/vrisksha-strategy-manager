@@ -47,6 +47,14 @@ Or run the complete chain:
 python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
 ```
 
+`build-finalized-package` syncs the universe and checks local price coverage before the backtest. If required history is missing or stale, it fetches Kite history from the earliest missing date through the requested end date. Use `--selenium-token` to let the command refresh today's Kite token through the configured Selenium auto-login flow:
+
+```bash
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000 --selenium-token
+```
+
+Use `--no-fetch-history` only when intentionally running against already stored local data.
+
 ## Live / Paper Model Portfolio
 
 The scheduled model-portfolio workflow also applies the strategy profile and finalized config before generating holdings:

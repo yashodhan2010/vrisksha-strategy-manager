@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import date
 
 from app.storage.database import get_connection, initialize_database
+from app.storage.market_data_repository import get_symbol_price_ranges
 from app.storage.repositories import (
     add_audit_event,
     create_backtest_run,
@@ -110,3 +111,23 @@ def test_backtest_snapshot_readers(tmp_path: Path) -> None:
     assert list_portfolio_snapshots(run_id, db)[0]["portfolio_nav"] == 100_000
     assert list_holding_snapshots(run_id, "2024-01-31", db)[0]["symbol"] == "ABC"
     assert summarize_stock_contributions(run_id, db)[0]["symbol"] == "ABC"
+
+
+def test_symbol_price_ranges_report_coverage(tmp_path: Path) -> None:
+    db = tmp_path / "test.db"
+    initialize_database(db)
+    with get_connection(db) as connection:
+        connection.execute(
+            """
+            INSERT INTO market_prices (
+                symbol, price_date, open, high, low, close, adjusted_close, volume, source, fetched_at
+            )
+            VALUES ('AAA', '2024-01-01', 1, 1, 1, 1, 1, 10, 'TEST', 'now')
+            """
+        )
+
+    ranges = get_symbol_price_ranges(["AAA", "BBB"], db)
+
+    assert ranges["AAA"]["first_date"] == "2024-01-01"
+    assert ranges["AAA"]["last_date"] == "2024-01-01"
+    assert "BBB" not in ranges

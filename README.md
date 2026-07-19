@@ -23,7 +23,7 @@ app/export/                        Creates the portable Vriksha strategy package
 Use the default Dual Momentum profile:
 
 ```bash
-python -m app.main build-finalized-package --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
+python -m app.main build-finalized-package --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000 --selenium-token
 ```
 
 Or pass it explicitly:
@@ -32,7 +32,7 @@ Or pass it explicitly:
 python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
 ```
 
-That command selects the best CAGR-ranked experiment row, writes a finalized config, applies those parameters, runs the backtest, and exports the Vriksha package.
+That command selects the best CAGR-ranked experiment row, writes a finalized config, applies those parameters, syncs/fetches missing Kite history, runs the backtest, and exports the Vriksha package.
 
 ## Windows Conda Setup
 

@@ -105,6 +105,27 @@ def get_price_summary(database_path: str | Path = config.DATABASE_PATH) -> list[
         return [dict(row) for row in rows]
 
 
+def get_symbol_price_ranges(
+    symbols: list[str],
+    database_path: str | Path = config.DATABASE_PATH,
+) -> dict[str, dict[str, Any]]:
+    cleaned = sorted({symbol.strip().upper() for symbol in symbols if symbol.strip()})
+    if not cleaned:
+        return {}
+    placeholders = ",".join("?" for _ in cleaned)
+    with get_connection(database_path) as connection:
+        rows = connection.execute(
+            f"""
+            SELECT symbol, COUNT(*) AS row_count, MIN(price_date) AS first_date, MAX(price_date) AS last_date
+            FROM market_prices
+            WHERE symbol IN ({placeholders})
+            GROUP BY symbol
+            """,
+            tuple(cleaned),
+        ).fetchall()
+    return {str(row["symbol"]).upper(): dict(row) for row in rows}
+
+
 def get_latest_ingestion_run(database_path: str | Path = config.DATABASE_PATH) -> dict[str, Any] | None:
     with get_connection(database_path) as connection:
         row = connection.execute("SELECT * FROM data_ingestion_runs ORDER BY id DESC LIMIT 1").fetchone()

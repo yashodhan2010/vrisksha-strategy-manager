@@ -118,3 +118,59 @@ def test_monthly_run_requires_finalized_config(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "Monthly run failed before rebalance" in result.stdout
+
+
+def test_build_finalized_package_can_skip_history_fetch(tmp_path: Path) -> None:
+    trials = tmp_path / "trials.csv"
+    pd.DataFrame(
+        [
+            {
+                "rank_by_cagr": 1,
+                "rebalances_per_month": 1,
+                "top_n": 2,
+                "sector_cap_pct": 0,
+                "high_cutoff_pct": 20,
+                "momentum_weight": 0.7,
+                "beta_weight": 0.15,
+                "volatility_weight": 0.15,
+                "buffer_pct": 60,
+                "cagr": 0.1,
+            }
+        ]
+    ).to_csv(trials, index=False)
+    profile = tmp_path / "strategy_profile.json"
+    profile.write_text(
+        f"""
+        {{
+          "strategy_id": "test_strategy_v1",
+          "slug": "test-strategy",
+          "name": "Test Strategy",
+          "optimization": {{
+            "results_path": "{trials.as_posix()}",
+            "finalized_config_path": "{(tmp_path / 'finalized.json').as_posix()}"
+          }},
+          "package": {{
+            "output_dir": "{(tmp_path / 'package').as_posix()}"
+          }}
+        }}
+        """,
+        encoding="utf-8",
+    )
+
+    result = _run(
+        [
+            "build-finalized-package",
+            "--strategy-profile",
+            str(profile),
+            "--start-date",
+            "2024-01-01",
+            "--end-date",
+            "2024-12-31",
+            "--no-fetch-history",
+        ],
+        tmp_path,
+    )
+
+    assert result.returncode == 1
+    assert "Skipping history fetch" in result.stdout
+    assert "No market prices found" in result.stdout

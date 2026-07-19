@@ -11,6 +11,7 @@ from app.automation.schedule import is_rebalance_day, parse_target_days, rebalan
 from app.backtest.engine import BacktestEngine
 from app.data.trading_calendar import WeekdayTradingCalendar
 from app.data.price_ingestion import fetch_and_store_history
+from app.data.universe_loader import load_universe
 from app.data.universe_sync import UniverseSyncError, sync_universe
 from app.execution.kite_session import exchange_request_token, get_login_url, save_access_token_to_env, validate_saved_access_token
 from app.export import build_strategy_package
@@ -24,6 +25,7 @@ from app.storage.repositories import (
     create_strategy_run,
     find_completed_backtest_run_by_scenario,
 )
+from app.storage.market_data_repository import get_symbol_price_ranges
 from app.strategy_profile import apply_strategy_profile
 from app.strategy.rebalance import RebalanceEngine
 from app.strategy.models import RunMode, RunStatus, RunType
@@ -101,6 +103,82 @@ def _apply_profile_and_finalized_config(
         "finalized_config": finalized,
         "finalized_config_path": config_path,
     }
+
+
+def _refresh_kite_token_if_needed(use_selenium: bool, timeout_seconds: int) -> None:
+    token_valid, token_message = validate_saved_access_token()
+    print(token_message)
+    if token_valid:
+        return
+    if not use_selenium:
+        raise ValueError("Kite access token is missing/invalid. Re-run with --selenium-token or save today's token.")
+    print("Opening Selenium login to refresh Kite token...")
+    request_token = capture_request_token(timeout_seconds)
+    access_token = exchange_request_token(request_token)
+    save_access_token_to_env(access_token)
+    print("Kite access token saved for today.")
+
+
+def _symbols_for_history() -> list[str]:
+    symbols = [stock.symbol for stock in load_universe()]
+    symbols.append(config.DEFAULT_BENCHMARK_SYMBOL)
+    symbols.extend(config.SAFE_ASSET_SYMBOLS)
+    return sorted({symbol.strip().upper() for symbol in symbols if symbol.strip()})
+
+
+def _history_missing(symbols: list[str], start_date: date, end_date: date) -> tuple[bool, date]:
+    ranges = get_symbol_price_ranges(symbols)
+    if not ranges:
+        return True, start_date
+    missing_symbols = [symbol for symbol in symbols if symbol not in ranges]
+    earliest_fetch = start_date
+    if missing_symbols:
+        return True, earliest_fetch
+    stale_dates = []
+    for symbol in symbols:
+        row = ranges[symbol]
+        first_date = date.fromisoformat(str(row["first_date"]))
+        last_date = date.fromisoformat(str(row["last_date"]))
+        if first_date > start_date:
+            return True, start_date
+        if last_date < end_date:
+            stale_dates.append(last_date + timedelta(days=1))
+    if stale_dates:
+        return True, min(stale_dates)
+    return False, start_date
+
+
+def _ensure_history_for_finalized_run(args: argparse.Namespace, start_date: date, end_date: date) -> None:
+    if args.no_fetch_history:
+        print("Skipping history fetch because --no-fetch-history was supplied.")
+        return
+    print("Syncing universe...")
+    report = sync_universe()
+    print(f"Universe ready: {report['active_rows']} active symbols.")
+    symbols = _symbols_for_history()
+    history_start_date = start_date - timedelta(days=args.lookback_days)
+    missing, fetch_start = _history_missing(symbols, history_start_date, end_date)
+    if not missing and not args.force_fetch_history:
+        print(f"Historical data already covers {history_start_date} to {end_date}.")
+        return
+    if args.force_fetch_history:
+        fetch_start = history_start_date
+    _refresh_kite_token_if_needed(args.selenium_token, args.timeout_seconds)
+    print(f"Fetching historical data from {fetch_start} to {end_date}...")
+    result = fetch_and_store_history(
+        start_date=fetch_start,
+        end_date=end_date,
+        include_benchmark=True,
+        include_safe_asset=True,
+    )
+    print(
+        f"Historical data ready: {result.stored_rows} rows stored "
+        f"for {result.requested_symbols} requested symbols."
+    )
+    if result.missing_symbols:
+        print(f"Missing symbols: {', '.join(result.missing_symbols[:20])}")
+        if len(result.missing_symbols) > 20:
+            print(f"...and {len(result.missing_symbols) - 20} more.")
 
 
 def cmd_init_db(_args: argparse.Namespace) -> int:
@@ -359,6 +437,11 @@ def cmd_finalized_backtest(args: argparse.Namespace) -> int:
 def cmd_finalized_package(args: argparse.Namespace) -> int:
     try:
         apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        start_date = _parse_date(args.start_date)
+        end_date = _parse_date(args.end_date)
+        if start_date > end_date:
+            print("--start-date must be on or before --end-date.")
+            return 2
         input_path = args.input or config.OPTIMIZATION_RESULTS_PATH
         config_output = args.config_output or config.FINALIZED_STRATEGY_CONFIG_PATH
         package_output = args.package_output or config.STRATEGY_PACKAGE_OUTPUT_DIR
@@ -370,14 +453,15 @@ def cmd_finalized_package(args: argparse.Namespace) -> int:
         )
         config_path = write_finalized_config(payload, config_output)
         apply_finalized_config(config_path)
-    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        _ensure_history_for_finalized_run(args, start_date, end_date)
+    except (FileNotFoundError, ImportError, UniverseSyncError, ValueError, json.JSONDecodeError) as exc:
         print(f"Finalized package pipeline failed: {exc}")
         return 1
     print(f"Finalized config written to {config_path}")
     backtest_args = argparse.Namespace(
         years=None,
-        start_date=args.start_date,
-        end_date=args.end_date,
+        start_date=start_date.isoformat(),
+        end_date=end_date.isoformat(),
         initial_capital=args.initial_capital,
         force=True,
     )
@@ -703,6 +787,11 @@ def build_parser() -> argparse.ArgumentParser:
     finalized_package.add_argument("--start-date", required=True)
     finalized_package.add_argument("--end-date", required=True)
     finalized_package.add_argument("--initial-capital", type=float, default=1_000_000.0)
+    finalized_package.add_argument("--lookback-days", type=int, default=450)
+    finalized_package.add_argument("--selenium-token", action="store_true")
+    finalized_package.add_argument("--timeout-seconds", type=int, default=config.SELENIUM_LOGIN_TIMEOUT_SECONDS)
+    finalized_package.add_argument("--no-fetch-history", action="store_true")
+    finalized_package.add_argument("--force-fetch-history", action="store_true")
     finalized_package.set_defaults(func=cmd_finalized_package)
 
     run_backtest = subparsers.add_parser("run-backtest")
