@@ -338,6 +338,65 @@ def list_latest_strategy_holdings(
         return [dict(item) for item in rows]
 
 
+def get_latest_monthly_strategy_run(database_path: str | Path = config.DATABASE_PATH) -> dict[str, Any] | None:
+    with get_connection(database_path) as connection:
+        row = connection.execute(
+            """
+            SELECT s.*
+            FROM strategy_runs s
+            JOIN holding_snapshots h ON h.run_id = s.id
+            WHERE s.run_type = ? AND h.selected = 1
+            GROUP BY s.id
+            ORDER BY MAX(h.snapshot_date) DESC, s.id DESC
+            LIMIT 1
+            """,
+            (RunType.MONTHLY.value,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def list_monthly_holding_snapshots(
+    database_path: str | Path = config.DATABASE_PATH,
+    limit_dates: int | None = None,
+) -> list[dict[str, Any]]:
+    date_limit = ""
+    if limit_dates is not None:
+        date_limit = """
+            AND hh.snapshot_date IN (
+                SELECT hhh.snapshot_date
+                FROM holding_snapshots hhh
+                JOIN strategy_runs sss ON sss.id = hhh.run_id
+                WHERE sss.run_type = ? AND hhh.selected = 1
+                GROUP BY hhh.snapshot_date
+                ORDER BY hhh.snapshot_date DESC
+                LIMIT ?
+            )
+        """
+        params: tuple[Any, ...] = (RunType.MONTHLY.value, RunType.MONTHLY.value, limit_dates)
+    else:
+        params = (RunType.MONTHLY.value,)
+    with get_connection(database_path) as connection:
+        rows = connection.execute(
+            f"""
+            WITH latest_runs AS (
+                SELECT hh.snapshot_date, MAX(ss.id) AS run_id
+                FROM holding_snapshots hh
+                JOIN strategy_runs ss ON ss.id = hh.run_id
+                WHERE ss.run_type = ? AND hh.selected = 1
+                {date_limit}
+                GROUP BY hh.snapshot_date
+            )
+            SELECT h.*
+            FROM holding_snapshots h
+            JOIN latest_runs lr ON lr.run_id = h.run_id AND lr.snapshot_date = h.snapshot_date
+            WHERE h.selected = 1
+            ORDER BY h.snapshot_date, h.rank, h.symbol
+            """,
+            params,
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
 def insert_order_proposals(
     run_id: int,
     proposals: list[OrderProposal],

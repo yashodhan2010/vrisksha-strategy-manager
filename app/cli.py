@@ -14,7 +14,7 @@ from app.data.price_ingestion import fetch_and_store_history
 from app.data.universe_loader import load_universe
 from app.data.universe_sync import UniverseSyncError, sync_universe
 from app.execution.kite_session import exchange_request_token, get_login_url, save_access_token_to_env, validate_saved_access_token
-from app.export import build_strategy_package
+from app.export import build_strategy_package, export_latest_model_portfolio_update
 from app.logging_config import get_logger
 from app.optimization import apply_finalized_config, build_finalized_config_from_results, write_finalized_config
 from app.storage.database import initialize_database
@@ -632,6 +632,73 @@ def cmd_export_strategy_package(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_build_model_portfolio_update(args: argparse.Namespace) -> int:
+    initialize_database()
+    if args.history_lookback_days <= 0:
+        print("--history-lookback-days must be greater than zero.")
+        return 2
+    if args.history_dates <= 0:
+        print("--history-dates must be greater than zero.")
+        return 2
+
+    try:
+        applied = _apply_profile_and_finalized_config(
+            args.strategy_profile,
+            args.finalized_config,
+        )
+        print(f"Applied finalized config from {applied['finalized_config_path']}")
+
+        print("Syncing universe...")
+        report = sync_universe()
+        print(f"Universe ready: {report['active_rows']} active symbols.")
+
+        today = date.today()
+        if not args.no_fetch_history:
+            _refresh_kite_token_if_needed(args.selenium_token, args.timeout_seconds)
+            history_start_date = today - timedelta(days=args.history_lookback_days)
+            print(f"Fetching recent Kite history from {history_start_date} to {today}...")
+            fetch_result = fetch_and_store_history(
+                start_date=history_start_date,
+                end_date=today,
+                symbols=args.symbols if args.symbols else None,
+                include_benchmark=not args.no_benchmark,
+                include_safe_asset=not args.no_safe_asset,
+            )
+            print(
+                f"Historical data refreshed: {fetch_result.stored_rows} rows stored "
+                f"for {fetch_result.requested_symbols} requested symbols."
+            )
+            if fetch_result.missing_symbols:
+                print(f"Missing symbols: {', '.join(fetch_result.missing_symbols[:20])}")
+                if len(fetch_result.missing_symbols) > 20:
+                    print(f"...and {len(fetch_result.missing_symbols) - 20} more.")
+        else:
+            print("Skipping Kite history refresh because --no-fetch-history was supplied.")
+    except (FileNotFoundError, ImportError, UniverseSyncError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Model portfolio update failed before rebalance: {exc}")
+        return 1
+
+    rebalance_status = cmd_monthly_run(
+        argparse.Namespace(
+            strategy_profile=args.strategy_profile,
+            finalized_config=args.finalized_config,
+        )
+    )
+    if rebalance_status != 0:
+        return rebalance_status
+
+    try:
+        output_path = export_latest_model_portfolio_update(
+            output_dir=args.output_dir,
+            history_dates=args.history_dates,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"Model portfolio update export failed: {exc}")
+        return 1
+    print(f"Model portfolio update exported to {output_path}")
+    return 0
+
+
 def cmd_kite_login_url(_args: argparse.Namespace) -> int:
     try:
         print(get_login_url())
@@ -821,6 +888,20 @@ def build_parser() -> argparse.ArgumentParser:
     export_package.add_argument("--backtest-run-id", type=int)
     export_package.add_argument("--output-dir")
     export_package.set_defaults(func=cmd_export_strategy_package)
+
+    model_update = subparsers.add_parser("build-model-portfolio-update")
+    model_update.add_argument("--strategy-profile")
+    model_update.add_argument("--finalized-config")
+    model_update.add_argument("--output-dir")
+    model_update.add_argument("--history-dates", type=int, default=6)
+    model_update.add_argument("--history-lookback-days", type=int, default=config.AUTOMATION_HISTORY_LOOKBACK_DAYS)
+    model_update.add_argument("--symbols", nargs="*")
+    model_update.add_argument("--selenium-token", action="store_true")
+    model_update.add_argument("--timeout-seconds", type=int, default=config.SELENIUM_LOGIN_TIMEOUT_SECONDS)
+    model_update.add_argument("--no-fetch-history", action="store_true")
+    model_update.add_argument("--no-benchmark", action="store_true")
+    model_update.add_argument("--no-safe-asset", action="store_true")
+    model_update.set_defaults(func=cmd_build_model_portfolio_update)
 
     subparsers.add_parser("kite-login-url").set_defaults(func=cmd_kite_login_url)
     subparsers.add_parser("kite-token-status").set_defaults(func=cmd_kite_token_status)

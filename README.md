@@ -32,7 +32,7 @@ Or pass it explicitly:
 python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
 ```
 
-That command selects the best CAGR-ranked experiment row, writes a finalized config, applies those parameters, syncs/fetches missing Kite history, runs the backtest, and exports the Vriksha package.
+That command selects the best CAGR-ranked experiment row, writes a finalized config, applies those parameters, syncs/fetches missing Kite history, runs the backtest, and exports the full public Vriksha package. For routine model-portfolio updates after parameters are finalized, use `build-model-portfolio-update`; it refreshes only recent Kite history by default and does not run the long historical backtest.
 
 ## Strategy Command Grid
 
@@ -41,9 +41,11 @@ Run these from the repository root.
 | Strategy | Purpose | Command |
 |---|---|---|
 | Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000 --selenium-token` |
-| Dual Momentum | Generate latest live/paper model portfolio on rebalance date | `python -m app.main monthly-run --strategy-profile strategies/dual-momentum/strategy_profile.json` |
+| Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum/strategy_profile.json --selenium-token` |
+| Dual Momentum | Generate latest live/paper model portfolio only | `python -m app.main monthly-run --strategy-profile strategies/dual-momentum/strategy_profile.json` |
 | Dual Momentum | Refresh data daily and rebalance only on configured dates | `python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum/strategy_profile.json` |
 | Future strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
+| Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-slug>/strategy_profile.json --selenium-token` |
 
 ## Windows Conda Setup
 
