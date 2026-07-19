@@ -89,6 +89,20 @@ def _print_cached_backtest(row: dict[str, object]) -> None:
         print(f"Annualized return: {float(annualized_return):.2%}; max drawdown: {float(max_drawdown):.2%}.")
 
 
+def _apply_profile_and_finalized_config(
+    strategy_profile: str | None = None,
+    finalized_config: str | None = None,
+) -> dict[str, object]:
+    profile = apply_strategy_profile(strategy_profile or config.STRATEGY_PROFILE_PATH)
+    config_path = finalized_config or config.FINALIZED_STRATEGY_CONFIG_PATH
+    finalized = apply_finalized_config(config_path)
+    return {
+        "profile": profile,
+        "finalized_config": finalized,
+        "finalized_config_path": config_path,
+    }
+
+
 def cmd_init_db(_args: argparse.Namespace) -> int:
     initialize_database()
     print(f"Initialized SQLite database at {config.DATABASE_PATH}")
@@ -135,9 +149,18 @@ def cmd_manual_run(_args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_monthly_run(_args: argparse.Namespace) -> int:
+def cmd_monthly_run(args: argparse.Namespace) -> int:
     initialize_database()
     logger = get_logger("scheduler.monthly")
+    try:
+        applied = _apply_profile_and_finalized_config(
+            getattr(args, "strategy_profile", None),
+            getattr(args, "finalized_config", None),
+        )
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Monthly run failed before rebalance: {exc}")
+        return 1
+    print(f"Applied finalized config from {applied['finalized_config_path']}")
     try:
         mode = RunMode(config.DEFAULT_MODE)
     except ValueError:
@@ -150,6 +173,10 @@ def cmd_monthly_run(_args: argparse.Namespace) -> int:
         config_payload={
             "target_portfolio_value": config.TARGET_PORTFOLIO_VALUE,
             "available_purchase_funds": config.AVAILABLE_PURCHASE_FUNDS,
+            "strategy_profile_path": config.STRATEGY_PROFILE_PATH,
+            "finalized_config_path": applied["finalized_config_path"],
+            "strategy_id": config.STRATEGY_PACKAGE_ID,
+            "strategy_slug": config.STRATEGY_PACKAGE_SLUG,
             "strategy_allocation_mode": config.STRATEGY_ALLOCATION_MODE,
             "strategy_top_n": config.STRATEGY_TOP_N,
             "strategy_ranking_method": config.STRATEGY_RANKING_METHOD,
@@ -615,7 +642,12 @@ def cmd_auto_daily_run(args: argparse.Namespace) -> int:
 
     if is_rebalance_day(today, target_days, calendar):
         print("Today is a configured rebalance day. Running scheduled rebalance workflow...")
-        return cmd_monthly_run(argparse.Namespace())
+        return cmd_monthly_run(
+            argparse.Namespace(
+                strategy_profile=args.strategy_profile,
+                finalized_config=args.finalized_config,
+            )
+        )
 
     print("Today is not a configured rebalance day. Data refresh complete; no rebalance run started.")
     return 0
@@ -629,7 +661,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("show-config").set_defaults(func=cmd_show_config)
     subparsers.add_parser("sync-universe").set_defaults(func=cmd_sync_universe)
     subparsers.add_parser("manual-run").set_defaults(func=cmd_manual_run)
-    subparsers.add_parser("monthly-run").set_defaults(func=cmd_monthly_run)
+    monthly_run = subparsers.add_parser("monthly-run")
+    monthly_run.add_argument("--strategy-profile")
+    monthly_run.add_argument("--finalized-config")
+    monthly_run.set_defaults(func=cmd_monthly_run)
 
     backtest = subparsers.add_parser("backtest")
     backtest.add_argument("--years", type=int)
@@ -709,6 +744,8 @@ def build_parser() -> argparse.ArgumentParser:
     kite_selenium.set_defaults(func=cmd_kite_selenium_token)
 
     auto_daily = subparsers.add_parser("auto-daily-run")
+    auto_daily.add_argument("--strategy-profile")
+    auto_daily.add_argument("--finalized-config")
     auto_daily.add_argument("--selenium-token", action="store_true")
     auto_daily.add_argument("--timeout-seconds", type=int, default=config.SELENIUM_LOGIN_TIMEOUT_SECONDS)
     auto_daily.add_argument("--history-lookback-days", type=int, default=config.AUTOMATION_HISTORY_LOOKBACK_DAYS)

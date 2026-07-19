@@ -96,3 +96,25 @@ def test_sync_universe_success_via_cli(tmp_path: Path) -> None:
     result = _run(["sync-universe"], tmp_path)
     assert result.returncode == 0
     assert (tmp_path / "nifty500_universe.json").exists()
+
+
+def test_monthly_run_requires_finalized_config(tmp_path: Path) -> None:
+    profile = tmp_path / "strategy_profile.json"
+    profile.write_text(
+        """
+        {
+          "strategy_id": "test_strategy_v1",
+          "slug": "test-strategy",
+          "name": "Test Strategy",
+          "optimization": {
+            "finalized_config_path": "missing_finalized_config.json"
+          }
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    result = _run(["monthly-run", "--strategy-profile", str(profile)], tmp_path)
+
+    assert result.returncode == 1
+    assert "Monthly run failed before rebalance" in result.stdout

@@ -47,6 +47,22 @@ Or run the complete chain:
 python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
 ```
 
+## Live / Paper Model Portfolio
+
+The scheduled model-portfolio workflow also applies the strategy profile and finalized config before generating holdings:
+
+```bash
+python -m app.main monthly-run --strategy-profile strategies/dual-momentum/strategy_profile.json
+```
+
+Daily automation refreshes market data and runs `monthly-run` only on configured rebalance dates:
+
+```bash
+python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum/strategy_profile.json
+```
+
+If `data/output/finalized/dual_momentum_best_config.json` does not exist, run `finalize-strategy-config` first. This prevents scheduled rebalances from silently using `.env` strategy knobs.
+
 ## Adding Another Strategy
 
 1. Create `strategies/<strategy-slug>/strategy_profile.json`.
