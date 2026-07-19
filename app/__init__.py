@@ -1,2 +1,1 @@
-"""Dual Momentum application package."""
-
+"""Vriksha strategy manager application package."""

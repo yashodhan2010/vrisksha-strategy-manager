@@ -47,9 +47,9 @@ def _selected_run(runs: list[dict[str, Any]]) -> dict[str, Any] | None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Dual Momentum - Backtest", layout="wide")
+    st.set_page_config(page_title="Vriksha Strategy Manager - Backtest", layout="wide")
     initialize_database()
-    st.title("Dual Momentum - Backtest Report")
+    st.title("Vriksha Strategy Manager - Backtest Report")
 
     runs = list_backtest_runs()
     run = _selected_run(runs)

@@ -2,6 +2,8 @@
 
 This repository is organized as a research and packaging factory for model-portfolio strategies. It does not own Vriksha website accounts, payments, subscriptions, or access control.
 
+The repository/folder should use the generic name `vrisksha-strategy-manager`. Strategy-specific folders, such as `strategies/dual-momentum`, are intentionally named by strategy slug.
+
 ## Folder Responsibilities
 
 ```text

@@ -31,9 +31,9 @@ def _count(table: str) -> int:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Dual Momentum - Live / Paper", layout="wide")
+    st.set_page_config(page_title="Vriksha Strategy Manager - Live / Paper", layout="wide")
     initialize_database()
-    st.title("Dual Momentum - Live / Paper")
+    st.title("Vriksha Strategy Manager - Live / Paper")
 
     latest_run = get_latest_strategy_run()
     latest_sync = get_latest_audit_event("UNIVERSE_SYNC")

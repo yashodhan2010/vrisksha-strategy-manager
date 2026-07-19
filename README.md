@@ -39,8 +39,8 @@ That command selects the best CAGR-ranked experiment row, writes a finalized con
 Create and activate a Python 3.12 Conda environment from VS Code or Anaconda Prompt, then install dependencies:
 
 ```bash
-conda activate dual-momentum
-cd "C:\Users\Yashodhan\OneDrive\Documents\Dual Momentum\dual-momentum"
+conda activate vrisksha-strategy-manager
+cd "C:\Users\Yashodhan\OneDrive\Documents\Algo\vrisksha-strategy-manager"
 ```
 
 ```bash
@@ -70,8 +70,8 @@ python -m app.main sync-universe
 Use these from the project root:
 
 ```bash
-cd "C:\Users\Yashodhan\OneDrive\Documents\Dual Momentum\dual-momentum"
-conda activate dual-momentum
+cd "C:\Users\Yashodhan\OneDrive\Documents\Algo\vrisksha-strategy-manager"
+conda activate vrisksha-strategy-manager
 ```
 
 First-time setup:
@@ -252,7 +252,7 @@ scripts\install_auto_daily_startup.bat
 ```
 
 After that, Windows launches `scripts\run_auto_daily.bat` at login. Output is appended to `logs\auto_daily.log`.
-The batch file attempts to activate the `dual-momentum` Conda environment from common Miniconda/Anaconda install paths before running Python.
+The batch file attempts to activate the `vrisksha-strategy-manager` Conda environment from common Miniconda/Anaconda install paths before running Python. Set `CONDA_ENV_NAME` before running the script if your environment has a different name.
 
 ## Full CLI Reference
 

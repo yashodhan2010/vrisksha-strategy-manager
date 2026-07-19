@@ -622,7 +622,7 @@ def cmd_auto_daily_run(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="dual-momentum")
+    parser = argparse.ArgumentParser(prog="vrisksha-strategy-manager")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     subparsers.add_parser("init-db").set_defaults(func=cmd_init_db)
