@@ -17,6 +17,9 @@
   "backtest": {
     "benchmark_symbol": "NIFTY500"
   },
+  "documents": {
+    "methodology_path": "strategies/dual-momentum/methodology.md"
+  },
   "optimization": {
     "results_path": "data/output/average_rank_buffer_10y_trials_parameters_cagr.csv",
     "finalized_config_path": "data/output/finalized/dual_momentum_best_config.json",

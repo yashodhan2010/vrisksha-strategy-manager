@@ -1,6 +1,6 @@
 # Strategy Details
 
-This document explains the actual dual-momentum methodology implemented in code — the signals, filters, ranking math, allocation logic, rebalance cadence, and order sizing. See [README.md](README.md) for setup/architecture and command usage.
+This document explains the actual dual-momentum methodology implemented in code — the signals, filters, ranking math, allocation logic, rebalance cadence, and order sizing. See [README.md](../../README.md) for setup/architecture and command usage.
 
 The same ranking/allocation logic (`app/backtest/engine.py::_rank_on_date` + `app/strategy/selection.py::allocate_from_ranking`) is shared by the backtest engine and the live/paper `RebalanceEngine`, so backtested behavior and live behavior are computed identically.
 
