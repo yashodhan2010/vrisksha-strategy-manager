@@ -5,8 +5,10 @@ import types
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from app.optimization.average_rank_buffer import run_average_rank_buffer_optimization
+from app.storage.database import initialize_database, get_connection
 
 
 def test_run_average_rank_buffer_optimization_writes_ranked_results(monkeypatch, tmp_path: Path) -> None:
@@ -58,6 +60,17 @@ def test_run_average_rank_buffer_optimization_writes_ranked_results(monkeypatch,
     monkeypatch.setitem(sys.modules, "experiments", parent)
     monkeypatch.setitem(sys.modules, "experiments.average_rank_buffer_grid", experiment)
 
+    db = tmp_path / "research.db"
+    initialize_database(db)
+    with get_connection(db) as connection:
+        connection.execute(
+            """
+            INSERT INTO market_prices (
+                symbol, price_date, open, high, low, close, adjusted_close, volume, source, fetched_at
+            )
+            VALUES ('AAA', '2024-01-01', 1, 1, 1, 1, 1, 1, 'TEST', 'now')
+            """
+        )
     output = tmp_path / "results.csv"
     result = run_average_rank_buffer_optimization(
         years=10,
@@ -66,7 +79,7 @@ def test_run_average_rank_buffer_optimization_writes_ranked_results(monkeypatch,
         seed=7,
         results_output_path=output,
         experiment_output_dir=tmp_path / "experiment-output",
-        database_path=tmp_path / "research.db",
+        database_path=db,
         universe_json_path=tmp_path / "universe.json",
     )
 
@@ -79,3 +92,12 @@ def test_run_average_rank_buffer_optimization_writes_ranked_results(monkeypatch,
     assert experiment.DATABASE_PATH == tmp_path / "research.db"
     assert experiment.UNIVERSE_JSON_PATH == tmp_path / "universe.json"
     assert experiment.OUTPUT_DIR == tmp_path / "experiment-output"
+
+
+def test_run_average_rank_buffer_optimization_requires_market_prices(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="No market_prices rows found"):
+        run_average_rank_buffer_optimization(
+            results_output_path=tmp_path / "results.csv",
+            database_path=tmp_path / "empty.db",
+            universe_json_path=tmp_path / "universe.json",
+        )

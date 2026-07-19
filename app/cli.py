@@ -432,6 +432,8 @@ def cmd_refresh_finalized_parameters(args: argparse.Namespace) -> int:
             seed=args.seed,
             results_output_path=results_output,
             experiment_output_dir=args.experiment_output_dir,
+            database_path=config.DATABASE_PATH,
+            universe_json_path=config.UNIVERSE_JSON_PATH,
         )
         payload = build_finalized_config_from_results(
             results_path=optimization_result.results_path,

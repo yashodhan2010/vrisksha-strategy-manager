@@ -8,6 +8,8 @@ from typing import Any
 import pandas as pd
 
 from app import config
+from app.storage.database import initialize_database
+from app.storage.market_data_repository import count_price_rows
 
 
 @dataclass(frozen=True)
@@ -32,9 +34,16 @@ def run_average_rank_buffer_optimization(
     if n_trials is not None and n_trials <= 0:
         raise ValueError("--n-trials must be greater than zero when supplied.")
 
+    initialize_database(database_path)
+    price_rows = count_price_rows(database_path)
+    if price_rows == 0:
+        raise ValueError(
+            f"No market_prices rows found in {database_path}. "
+            "Run sync-universe and fetch-history/build-finalized-package history refresh before refreshing parameters."
+        )
+
     experiment = _load_average_rank_experiment()
-    experiment.DATABASE_PATH = Path(database_path)
-    experiment.UNIVERSE_JSON_PATH = Path(universe_json_path)
+    _bind_experiment_paths(experiment, Path(database_path), Path(universe_json_path))
     if experiment_output_dir is not None:
         experiment.OUTPUT_DIR = Path(experiment_output_dir)
 
@@ -64,6 +73,30 @@ def _load_average_rank_experiment() -> Any:
             "Keep the local experiments/average_rank_buffer_grid.py folder available, "
             "or port that strategy's optimizer into app/optimization before running this command."
         ) from exc
+
+
+def _bind_experiment_paths(experiment: Any, database_path: Path, universe_json_path: Path) -> None:
+    experiment.DATABASE_PATH = database_path
+    experiment.UNIVERSE_JSON_PATH = universe_json_path
+    if not hasattr(experiment, "load_price_pivot") or not hasattr(experiment, "load_universe"):
+        return
+    original_load_price_pivot = experiment.load_price_pivot
+    original_load_universe = experiment.load_universe
+
+    def load_price_pivot_with_active_paths(*args: Any, **kwargs: Any) -> pd.DataFrame:
+        if len(args) < 1:
+            kwargs.setdefault("database_path", database_path)
+        if len(args) < 2:
+            kwargs.setdefault("universe_json_path", universe_json_path)
+        return original_load_price_pivot(*args, **kwargs)
+
+    def load_universe_with_active_path(*args: Any, **kwargs: Any) -> Any:
+        if len(args) < 1:
+            kwargs.setdefault("universe_json_path", universe_json_path)
+        return original_load_universe(*args, **kwargs)
+
+    experiment.load_price_pivot = load_price_pivot_with_active_paths
+    experiment.load_universe = load_universe_with_active_path
 
 
 def _with_rank_columns(results: pd.DataFrame, years: int) -> pd.DataFrame:
