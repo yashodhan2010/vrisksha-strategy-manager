@@ -83,7 +83,9 @@ class KiteHistoricalMarketDataProvider:
 
     source = "KITE"
 
-    def __init__(self, api_key: str = config.KITE_API_KEY, access_token: str = config.KITE_ACCESS_TOKEN) -> None:
+    def __init__(self, api_key: str | None = None, access_token: str | None = None) -> None:
+        api_key = api_key if api_key is not None else config.KITE_API_KEY
+        access_token = access_token if access_token is not None else config.KITE_ACCESS_TOKEN
         if not api_key:
             raise ValueError("KITE_API_KEY is not configured.")
         if not access_token:

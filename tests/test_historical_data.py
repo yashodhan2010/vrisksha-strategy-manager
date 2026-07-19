@@ -181,6 +181,25 @@ def test_kite_provider_fetches_daily_prices_in_chunks(monkeypatch: pytest.Monkey
     assert frame["symbol"].tolist() == ["ABC", "ABC", "ABC"]
 
 
+def test_kite_provider_reads_current_runtime_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    tokens: list[str] = []
+
+    class FakeKite:
+        def __init__(self, api_key: str) -> None:
+            self.api_key = api_key
+
+        def set_access_token(self, access_token: str) -> None:
+            tokens.append(access_token)
+
+    monkeypatch.setattr("app.data.historical_data.config.KITE_API_KEY", "key")
+    monkeypatch.setattr("app.data.historical_data.config.KITE_ACCESS_TOKEN", "fresh-token")
+    monkeypatch.setitem(__import__("sys").modules, "kiteconnect", type("FakeModule", (), {"KiteConnect": FakeKite}))
+
+    KiteHistoricalMarketDataProvider()
+
+    assert tokens == ["fresh-token"]
+
+
 def test_kite_request_retries_rate_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = KiteHistoricalMarketDataProvider.__new__(KiteHistoricalMarketDataProvider)
     provider.warnings = []
