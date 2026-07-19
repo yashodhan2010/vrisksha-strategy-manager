@@ -7,7 +7,9 @@ __pycache__/
 .ruff_cache/
 *.pyc
 logs/*.log
-data/dual_momentum.db
+data/*.db
+data/*.sqlite
+data/*.sqlite3
 data/reference/nifty500_universe.xlsx
 data/reference/nifty500_universe.json
 data/output/*
