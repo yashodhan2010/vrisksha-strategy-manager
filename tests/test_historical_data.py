@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from app import config
 from app.data import price_ingestion
 from app.data.historical_data import KiteHistoricalMarketDataProvider, PriceBar, frame_to_price_bars, iter_date_chunks, to_yahoo_symbol
 from app.storage.database import initialize_database
@@ -92,11 +93,56 @@ def test_fetch_and_store_history_uses_provider_and_records_missing(monkeypatch: 
         date(2024, 1, 2),
         symbols=["ABC", "MISSING"],
         include_benchmark=False,
+        include_safe_asset=False,
     )
 
     assert result.stored_rows == 1
     assert result.missing_symbols == ["MISSING"]
     assert count_price_rows(db) == 1
+
+
+def test_fetch_and_store_history_includes_all_safe_assets(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    db = tmp_path / "prices.db"
+    initialize_database(db)
+    requested: list[str] = []
+
+    class FakeProvider:
+        source = "TEST"
+
+        def get_daily_prices(self, symbols: list[str], start_date: date, end_date: date) -> pd.DataFrame:
+            requested.extend(symbols)
+            return pd.DataFrame(
+                [
+                    {
+                        "symbol": symbol,
+                        "price_date": date(2024, 1, 1),
+                        "open": 1,
+                        "high": 2,
+                        "low": 0.5,
+                        "close": 1.5,
+                        "adjusted_close": 1.5,
+                        "volume": 100,
+                    }
+                    for symbol in symbols
+                ]
+            )
+
+    monkeypatch.setattr(price_ingestion, "get_market_data_provider", lambda: FakeProvider())
+    monkeypatch.setattr(price_ingestion, "upsert_price_bars", lambda bars: upsert_price_bars(bars, db))
+    monkeypatch.setattr(price_ingestion, "create_ingestion_run", lambda **kwargs: 1)
+    monkeypatch.setattr(config, "SAFE_ASSET_SYMBOLS", ["LIQUIDBEES", "GOLDBEES"])
+    monkeypatch.setattr(config, "DEFAULT_BENCHMARK_SYMBOL", "NIFTY500")
+
+    result = price_ingestion.fetch_and_store_history(
+        date(2024, 1, 1),
+        date(2024, 1, 2),
+        symbols=["ABC"],
+        include_benchmark=True,
+        include_safe_asset=True,
+    )
+
+    assert requested == ["ABC", "NIFTY500", "LIQUIDBEES", "GOLDBEES"]
+    assert result.stored_rows == 4
 
 
 def test_kite_provider_fetches_daily_prices_in_chunks(monkeypatch: pytest.MonkeyPatch) -> None:

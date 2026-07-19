@@ -68,6 +68,14 @@ class AllocationResult:
     liquidbees_weight: float
     total_weight: float
 
+    @property
+    def safe_asset_symbol(self) -> str:
+        return self.liquidbees_symbol
+
+    @property
+    def safe_asset_weight(self) -> float:
+        return self.liquidbees_weight
+
 
 @dataclass(frozen=True)
 class StrategyRun:
@@ -164,4 +172,3 @@ class BacktestRun:
     config: dict[str, Any] = field(default_factory=dict)
     summary: dict[str, Any] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
-

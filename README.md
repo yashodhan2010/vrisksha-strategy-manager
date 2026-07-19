@@ -1,14 +1,38 @@
-# Dual Momentum
+# Strategy Research Factory
 
-Local Python foundation for an Indian-equities dual-momentum strategy using a locally maintained Nifty 500 universe, SQLite persistence, CLI workflows, and Streamlit dashboards.
+Local Python foundation for Indian-equities strategy research, optimization, backtesting, model-portfolio generation, and portable Vriksha strategy-package exports.
 
-## Sprint 0 Scope
+Dual Momentum is the first strategy profile in this repository. See [STRATEGY.md](STRATEGY.md) for its momentum/beta/volatility signal math, ranking methods, allocation logic, holding buffer, and rebalance mechanics. See [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
 
-This sprint creates a clean runnable base: configuration, logging, SQLite schema, typed models, universe Excel-to-JSON validation, allocation logic, CLI placeholders, Windows scripts, and dashboard shells.
+This repository does not own Vriksha website accounts, payments, subscriptions, or access control.
 
-## Deferred Functionality
+## Repository Roles
 
-Historical market-data ingestion, momentum calculations, beta calculations, 52-week-high filters, trading-calendar holidays, full backtests, paper execution, live order placement, Zerodha Kite order APIs, and real performance metrics are intentionally deferred.
+```text
+.env                              Runtime/provider settings only.
+strategies/<slug>/strategy_profile.json
+                                  Strategy identity, public metadata, optimization input, and package output path.
+data/output/finalized/*.json       Best parameters promoted from experiment/Optuna output.
+app/optimization/                  Converts experiment results into finalized configs.
+app/backtest/                      Runs the finalized strategy simulation.
+app/export/                        Creates the portable Vriksha strategy package.
+```
+
+## Dual Momentum Package Pipeline
+
+Use the default Dual Momentum profile:
+
+```bash
+python -m app.main build-finalized-package --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
+```
+
+Or pass it explicitly:
+
+```bash
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
+```
+
+That command selects the best CAGR-ranked experiment row, writes a finalized config, applies those parameters, runs the backtest, and exports the Vriksha package.
 
 ## Windows Conda Setup
 
@@ -161,10 +185,12 @@ Advanced: fetch full synced universe history after today's token has been saved:
 python -m app.main fetch-history --start-date 2016-01-01 --end-date 2025-12-31
 ```
 
+`fetch-history`, `run-backtest`, and `auto-daily-run` automatically include the benchmark (`DEFAULT_BENCHMARK_SYMBOL`) and the configured safe asset (`SAFE_ASSET_SYMBOL`) alongside the requested/universe symbols, so `LIQUIDBEES`/`GOLDBEES` prices are fetched without listing them explicitly. Use `--no-benchmark` or `--no-safe-asset` to skip either.
+
 Quick Kite test for one stock:
 
 ```bash
-python -m app.main fetch-history --start-date 2024-01-01 --end-date 2024-01-10 --symbols RELIANCE --no-benchmark
+python -m app.main fetch-history --start-date 2024-01-01 --end-date 2024-01-10 --symbols RELIANCE --no-benchmark --no-safe-asset
 ```
 
 Advanced: run backtest using already stored local data only:
@@ -174,30 +200,23 @@ python -m app.main backtest --years 10
 python -m app.main backtest --start-date 2016-01-01 --end-date 2025-12-31
 ```
 
-Backtest rebalance frequency is configurable from `.env`:
+Strategy knobs are not meant to live in `.env`. The finalized package pipeline gets them from experiment output and writes them to:
 
 ```text
-BACKTEST_REBALANCES_PER_MONTH=1
+data/output/finalized/dual_momentum_best_config.json
 ```
 
-The default `1` rebalances on the first available trading/pricing day of each month. Set `2` for start-of-month plus mid-month rebalances, or `4` for roughly weekly rebalances within each month.
-
-Allocation mode is also configurable from `.env` and is shared by backtests plus scheduled paper/live target generation:
+Strategy identity, public metadata, optimization input path, finalized config path, and package output path live in:
 
 ```text
-STRATEGY_RANKING_METHOD=COMBINED_RANK
-RANKING_MOMENTUM_WEIGHT=0.60
-RANKING_BETA_WEIGHT=0.25
-RANKING_VOLATILITY_WEIGHT=0.15
-STRATEGY_ALLOCATION_MODE=TOP_N_EQUAL
-STRATEGY_TOP_N=15
-DYNAMIC_MIN_WEIGHT=0.01
-DYNAMIC_MAX_WEIGHT=0.07
+strategies/dual-momentum/strategy_profile.json
 ```
 
-Use `STRATEGY_RANKING_METHOD=COMBINED_RANK` to rank stocks by a weighted percentile blend of raw 3M/6M/12M momentum, low beta, and low volatility. The three `RANKING_*_WEIGHT` values are normalized internally, so you can copy optimized weights from the experiment notebook even if they do not sum to exactly 1. Other supported ranking methods are `MOMENTUM`, `BETA_ADJUSTED`, and `VOLATILITY_ADJUSTED`.
+Use `STRATEGY_RANKING_METHOD=AVERAGE_RANK` to rank stocks independently by raw 3M/6M/12M momentum, low beta, and low volatility, then sort by the average of those three ranks. With `STRATEGY_TOP_N=25`, the allocator uses the top 25 average-rank candidates. Other supported ranking methods are `MOMENTUM`, `BETA_ADJUSTED`, `VOLATILITY_ADJUSTED`, and `COMBINED_RANK`; `COMBINED_RANK` uses a weighted percentile blend and normalizes the three `RANKING_*_WEIGHT` values internally.
 
-Use `STRATEGY_ALLOCATION_MODE=TOP_N_EQUAL` to buy the top N ranked stocks with equal weights capped by `MAX_STOCK_WEIGHT`. Use `STRATEGY_ALLOCATION_MODE=DYNAMIC` to buy the top N positive-score stocks with weights tilted toward stronger scores and constrained by `DYNAMIC_MIN_WEIGHT` / `DYNAMIC_MAX_WEIGHT`. Any residual allocation is treated as cash/LIQUIDBEES.
+Use `STRATEGY_ALLOCATION_MODE=TOP_N_EQUAL` to buy the top N ranked stocks with equal weights capped by `MAX_STOCK_WEIGHT`. Use `STRATEGY_ALLOCATION_MODE=DYNAMIC` to buy the top N positive-score stocks with weights tilted toward stronger scores and constrained by `DYNAMIC_MIN_WEIGHT` / `DYNAMIC_MAX_WEIGHT`. `MAX_SECTOR_WEIGHT` caps the combined allocation to any one sector; excess weight moves to `SAFE_ASSET_SYMBOL` / cash. Set `SAFE_ASSET_SYMBOL=GOLDBEES`, `LIQUIDBEES`, or another stored symbol to use that asset for residual allocation when fewer than the target number of stocks qualify or caps leave unallocated weight.
+
+Backtests store each scenario in SQLite using a stable scenario key derived from the dates, capital, and strategy knobs. With `BACKTEST_REUSE_SCENARIO=true`, repeated matching backtests reuse the completed DB result instead of rerunning; pass `--force` to run again. Holding snapshots and order proposals floor quantities to whole tradable units.
 
 Open dashboards:
 

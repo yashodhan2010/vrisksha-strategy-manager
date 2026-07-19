@@ -32,7 +32,7 @@ def _run(args: list[str], tmp_path: Path) -> subprocess.CompletedProcess[str]:
 def test_show_config_works(tmp_path: Path) -> None:
     result = _run(["show-config"], tmp_path)
     assert result.returncode == 0
-    assert "Dual Momentum" in result.stdout
+    assert "Strategy Research Factory" in result.stdout
     assert "KITE_API_SECRET" not in result.stdout
 
 

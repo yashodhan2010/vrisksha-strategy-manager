@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from math import floor
 from pathlib import Path
 
 import pandas as pd
@@ -63,10 +64,14 @@ class RebalanceEngine:
         rebalance_date = self._latest_price_date(price_pivot)
         benchmark_returns = self._benchmark_returns(price_frame)
         ranking = self._rank(price_pivot, benchmark_returns, rebalance_date)
-        strategy_allocation = allocate_from_ranking(ranking)
+        previous_holdings = {row["symbol"]: row for row in list_latest_strategy_holdings(self.database_path)}
+        strategy_allocation = allocate_from_ranking(
+            ranking,
+            sector_by_symbol={symbol: stock.sector for symbol, stock in universe_by_symbol.items()},
+            previous_symbols=set(previous_holdings),
+        )
         allocation = strategy_allocation.allocation
         selected = strategy_allocation.selected_symbols
-        previous_holdings = {row["symbol"]: row for row in list_latest_strategy_holdings(self.database_path)}
         rows = self._holding_rows(
             ranking=ranking,
             weights=allocation.stock_weights,
@@ -155,6 +160,7 @@ class RebalanceEngine:
         for symbol, weight in weights.items():
             stock = universe_by_symbol.get(symbol)
             price = float(price_pivot.at[snapshot_date, symbol])
+            quantity = floor((self.portfolio_value * weight) / price) if price > 0 else None
             rows.append(
                 {
                     "run_id": self.run_id,
@@ -165,9 +171,9 @@ class RebalanceEngine:
                     "rank": int(rank_by_symbol.get(symbol, 0)) or None,
                     "selected": True,
                     "weight": weight,
-                    "quantity": (self.portfolio_value * weight) / price if price > 0 else None,
+                    "quantity": quantity,
                     "reference_price": price,
-                    "market_value": self.portfolio_value * weight,
+                    "market_value": (quantity * price) if quantity is not None else None,
                     "holding_action": "HELD" if symbol in previous_holdings else "ENTERED",
                     "consecutive_months_held": 0,
                     "total_months_held": 0,
@@ -208,13 +214,16 @@ class RebalanceEngine:
         proposals: list[OrderProposal] = []
         for symbol, side, value, price, target_value, previous_value in proposal_inputs:
             estimated_value = value * buy_scaling_ratio if side == OrderSide.BUY else value
+            quantity = floor(estimated_value / price)
+            if quantity <= 0:
+                continue
             proposals.append(
                 OrderProposal(
                     symbol=symbol,
                     side=side,
-                    quantity=estimated_value / price,
+                    quantity=quantity,
                     reference_price=price,
-                    estimated_value=estimated_value,
+                    estimated_value=quantity * price,
                     reason="Target rebalance delta",
                     details={
                         "target_weight": target_weights.get(symbol, 0.0),

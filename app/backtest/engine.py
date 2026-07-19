@@ -3,6 +3,7 @@ from __future__ import annotations
 import calendar
 from dataclasses import dataclass
 from datetime import date
+from math import floor
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,7 @@ class BacktestEngine:
         self.initial_capital = initial_capital
         self.database_path = database_path
         self.warnings: list[str] = []
+        self._safe_asset_warning_added = False
         if self.initial_capital <= 0:
             raise ValueError("initial_capital must be greater than zero.")
 
@@ -57,7 +59,9 @@ class BacktestEngine:
         if prices.empty:
             raise ValueError("No market prices found. Run fetch-history before backtest.")
 
-        symbols = [stock.symbol for stock in load_universe()]
+        universe = load_universe()
+        symbols = [stock.symbol for stock in universe]
+        universe_by_symbol = {stock.symbol: stock for stock in universe}
         price_pivot = self._pivot_prices(prices, symbols)
         if price_pivot.empty:
             raise ValueError("No universe symbols have stored prices for the requested backtest window.")
@@ -76,10 +80,21 @@ class BacktestEngine:
         for index, rebalance_date in enumerate(rebalance_dates[:-1], start=1):
             next_date = rebalance_dates[index]
             ranking = self._rank_on_date(price_pivot, benchmark_returns, rebalance_date)
-            strategy_allocation = allocate_from_ranking(ranking)
+            strategy_allocation = allocate_from_ranking(
+                ranking,
+                sector_by_symbol={symbol: stock.sector for symbol, stock in universe_by_symbol.items()},
+                previous_symbols=previous_holdings,
+            )
             allocation = strategy_allocation.allocation
             selected = strategy_allocation.selected_symbols
-            month_return = self._portfolio_period_return(price_pivot, rebalance_date, next_date, allocation.stock_weights)
+            month_return = self._portfolio_period_return(
+                price_pivot,
+                rebalance_date,
+                next_date,
+                allocation.stock_weights,
+                allocation.safe_asset_symbol,
+                allocation.safe_asset_weight,
+            )
             previous_nav = nav
             nav = nav * (1.0 + month_return)
             nav_values.append(nav)
@@ -115,6 +130,9 @@ class BacktestEngine:
                     consecutive_months_held=consecutive_months_held,
                     total_months_held=total_months_held,
                     price_pivot=price_pivot,
+                    universe_by_symbol=universe_by_symbol,
+                    safe_asset_symbol=allocation.safe_asset_symbol,
+                    safe_asset_weight=allocation.safe_asset_weight,
                 ),
                 database_path=self.database_path,
             )
@@ -138,9 +156,13 @@ class BacktestEngine:
             "ranking_volatility_weight": config.RANKING_VOLATILITY_WEIGHT,
             "strategy_allocation_mode": config.STRATEGY_ALLOCATION_MODE,
             "strategy_top_n": config.STRATEGY_TOP_N,
+            "buffer_pct": config.BUFFER_PCT,
+            "max_stock_weight": config.MAX_STOCK_WEIGHT,
+            "max_sector_weight": config.MAX_SECTOR_WEIGHT,
+            "safe_asset_symbol": config.SAFE_ASSET_SYMBOL,
             "dynamic_min_weight": config.DYNAMIC_MIN_WEIGHT,
             "dynamic_max_weight": config.DYNAMIC_MAX_WEIGHT,
-            "methodology": "Configurable-period dual momentum prototype using stored prices, 3M/6M/12M momentum, beta, volatility, 52-week-high filter, configured ranking method, and configured allocation mode.",
+            "methodology": "Configurable-period dual momentum prototype using stored prices, 3M/6M/12M momentum, beta, volatility, 52-week-high filter, configured ranking method, configured allocation mode, sector caps, and configured safe asset/cash residual.",
         }
         update_backtest_run_result(
             self.backtest_run_id,
@@ -179,7 +201,13 @@ class BacktestEngine:
     def _pivot_prices(self, prices: pd.DataFrame, symbols: list[str]) -> pd.DataFrame:
         filtered = prices[prices["symbol"].isin(symbols)]
         pivot = filtered.pivot_table(index="price_date", columns="symbol", values="price", aggfunc="last").sort_index()
-        return pivot.ffill()
+        pivot = pivot.ffill()
+        if config.SAFE_ASSET_SYMBOL:
+            safe_asset = prices[prices["symbol"] == config.SAFE_ASSET_SYMBOL]
+            if not safe_asset.empty and not pivot.empty:
+                safe_series = safe_asset.pivot_table(index="price_date", values="price", aggfunc="last").sort_index()["price"]
+                pivot[config.SAFE_ASSET_SYMBOL] = safe_series.reindex(pivot.index).ffill()
+        return pivot
 
     def _benchmark_returns(self, prices: pd.DataFrame) -> pd.Series | None:
         benchmark = prices[prices["symbol"] == config.DEFAULT_BENCHMARK_SYMBOL]
@@ -218,6 +246,8 @@ class BacktestEngine:
         history = price_pivot.loc[:rebalance_date].tail(config.BETA_LOOKBACK_DAYS + 5)
         rows: list[dict[str, Any]] = []
         for symbol in history.columns:
+            if symbol == config.SAFE_ASSET_SYMBOL:
+                continue
             series = history[symbol].dropna()
             if len(series) < config.BETA_LOOKBACK_DAYS:
                 continue
@@ -257,10 +287,20 @@ class BacktestEngine:
         frame = pd.DataFrame(rows).dropna(subset=["momentum_score", "beta", "volatility"])
         if frame.empty:
             return pd.DataFrame(columns=["symbol", "score", "rank"])
+        if config.STRATEGY_RANKING_METHOD.strip().upper() == "AVERAGE_RANK":
+            frame = self._add_average_rank_columns(frame)
         frame["score"] = self._ranking_score(frame)
         frame = frame.sort_values("score", ascending=False).reset_index(drop=True)
         frame["rank"] = frame.index + 1
         return frame
+
+    def _add_average_rank_columns(self, frame: pd.DataFrame) -> pd.DataFrame:
+        ranked = frame.copy()
+        ranked["momentum_rank"] = ranked["momentum_score"].rank(method="average", ascending=False)
+        ranked["beta_rank"] = ranked["beta"].rank(method="average", ascending=True)
+        ranked["volatility_rank"] = ranked["volatility"].rank(method="average", ascending=True)
+        ranked["average_rank"] = ranked[["momentum_rank", "beta_rank", "volatility_rank"]].mean(axis=1)
+        return ranked
 
     def _ranking_score(self, frame: pd.DataFrame) -> pd.Series:
         method = config.STRATEGY_RANKING_METHOD.strip().upper()
@@ -285,7 +325,11 @@ class BacktestEngine:
                 + beta_weight * low_beta_percentile
                 + volatility_weight * low_volatility_percentile
             )
-        raise ValueError("STRATEGY_RANKING_METHOD must be MOMENTUM, BETA_ADJUSTED, VOLATILITY_ADJUSTED, or COMBINED_RANK.")
+        if method == "AVERAGE_RANK":
+            if "average_rank" in frame.columns:
+                return -frame["average_rank"]
+            return -self._add_average_rank_columns(frame)["average_rank"]
+        raise ValueError("STRATEGY_RANKING_METHOD must be MOMENTUM, BETA_ADJUSTED, VOLATILITY_ADJUSTED, COMBINED_RANK, or AVERAGE_RANK.")
 
     def _beta(self, stock_prices: pd.Series, benchmark_returns: pd.Series | None) -> float:
         if benchmark_returns is None:
@@ -312,6 +356,8 @@ class BacktestEngine:
         start_date: date,
         end_date: date,
         weights: dict[str, float],
+        safe_asset_symbol: str,
+        safe_asset_weight: float,
     ) -> float:
         result = 0.0
         for symbol, weight in weights.items():
@@ -320,7 +366,32 @@ class BacktestEngine:
             if pd.isna(start_price) or pd.isna(end_price) or start_price <= 0:
                 continue
             result += weight * ((float(end_price) / float(start_price)) - 1.0)
+        result += self._safe_asset_period_return(price_pivot, start_date, end_date, safe_asset_symbol, safe_asset_weight)
         return result
+
+    def _safe_asset_period_return(
+        self,
+        price_pivot: pd.DataFrame,
+        start_date: date,
+        end_date: date,
+        safe_asset_symbol: str,
+        safe_asset_weight: float,
+    ) -> float:
+        if safe_asset_weight <= 0:
+            return 0.0
+        if safe_asset_symbol not in price_pivot.columns:
+            if not self._safe_asset_warning_added:
+                self.warnings.append(f"Safe asset {safe_asset_symbol} prices not found; residual allocation treated as cash.")
+                self._safe_asset_warning_added = True
+            return 0.0
+        start_price = price_pivot.at[start_date, safe_asset_symbol]
+        end_price = price_pivot.at[end_date, safe_asset_symbol]
+        if pd.isna(start_price) or pd.isna(end_price) or start_price <= 0:
+            if not self._safe_asset_warning_added:
+                self.warnings.append(f"Safe asset {safe_asset_symbol} had unusable prices; residual allocation treated as cash.")
+                self._safe_asset_warning_added = True
+            return 0.0
+        return safe_asset_weight * ((float(end_price) / float(start_price)) - 1.0)
 
     def _holding_rows(
         self,
@@ -333,12 +404,17 @@ class BacktestEngine:
         consecutive_months_held: dict[str, int],
         total_months_held: dict[str, int],
         price_pivot: pd.DataFrame,
+        universe_by_symbol: dict[str, object],
+        safe_asset_symbol: str,
+        safe_asset_weight: float,
     ) -> list[dict[str, Any]]:
         rank_by_symbol = dict(zip(ranking["symbol"], ranking["rank"], strict=False)) if not ranking.empty else {}
         rows: list[dict[str, Any]] = []
         for symbol, weight in weights.items():
+            stock = universe_by_symbol.get(symbol)
             start_price = float(price_pivot.at[period_start_date, symbol])
             price = float(price_pivot.at[snapshot_date, symbol])
+            quantity = floor((nav * weight) / price) if price > 0 else None
             monthly_return = (price / start_price) - 1.0 if start_price > 0 else None
             portfolio_contribution = weight * monthly_return if monthly_return is not None else None
             rows.append(
@@ -346,12 +422,14 @@ class BacktestEngine:
                     "run_id": self.backtest_run_id,
                     "snapshot_date": snapshot_date,
                     "symbol": symbol,
+                    "industry": getattr(stock, "industry", None),
+                    "sector": getattr(stock, "sector", None),
                     "rank": int(rank_by_symbol.get(symbol, 0)) or None,
                     "selected": True,
                     "weight": weight,
-                    "quantity": (nav * weight) / price if price > 0 else None,
+                    "quantity": quantity,
                     "reference_price": price,
-                    "market_value": nav * weight,
+                    "market_value": (quantity * price) if quantity is not None else None,
                     "monthly_return": monthly_return,
                     "portfolio_contribution": portfolio_contribution,
                     "holding_action": "HELD" if symbol in previous_holdings else "ENTERED",
@@ -359,7 +437,59 @@ class BacktestEngine:
                     "total_months_held": total_months_held.get(symbol, 0),
                 }
             )
+        if safe_asset_weight > 0:
+            rows.extend(
+                self._safe_asset_holding_row(
+                    safe_asset_symbol=safe_asset_symbol,
+                    safe_asset_weight=safe_asset_weight,
+                    period_start_date=period_start_date,
+                    snapshot_date=snapshot_date,
+                    nav=nav,
+                    price_pivot=price_pivot,
+                )
+            )
         return rows
+
+    def _safe_asset_holding_row(
+        self,
+        safe_asset_symbol: str,
+        safe_asset_weight: float,
+        period_start_date: date,
+        snapshot_date: date,
+        nav: float,
+        price_pivot: pd.DataFrame,
+    ) -> list[dict[str, Any]]:
+        if safe_asset_symbol not in price_pivot.columns:
+            return []
+        start_price = price_pivot.at[period_start_date, safe_asset_symbol]
+        price = price_pivot.at[snapshot_date, safe_asset_symbol]
+        if pd.isna(start_price) or pd.isna(price) or price <= 0:
+            return []
+        start_price_float = float(start_price)
+        price_float = float(price)
+        quantity = floor((nav * safe_asset_weight) / price_float)
+        monthly_return = (price_float / start_price_float) - 1.0 if start_price_float > 0 else None
+        portfolio_contribution = safe_asset_weight * monthly_return if monthly_return is not None else None
+        return [
+            {
+                "run_id": self.backtest_run_id,
+                "snapshot_date": snapshot_date,
+                "symbol": safe_asset_symbol,
+                "industry": "SAFE_ASSET",
+                "sector": "SAFE_ASSET",
+                "rank": None,
+                "selected": True,
+                "weight": safe_asset_weight,
+                "quantity": quantity,
+                "reference_price": price_float,
+                "market_value": quantity * price_float,
+                "monthly_return": monthly_return,
+                "portfolio_contribution": portfolio_contribution,
+                "holding_action": "SAFE_ASSET",
+                "consecutive_months_held": 0,
+                "total_months_held": 0,
+            }
+        ]
 
     def _max_drawdown(self, nav_values: list[float]) -> float:
         peak = nav_values[0]

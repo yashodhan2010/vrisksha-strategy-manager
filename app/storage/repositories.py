@@ -233,6 +233,31 @@ def list_backtest_runs(database_path: str | Path = config.DATABASE_PATH) -> list
         return [dict(row) for row in connection.execute("SELECT * FROM backtest_runs ORDER BY id DESC")]
 
 
+def find_completed_backtest_run_by_scenario(
+    scenario_key: str,
+    database_path: str | Path = config.DATABASE_PATH,
+) -> dict[str, Any] | None:
+    with get_connection(database_path) as connection:
+        rows = connection.execute(
+            """
+            SELECT *
+            FROM backtest_runs
+            WHERE status = ?
+            ORDER BY id DESC
+            """,
+            (RunStatus.COMPLETED.value,),
+        ).fetchall()
+    for row in rows:
+        item = dict(row)
+        try:
+            payload = json.loads(item.get("config_json") or "{}")
+        except json.JSONDecodeError:
+            continue
+        if payload.get("scenario_key") == scenario_key:
+            return item
+    return None
+
+
 def list_portfolio_snapshots(
     run_id: int,
     database_path: str | Path = config.DATABASE_PATH,

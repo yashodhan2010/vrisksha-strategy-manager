@@ -1,0 +1,30 @@
+{
+  "strategy_id": "dual_momentum_nifty500_v1",
+  "slug": "dual-momentum",
+  "name": "Dual Momentum",
+  "short_description": "A Nifty 500 dual-momentum model portfolio using momentum, beta, volatility, 52-week-high filters, and a holding-retention buffer.",
+  "category_labels": [
+    "Momentum",
+    "Factor Strategy",
+    "Equity",
+    "Model Portfolio"
+  ],
+  "ra_entity": "Prathamesh Gupta",
+  "sebi_registration_number": "",
+  "universe": "NIFTY 500",
+  "benchmark": "NIFTY 500 TRI",
+  "min_capital_guidance": 0,
+  "backtest": {
+    "benchmark_symbol": "NIFTY500"
+  },
+  "optimization": {
+    "results_path": "data/output/average_rank_buffer_10y_trials_parameters_cagr.csv",
+    "finalized_config_path": "data/output/finalized/dual_momentum_best_config.json",
+    "objective": "cagr",
+    "rank_column": "rank_by_cagr"
+  },
+  "package": {
+    "version": "1.0.0",
+    "output_dir": "data/output/packages/dual-momentum/strategy-package"
+  }
+}

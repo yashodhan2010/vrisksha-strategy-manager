@@ -13,6 +13,7 @@ def fetch_and_store_history(
     end_date: date,
     symbols: list[str] | None = None,
     include_benchmark: bool = True,
+    include_safe_asset: bool = True,
 ) -> FetchResult:
     if start_date > end_date:
         raise ValueError("start_date must be on or before end_date.")
@@ -25,6 +26,10 @@ def fetch_and_store_history(
 
     if include_benchmark and config.DEFAULT_BENCHMARK_SYMBOL not in cleaned_symbols:
         cleaned_symbols.append(config.DEFAULT_BENCHMARK_SYMBOL)
+    if include_safe_asset:
+        for safe_asset_symbol in config.SAFE_ASSET_SYMBOLS:
+            if safe_asset_symbol not in cleaned_symbols:
+                cleaned_symbols.append(safe_asset_symbol)
 
     provider = get_market_data_provider()
     frame = provider.get_daily_prices(cleaned_symbols, start_date, end_date)

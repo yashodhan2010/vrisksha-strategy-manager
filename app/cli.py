@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from datetime import date, datetime, timedelta
 
@@ -12,20 +13,80 @@ from app.data.trading_calendar import WeekdayTradingCalendar
 from app.data.price_ingestion import fetch_and_store_history
 from app.data.universe_sync import UniverseSyncError, sync_universe
 from app.execution.kite_session import exchange_request_token, get_login_url, save_access_token_to_env, validate_saved_access_token
+from app.export import build_strategy_package
 from app.logging_config import get_logger
+from app.optimization import apply_finalized_config, build_finalized_config_from_results, write_finalized_config
 from app.storage.database import initialize_database
 from app.storage.repositories import (
     add_audit_event,
     complete_strategy_run,
     create_backtest_run,
     create_strategy_run,
+    find_completed_backtest_run_by_scenario,
 )
+from app.strategy_profile import apply_strategy_profile
 from app.strategy.rebalance import RebalanceEngine
 from app.strategy.models import RunMode, RunStatus, RunType
 
 
 def _parse_date(value: str) -> date:
     return date.fromisoformat(value)
+
+
+def _backtest_scenario_payload(
+    start_date: date,
+    end_date: date,
+    initial_capital: float,
+    years: int | None = None,
+    orchestrated: bool = False,
+    history_start_date: date | None = None,
+) -> dict[str, object]:
+    scenario = {
+        "years": years,
+        "initial_capital": initial_capital,
+        "requested_start_date": start_date.isoformat(),
+        "requested_end_date": end_date.isoformat(),
+        "benchmark_symbol": config.DEFAULT_BENCHMARK_SYMBOL,
+        "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
+        "strategy_allocation_mode": config.STRATEGY_ALLOCATION_MODE,
+        "strategy_top_n": config.STRATEGY_TOP_N,
+        "strategy_ranking_method": config.STRATEGY_RANKING_METHOD,
+        "ranking_momentum_weight": config.RANKING_MOMENTUM_WEIGHT,
+        "ranking_beta_weight": config.RANKING_BETA_WEIGHT,
+        "ranking_volatility_weight": config.RANKING_VOLATILITY_WEIGHT,
+        "buffer_pct": config.BUFFER_PCT,
+        "max_stock_weight": config.MAX_STOCK_WEIGHT,
+        "max_sector_weight": config.MAX_SECTOR_WEIGHT,
+        "safe_asset_symbol": config.SAFE_ASSET_SYMBOL,
+        "dynamic_min_weight": config.DYNAMIC_MIN_WEIGHT,
+        "dynamic_max_weight": config.DYNAMIC_MAX_WEIGHT,
+        "high_52w_threshold": config.HIGH_52W_THRESHOLD,
+        "beta_lookback_days": config.BETA_LOOKBACK_DAYS,
+        "beta_floor": config.BETA_FLOOR,
+    }
+    scenario_key = hashlib.sha256(json.dumps(scenario, sort_keys=True).encode("utf-8")).hexdigest()
+    payload = {
+        **scenario,
+        "scenario_key": scenario_key,
+        "orchestrated": orchestrated,
+        "requested_at": datetime.now().isoformat(),
+    }
+    if history_start_date:
+        payload["history_start_date"] = history_start_date.isoformat()
+    return payload
+
+
+def _print_cached_backtest(row: dict[str, object]) -> None:
+    summary = json.loads(str(row.get("summary_json") or "{}"))
+    total_return = summary.get("total_return")
+    annualized_return = summary.get("annualized_return")
+    max_drawdown = summary.get("max_drawdown")
+    print(
+        f"Reused cached backtest run {row['id']}: final value {float(row['final_value']):,.2f}, "
+        f"total return {float(total_return):.2%}."
+    )
+    if annualized_return is not None:
+        print(f"Annualized return: {float(annualized_return):.2%}; max drawdown: {float(max_drawdown):.2%}.")
 
 
 def cmd_init_db(_args: argparse.Namespace) -> int:
@@ -95,9 +156,12 @@ def cmd_monthly_run(_args: argparse.Namespace) -> int:
             "ranking_momentum_weight": config.RANKING_MOMENTUM_WEIGHT,
             "ranking_beta_weight": config.RANKING_BETA_WEIGHT,
             "ranking_volatility_weight": config.RANKING_VOLATILITY_WEIGHT,
+            "buffer_pct": config.BUFFER_PCT,
             "dynamic_min_weight": config.DYNAMIC_MIN_WEIGHT,
             "dynamic_max_weight": config.DYNAMIC_MAX_WEIGHT,
             "max_stock_weight": config.MAX_STOCK_WEIGHT,
+            "max_sector_weight": config.MAX_SECTOR_WEIGHT,
+            "safe_asset_symbol": config.SAFE_ASSET_SYMBOL,
             "high_52w_threshold": config.HIGH_52W_THRESHOLD,
             "beta_lookback_days": config.BETA_LOOKBACK_DAYS,
             "mode": mode.value,
@@ -122,7 +186,7 @@ def cmd_monthly_run(_args: argparse.Namespace) -> int:
         message = (
             f"Scheduled rebalance completed for {result.run_date.isoformat()}: "
             f"{result.selected_count} selected stocks, {result.proposal_count} proposed orders, "
-            f"{result.liquidbees_weight:.2%} LIQUIDBEES/cash, "
+            f"{result.liquidbees_weight:.2%} {config.SAFE_ASSET_SYMBOL}/cash, "
             f"{result.buy_scaling_ratio:.2%} buy scaling."
         )
         status = RunStatus.COMPLETED
@@ -170,20 +234,15 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         end_date = date.today()
         start_date = end_date - timedelta(days=round(args.years * 365.25))
 
-    payload = {
-        "years": args.years,
-        "requested_at": datetime.now().isoformat(),
-        "initial_capital": args.initial_capital,
-        "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
-        "strategy_allocation_mode": config.STRATEGY_ALLOCATION_MODE,
-        "strategy_top_n": config.STRATEGY_TOP_N,
-        "strategy_ranking_method": config.STRATEGY_RANKING_METHOD,
-        "ranking_momentum_weight": config.RANKING_MOMENTUM_WEIGHT,
-        "ranking_beta_weight": config.RANKING_BETA_WEIGHT,
-        "ranking_volatility_weight": config.RANKING_VOLATILITY_WEIGHT,
-        "dynamic_min_weight": config.DYNAMIC_MIN_WEIGHT,
-        "dynamic_max_weight": config.DYNAMIC_MAX_WEIGHT,
-    }
+    assert start_date is not None
+    assert end_date is not None
+    payload = _backtest_scenario_payload(start_date, end_date, args.initial_capital, years=args.years)
+    if config.BACKTEST_REUSE_SCENARIO and not args.force:
+        cached = find_completed_backtest_run_by_scenario(str(payload["scenario_key"]))
+        if cached:
+            _print_cached_backtest(cached)
+            return 0
+
     run_id = create_backtest_run(
         start_date,
         end_date,
@@ -220,6 +279,89 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_finalize_strategy_config(args: argparse.Namespace) -> int:
+    try:
+        apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        input_path = args.input or config.OPTIMIZATION_RESULTS_PATH
+        output_path_arg = args.output or config.FINALIZED_STRATEGY_CONFIG_PATH
+        payload = build_finalized_config_from_results(
+            results_path=input_path,
+            objective=args.objective,
+            rank_column=args.rank_column,
+            row_index=args.row_index,
+        )
+        output_path = write_finalized_config(payload, output_path_arg)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"Finalized strategy config failed: {exc}")
+        return 1
+    parameters = payload["strategy_parameters"]
+    print(f"Finalized strategy config written to {output_path}")
+    print(
+        "Selected parameters: "
+        f"top_n={parameters['STRATEGY_TOP_N']}, "
+        f"rebalances_per_month={parameters['BACKTEST_REBALANCES_PER_MONTH']}, "
+        f"sector_cap={parameters['MAX_SECTOR_WEIGHT']:.2f}, "
+        f"high_52w_threshold={parameters['HIGH_52W_THRESHOLD']:.2f}, "
+        f"buffer_pct={parameters.get('BUFFER_PCT')}, "
+        f"weights={parameters['RANKING_MOMENTUM_WEIGHT']}/"
+        f"{parameters['RANKING_BETA_WEIGHT']}/{parameters['RANKING_VOLATILITY_WEIGHT']}."
+    )
+    return 0
+
+
+def cmd_finalized_backtest(args: argparse.Namespace) -> int:
+    try:
+        apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        config_path = args.config or config.FINALIZED_STRATEGY_CONFIG_PATH
+        payload = apply_finalized_config(config_path)
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Finalized backtest failed: {exc}")
+        return 1
+    print(f"Applied finalized config from {config_path}")
+    print(f"Source experiment: {payload.get('source_results_path')}")
+    backtest_args = argparse.Namespace(
+        years=None,
+        start_date=args.start_date,
+        end_date=args.end_date,
+        initial_capital=args.initial_capital,
+        force=args.force,
+    )
+    return cmd_backtest(backtest_args)
+
+
+def cmd_finalized_package(args: argparse.Namespace) -> int:
+    try:
+        apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        input_path = args.input or config.OPTIMIZATION_RESULTS_PATH
+        config_output = args.config_output or config.FINALIZED_STRATEGY_CONFIG_PATH
+        package_output = args.package_output or config.STRATEGY_PACKAGE_OUTPUT_DIR
+        payload = build_finalized_config_from_results(
+            results_path=input_path,
+            objective=args.objective,
+            rank_column=args.rank_column,
+            row_index=args.row_index,
+        )
+        config_path = write_finalized_config(payload, config_output)
+        apply_finalized_config(config_path)
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Finalized package pipeline failed: {exc}")
+        return 1
+    print(f"Finalized config written to {config_path}")
+    backtest_args = argparse.Namespace(
+        years=None,
+        start_date=args.start_date,
+        end_date=args.end_date,
+        initial_capital=args.initial_capital,
+        force=True,
+    )
+    backtest_status = cmd_backtest(backtest_args)
+    if backtest_status != 0:
+        return backtest_status
+    return cmd_export_strategy_package(
+        argparse.Namespace(backtest_run_id=None, output_dir=package_output, strategy_profile=None)
+    )
+
+
 def cmd_run_backtest(args: argparse.Namespace) -> int:
     initialize_database()
     logger = get_logger("app.run_backtest")
@@ -235,6 +377,19 @@ def cmd_run_backtest(args: argparse.Namespace) -> int:
     # Fetch extra history before the requested simulation window so 12M momentum,
     # 52-week highs, and beta lookbacks are available on the first rebalance date.
     history_start_date = start_date - timedelta(days=args.lookback_days)
+    payload = _backtest_scenario_payload(
+        start_date,
+        end_date,
+        args.initial_capital,
+        orchestrated=True,
+        history_start_date=history_start_date,
+    )
+    if config.BACKTEST_REUSE_SCENARIO and not args.force:
+        cached = find_completed_backtest_run_by_scenario(str(payload["scenario_key"]))
+        if cached:
+            _print_cached_backtest(cached)
+            return 0
+
     try:
         if args.request_token:
             access_token = exchange_request_token(args.request_token)
@@ -251,6 +406,7 @@ def cmd_run_backtest(args: argparse.Namespace) -> int:
             end_date=end_date,
             symbols=args.symbols if args.symbols else None,
             include_benchmark=not args.no_benchmark,
+            include_safe_asset=not args.no_safe_asset,
         )
         print(
             f"Historical data ready: {fetch_result.stored_rows} rows stored "
@@ -262,23 +418,6 @@ def cmd_run_backtest(args: argparse.Namespace) -> int:
                 print(f"...and {len(fetch_result.missing_symbols) - 20} more.")
 
         print("Step 3/4: running backtest simulation...")
-        payload = {
-            "orchestrated": True,
-            "requested_at": datetime.now().isoformat(),
-            "initial_capital": args.initial_capital,
-            "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
-            "strategy_allocation_mode": config.STRATEGY_ALLOCATION_MODE,
-            "strategy_top_n": config.STRATEGY_TOP_N,
-            "strategy_ranking_method": config.STRATEGY_RANKING_METHOD,
-            "ranking_momentum_weight": config.RANKING_MOMENTUM_WEIGHT,
-            "ranking_beta_weight": config.RANKING_BETA_WEIGHT,
-            "ranking_volatility_weight": config.RANKING_VOLATILITY_WEIGHT,
-            "dynamic_min_weight": config.DYNAMIC_MIN_WEIGHT,
-            "dynamic_max_weight": config.DYNAMIC_MAX_WEIGHT,
-            "history_start_date": history_start_date.isoformat(),
-            "requested_start_date": start_date.isoformat(),
-            "requested_end_date": end_date.isoformat(),
-        }
         run_id = create_backtest_run(
             start_date,
             end_date,
@@ -336,6 +475,7 @@ def cmd_fetch_history(args: argparse.Namespace) -> int:
             end_date=end_date,
             symbols=symbols,
             include_benchmark=not args.no_benchmark,
+            include_safe_asset=not args.no_safe_asset,
         )
     except (FileNotFoundError, ImportError, ValueError) as exc:
         logger.error("Historical data fetch failed: %s", exc)
@@ -362,6 +502,22 @@ def cmd_fetch_history(args: argparse.Namespace) -> int:
         if len(result.missing_symbols) > 20:
             print(f"...and {len(result.missing_symbols) - 20} more.")
     return 0 if result.stored_rows else 1
+
+
+def cmd_export_strategy_package(args: argparse.Namespace) -> int:
+    initialize_database()
+    try:
+        apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        output_dir = args.output_dir or config.STRATEGY_PACKAGE_OUTPUT_DIR
+        output_path = build_strategy_package(
+            backtest_run_id=args.backtest_run_id,
+            output_dir=output_dir,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"Strategy package export failed: {exc}")
+        return 1
+    print(f"Strategy package exported to {output_path}")
+    return 0
 
 
 def cmd_kite_login_url(_args: argparse.Namespace) -> int:
@@ -447,6 +603,7 @@ def cmd_auto_daily_run(args: argparse.Namespace) -> int:
             end_date=today,
             symbols=args.symbols if args.symbols else None,
             include_benchmark=not args.no_benchmark,
+            include_safe_asset=not args.no_safe_asset,
         )
         print(
             f"Historical data refreshed: {fetch_result.stored_rows} rows stored "
@@ -479,7 +636,39 @@ def build_parser() -> argparse.ArgumentParser:
     backtest.add_argument("--start-date")
     backtest.add_argument("--end-date")
     backtest.add_argument("--initial-capital", type=float, default=1_000_000.0)
+    backtest.add_argument("--force", action="store_true", help="Run even if a completed matching scenario exists.")
     backtest.set_defaults(func=cmd_backtest)
+
+    finalize_config = subparsers.add_parser("finalize-strategy-config")
+    finalize_config.add_argument("--strategy-profile")
+    finalize_config.add_argument("--input")
+    finalize_config.add_argument("--output")
+    finalize_config.add_argument("--objective", default="cagr")
+    finalize_config.add_argument("--rank-column", default="rank_by_cagr")
+    finalize_config.add_argument("--row-index", type=int)
+    finalize_config.set_defaults(func=cmd_finalize_strategy_config)
+
+    finalized_backtest = subparsers.add_parser("run-finalized-backtest")
+    finalized_backtest.add_argument("--strategy-profile")
+    finalized_backtest.add_argument("--config")
+    finalized_backtest.add_argument("--start-date", required=True)
+    finalized_backtest.add_argument("--end-date", required=True)
+    finalized_backtest.add_argument("--initial-capital", type=float, default=1_000_000.0)
+    finalized_backtest.add_argument("--force", action="store_true")
+    finalized_backtest.set_defaults(func=cmd_finalized_backtest)
+
+    finalized_package = subparsers.add_parser("build-finalized-package")
+    finalized_package.add_argument("--strategy-profile")
+    finalized_package.add_argument("--input")
+    finalized_package.add_argument("--config-output")
+    finalized_package.add_argument("--package-output")
+    finalized_package.add_argument("--objective", default="cagr")
+    finalized_package.add_argument("--rank-column", default="rank_by_cagr")
+    finalized_package.add_argument("--row-index", type=int)
+    finalized_package.add_argument("--start-date", required=True)
+    finalized_package.add_argument("--end-date", required=True)
+    finalized_package.add_argument("--initial-capital", type=float, default=1_000_000.0)
+    finalized_package.set_defaults(func=cmd_finalized_package)
 
     run_backtest = subparsers.add_parser("run-backtest")
     run_backtest.add_argument("--start-date", required=True)
@@ -488,7 +677,9 @@ def build_parser() -> argparse.ArgumentParser:
     run_backtest.add_argument("--lookback-days", type=int, default=450)
     run_backtest.add_argument("--symbols", nargs="*")
     run_backtest.add_argument("--no-benchmark", action="store_true")
+    run_backtest.add_argument("--no-safe-asset", action="store_true")
     run_backtest.add_argument("--request-token")
+    run_backtest.add_argument("--force", action="store_true", help="Fetch and run even if a completed matching scenario exists.")
     run_backtest.set_defaults(func=cmd_run_backtest)
 
     fetch_history = subparsers.add_parser("fetch-history")
@@ -496,8 +687,15 @@ def build_parser() -> argparse.ArgumentParser:
     fetch_history.add_argument("--end-date", required=True)
     fetch_history.add_argument("--symbols", nargs="*")
     fetch_history.add_argument("--no-benchmark", action="store_true")
+    fetch_history.add_argument("--no-safe-asset", action="store_true")
     fetch_history.add_argument("--request-token")
     fetch_history.set_defaults(func=cmd_fetch_history)
+
+    export_package = subparsers.add_parser("export-strategy-package")
+    export_package.add_argument("--strategy-profile")
+    export_package.add_argument("--backtest-run-id", type=int)
+    export_package.add_argument("--output-dir")
+    export_package.set_defaults(func=cmd_export_strategy_package)
 
     subparsers.add_parser("kite-login-url").set_defaults(func=cmd_kite_login_url)
     subparsers.add_parser("kite-token-status").set_defaults(func=cmd_kite_token_status)
@@ -516,6 +714,7 @@ def build_parser() -> argparse.ArgumentParser:
     auto_daily.add_argument("--history-lookback-days", type=int, default=config.AUTOMATION_HISTORY_LOOKBACK_DAYS)
     auto_daily.add_argument("--symbols", nargs="*")
     auto_daily.add_argument("--no-benchmark", action="store_true")
+    auto_daily.add_argument("--no-safe-asset", action="store_true")
     auto_daily.set_defaults(func=cmd_auto_daily_run)
     return parser
 

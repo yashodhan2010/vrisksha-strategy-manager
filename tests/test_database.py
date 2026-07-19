@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import date
 
 from app.storage.database import get_connection, initialize_database
 from app.storage.repositories import (
     add_audit_event,
     create_backtest_run,
+    find_completed_backtest_run_by_scenario,
     create_strategy_run,
     get_latest_backtest_run,
     get_latest_strategy_run,
@@ -54,6 +56,25 @@ def test_placeholder_backtest_run_can_be_inserted_and_read(tmp_path: Path) -> No
     assert latest is not None
     assert latest["benchmark_symbol"] == "NIFTY500"
     assert latest["final_value"] is None
+
+
+def test_completed_backtest_run_can_be_found_by_scenario_key(tmp_path: Path) -> None:
+    db = tmp_path / "test.db"
+    initialize_database(db)
+    create_backtest_run(date(2024, 1, 1), date(2024, 12, 31), "NIFTY500", {"scenario_key": "abc"}, RunStatus.STARTED, db)
+    completed_id = create_backtest_run(
+        date(2024, 1, 1),
+        date(2024, 12, 31),
+        "NIFTY500",
+        {"scenario_key": "abc"},
+        RunStatus.COMPLETED,
+        db,
+    )
+
+    cached = find_completed_backtest_run_by_scenario("abc", db)
+
+    assert cached is not None
+    assert cached["id"] == completed_id
 
 
 def test_backtest_snapshot_readers(tmp_path: Path) -> None:

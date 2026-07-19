@@ -56,6 +56,11 @@ def test_rebalance_engine_persists_holdings_and_order_proposals(monkeypatch, tmp
             "SELECT SUM(estimated_value) FROM order_proposals WHERE run_id = ? AND side = 'BUY'",
             (run_id,),
         ).fetchone()[0]
+        fractional_quantities = connection.execute(
+            "SELECT COUNT(*) FROM order_proposals WHERE run_id = ? AND quantity != CAST(quantity AS INTEGER)",
+            (run_id,),
+        ).fetchone()[0]
     assert holdings == 2
     assert orders == 2
-    assert buy_value == 5_000
+    assert buy_value <= 5_000
+    assert fractional_quantities == 0

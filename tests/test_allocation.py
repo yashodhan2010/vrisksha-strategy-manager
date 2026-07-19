@@ -38,3 +38,19 @@ def test_total_allocation_equals_100_percent() -> None:
     assert isclose(sum(result.stock_weights.values()) + result.liquidbees_weight, 1.0)
     assert max(result.stock_weights.values()) <= 0.05
 
+
+def test_sector_cap_moves_excess_to_safe_asset() -> None:
+    result = allocate_equal_weight_with_cap(
+        ["AAA", "BBB", "CCC", "DDD"],
+        max_stock_weight=0.25,
+        safe_asset_symbol="GOLDBEES",
+        sector_by_symbol={"AAA": "BANKS", "BBB": "BANKS", "CCC": "IT", "DDD": "IT"},
+        max_sector_weight=0.40,
+    )
+
+    assert result.safe_asset_symbol == "GOLDBEES"
+    assert result.stock_weights["AAA"] == pytest.approx(0.20)
+    assert result.stock_weights["BBB"] == pytest.approx(0.20)
+    assert result.stock_weights["CCC"] == pytest.approx(0.20)
+    assert result.stock_weights["DDD"] == pytest.approx(0.20)
+    assert result.safe_asset_weight == pytest.approx(0.20)

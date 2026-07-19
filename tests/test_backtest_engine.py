@@ -57,9 +57,47 @@ def test_backtest_engine_persists_results(monkeypatch, tmp_path: Path) -> None:
         contribution = connection.execute(
             "SELECT portfolio_contribution FROM holding_snapshots WHERE portfolio_contribution IS NOT NULL LIMIT 1"
         ).fetchone()
+        quantity = connection.execute("SELECT quantity FROM holding_snapshots WHERE quantity IS NOT NULL LIMIT 1").fetchone()[0]
     assert snapshots > 0
     assert holdings > 0
     assert contribution is not None
+    assert quantity == int(quantity)
+
+
+def test_backtest_engine_persists_safe_asset_holding(monkeypatch, tmp_path: Path) -> None:
+    db = tmp_path / "backtest.db"
+    initialize_database(db)
+    monkeypatch.setattr(
+        backtest_engine,
+        "load_universe",
+        lambda: [
+            UniverseStock("AAA", "A", "I", "S"),
+            UniverseStock("BBB", "B", "I", "S"),
+        ],
+    )
+    monkeypatch.setattr("app.backtest.engine.config.SAFE_ASSET_SYMBOL", "LIQUIDBEES")
+    dates = _business_dates(date(2023, 1, 2), 340)
+    bars: list[PriceBar] = []
+    for index, price_date in enumerate(dates):
+        for symbol, base, drift in [
+            ("AAA", 100.0, 0.35),
+            ("BBB", 90.0, 0.15),
+            ("LIQUIDBEES", 1000.0, 0.02),
+            ("NIFTY500", 1000.0, 0.2),
+        ]:
+            price = base + index * drift
+            bars.append(PriceBar(symbol, price_date, price, price, price, price, price, 1000, "TEST", "now"))
+    upsert_price_bars(bars, db)
+    run_id = create_backtest_run(date(2023, 1, 2), dates[-1], "NIFTY500", {}, RunStatus.STARTED, db)
+
+    BacktestEngine(run_id, date(2023, 1, 2), dates[-1], 100_000, db).run()
+
+    with get_connection(db) as connection:
+        safe_asset_rows = connection.execute(
+            "SELECT COUNT(*) FROM holding_snapshots WHERE run_id = ? AND symbol = 'LIQUIDBEES'",
+            (run_id,),
+        ).fetchone()[0]
+    assert safe_asset_rows > 0
 
 
 def test_backtest_engine_rejects_zero_initial_capital(tmp_path: Path) -> None:
@@ -92,6 +130,24 @@ def test_rebalance_dates_reject_invalid_frequency(monkeypatch, tmp_path: Path) -
         engine._rebalance_dates(prices)
 
 
+def test_safe_asset_prices_do_not_extend_universe_calendar(monkeypatch, tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2024, 1, 1), date(2024, 1, 31), 100_000, tmp_path / "x.db")
+    prices = pd.DataFrame(
+        [
+            {"symbol": "AAA", "price_date": date(2024, 1, 1), "price": 100.0},
+            {"symbol": "AAA", "price_date": date(2024, 1, 2), "price": 101.0},
+            {"symbol": "LIQUIDBEES", "price_date": date(2024, 1, 1), "price": 1000.0},
+            {"symbol": "LIQUIDBEES", "price_date": date(2024, 1, 3), "price": 1001.0},
+        ]
+    )
+    monkeypatch.setattr("app.backtest.engine.config.SAFE_ASSET_SYMBOL", "LIQUIDBEES")
+
+    pivot = engine._pivot_prices(prices, ["AAA"])
+
+    assert list(pivot.index) == [date(2024, 1, 1), date(2024, 1, 2)]
+    assert "LIQUIDBEES" in pivot.columns
+
+
 def test_rank_on_date_skips_zero_lookback_price(monkeypatch, tmp_path: Path) -> None:
     engine = BacktestEngine(1, date(2023, 1, 1), date(2024, 12, 31), 100_000, tmp_path / "x.db")
     dates = _business_dates(date(2023, 1, 2), 260)
@@ -122,6 +178,25 @@ def test_ranking_score_supports_combined_rank(monkeypatch, tmp_path: Path) -> No
     scores = engine._ranking_score(frame)
 
     assert scores.loc[1] > scores.loc[0]
+
+
+def test_ranking_score_supports_average_rank(monkeypatch, tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2023, 1, 1), date(2024, 12, 31), 100_000, tmp_path / "x.db")
+    frame = pd.DataFrame(
+        [
+            {"symbol": "HIGHMOM", "momentum_score": 0.30, "beta": 1.30, "volatility": 0.45},
+            {"symbol": "BALANCED", "momentum_score": 0.24, "beta": 0.60, "volatility": 0.18},
+            {"symbol": "LOWMOM", "momentum_score": 0.08, "beta": 0.40, "volatility": 0.12},
+        ]
+    )
+    monkeypatch.setattr("app.backtest.engine.config.STRATEGY_RANKING_METHOD", "AVERAGE_RANK")
+
+    ranked = engine._add_average_rank_columns(frame)
+    scores = engine._ranking_score(ranked)
+
+    assert ranked.loc[2, "average_rank"] == pytest.approx(5 / 3)
+    assert scores.loc[2] > scores.loc[1]
+    assert scores.loc[2] == pytest.approx(-5 / 3)
 
 
 def test_ranking_score_supports_legacy_beta_adjusted_mode(monkeypatch, tmp_path: Path) -> None:
