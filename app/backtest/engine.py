@@ -201,12 +201,12 @@ class BacktestEngine:
     def _pivot_prices(self, prices: pd.DataFrame, symbols: list[str]) -> pd.DataFrame:
         filtered = prices[prices["symbol"].isin(symbols)]
         pivot = filtered.pivot_table(index="price_date", columns="symbol", values="price", aggfunc="last").sort_index()
-        pivot = pivot.ffill()
+        pivot = _bounded_forward_fill(pivot)
         if config.SAFE_ASSET_SYMBOL:
             safe_asset = prices[prices["symbol"] == config.SAFE_ASSET_SYMBOL]
             if not safe_asset.empty and not pivot.empty:
                 safe_series = safe_asset.pivot_table(index="price_date", values="price", aggfunc="last").sort_index()["price"]
-                pivot[config.SAFE_ASSET_SYMBOL] = safe_series.reindex(pivot.index).ffill()
+                pivot[config.SAFE_ASSET_SYMBOL] = _bounded_forward_fill(safe_series.reindex(pivot.index))
         return pivot
 
     def _benchmark_returns(self, prices: pd.DataFrame) -> pd.Series | None:
@@ -214,7 +214,7 @@ class BacktestEngine:
         if benchmark.empty:
             self.warnings.append("Benchmark prices not found; beta adjustment used beta=1.0.")
             return None
-        series = benchmark.pivot_table(index="price_date", values="price", aggfunc="last").sort_index()["price"].ffill()
+        series = _bounded_forward_fill(benchmark.pivot_table(index="price_date", values="price", aggfunc="last").sort_index()["price"])
         return series.pct_change(fill_method=None).replace([float("inf"), float("-inf")], pd.NA).dropna()
 
     def _rebalance_dates(self, price_pivot: pd.DataFrame) -> list[date]:
@@ -499,3 +499,10 @@ class BacktestEngine:
             if peak > 0:
                 max_drawdown = min(max_drawdown, (value / peak) - 1.0)
         return max_drawdown
+
+
+def _bounded_forward_fill(frame: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
+    limit = config.MAX_PRICE_FORWARD_FILL_DAYS
+    if limit <= 0:
+        return frame
+    return frame.ffill(limit=limit)

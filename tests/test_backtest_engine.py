@@ -161,6 +161,31 @@ def test_rank_on_date_skips_zero_lookback_price(monkeypatch, tmp_path: Path) -> 
     assert ranking.empty
 
 
+def test_rank_on_date_does_not_carry_stale_prices_across_long_gap(monkeypatch, tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2021, 1, 1), date(2022, 6, 30), 100_000, tmp_path / "x.db")
+    dates = _business_dates(date(2021, 1, 1), 380)
+    rows = [{"symbol": "AAA", "price_date": item, "price": 100.0 + index * 0.1} for index, item in enumerate(dates)]
+    rows.extend(
+        [
+            {"symbol": "STALEIPO", "price_date": dates[0], "price": 5.75},
+            {"symbol": "STALEIPO", "price_date": dates[1], "price": 5.75},
+            {"symbol": "STALEIPO", "price_date": dates[-4], "price": 530.25},
+            {"symbol": "STALEIPO", "price_date": dates[-3], "price": 535.65},
+            {"symbol": "STALEIPO", "price_date": dates[-2], "price": 570.45},
+            {"symbol": "STALEIPO", "price_date": dates[-1], "price": 535.65},
+        ]
+    )
+    prices = pd.DataFrame(rows)
+    monkeypatch.setattr("app.backtest.engine.config.MAX_PRICE_FORWARD_FILL_DAYS", 5)
+    monkeypatch.setattr("app.backtest.engine.config.BETA_LOOKBACK_DAYS", 252)
+
+    pivot = engine._pivot_prices(prices, ["AAA", "STALEIPO"])
+    ranking = engine._rank_on_date(pivot, None, dates[-1])
+
+    assert pd.isna(pivot.at[dates[10], "STALEIPO"])
+    assert "STALEIPO" not in set(ranking["symbol"])
+
+
 def test_ranking_score_supports_combined_rank(monkeypatch, tmp_path: Path) -> None:
     engine = BacktestEngine(1, date(2023, 1, 1), date(2024, 12, 31), 100_000, tmp_path / "x.db")
     frame = pd.DataFrame(

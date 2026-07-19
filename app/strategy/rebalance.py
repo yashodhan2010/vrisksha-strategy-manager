@@ -9,6 +9,7 @@ import pandas as pd
 
 from app import config
 from app.backtest.engine import BacktestEngine
+from app.backtest.engine import _bounded_forward_fill
 from app.data.universe_loader import load_universe
 from app.storage.market_data_repository import load_market_prices
 from app.storage.repositories import (
@@ -121,14 +122,15 @@ class RebalanceEngine:
 
     def _pivot_prices(self, prices: pd.DataFrame, symbols: list[str]) -> pd.DataFrame:
         filtered = prices[prices["symbol"].isin(symbols)]
-        return filtered.pivot_table(index="price_date", columns="symbol", values="price", aggfunc="last").sort_index().ffill()
+        pivot = filtered.pivot_table(index="price_date", columns="symbol", values="price", aggfunc="last").sort_index()
+        return _bounded_forward_fill(pivot)
 
     def _benchmark_returns(self, prices: pd.DataFrame) -> pd.Series | None:
         benchmark = prices[prices["symbol"] == config.DEFAULT_BENCHMARK_SYMBOL]
         if benchmark.empty:
             self.warnings.append("Benchmark prices not found; beta adjustment used beta=1.0.")
             return None
-        series = benchmark.pivot_table(index="price_date", values="price", aggfunc="last").sort_index()["price"].ffill()
+        series = _bounded_forward_fill(benchmark.pivot_table(index="price_date", values="price", aggfunc="last").sort_index()["price"])
         return series.pct_change()
 
     def _rank(

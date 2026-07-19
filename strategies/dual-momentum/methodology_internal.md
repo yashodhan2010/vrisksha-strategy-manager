@@ -10,7 +10,7 @@ The tradable universe is the locally maintained Nifty 500 list (`data/reference/
 
 ## 2. Price Series
 
-For every symbol, the daily price used for signals is `adjusted_close`, falling back to `close` when adjusted close is missing. Prices are pivoted into a date × symbol matrix and forward-filled (`ffill`) so that momentum/beta/volatility windows tolerate sparse trading days.
+For every symbol, the daily price used for signals is `adjusted_close`, falling back to `close` when adjusted close is missing. Prices are pivoted into a date × symbol matrix and forward-filled only up to `MAX_PRICE_FORWARD_FILL_DAYS` rows (default 5). This tolerates small sparse-data gaps but prevents stale pre-listing or re-mapped symbol prices from being carried across long calendar gaps.
 
 ## 3. Signal Construction (per rebalance date)
 
@@ -162,6 +162,7 @@ Every BUY's estimated value is multiplied by `buy_scaling_ratio` (SELLs are neve
 | `DYNAMIC_MIN_WEIGHT` / `DYNAMIC_MAX_WEIGHT` | 0.01 / 0.07 | Per-stock weight bounds (`DYNAMIC`) |
 | `MAX_SECTOR_WEIGHT` | 1.0 | Cap on combined sector weight |
 | `SAFE_ASSET_SYMBOL` | `LIQUIDBEES` | Residual/cash-proxy asset |
+| `MAX_PRICE_FORWARD_FILL_DAYS` | 5 | Maximum rows to forward-fill missing prices before treating the symbol as unavailable |
 | `BACKTEST_REBALANCES_PER_MONTH` | 1 | Rebalance frequency in backtests |
 | `AUTO_REBALANCE_TARGET_DAYS` | `1,15` | Day-of-month triggers for scheduled live rebalances |
 | `TARGET_PORTFOLIO_VALUE` | 1,000,000 | Notional portfolio size for live weight → quantity conversion |

@@ -297,6 +297,8 @@ python -m app.main fetch-history --start-date 2024-01-01 --end-date 2024-12-31
 
 Without `--symbols`, the command uses the synced universe. Kite historical data requires `KITE_API_KEY` and a valid daily `KITE_ACCESS_TOKEN` in `.env`.
 
+Backtests and model-portfolio rebalances cap price forward-fill with `MAX_PRICE_FORWARD_FILL_DAYS` so stale pre-listing or re-mapped symbol prices cannot create false multi-year returns.
+
 To get the token, run `python -m app.main kite-login-url`, open the URL, complete Kite login manually, copy the `request_token` from the redirect URL, then either save it with `python -m app.main kite-save-token --request-token YOUR_REQUEST_TOKEN` or pass it directly to `fetch-history` with `--request-token`. The app saves the access token and token date in `.env` and reuses it for that day.
 
 ## Dashboards
