@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -114,15 +115,20 @@ def get_symbol_price_ranges(
         return {}
     placeholders = ",".join("?" for _ in cleaned)
     with get_connection(database_path) as connection:
-        rows = connection.execute(
-            f"""
-            SELECT symbol, COUNT(*) AS row_count, MIN(price_date) AS first_date, MAX(price_date) AS last_date
-            FROM market_prices
-            WHERE symbol IN ({placeholders})
-            GROUP BY symbol
-            """,
-            tuple(cleaned),
-        ).fetchall()
+        try:
+            rows = connection.execute(
+                f"""
+                SELECT symbol, COUNT(*) AS row_count, MIN(price_date) AS first_date, MAX(price_date) AS last_date
+                FROM market_prices
+                WHERE symbol IN ({placeholders})
+                GROUP BY symbol
+                """,
+                tuple(cleaned),
+            ).fetchall()
+        except sqlite3.OperationalError as exc:
+            if "no such table" in str(exc).lower():
+                return {}
+            raise
     return {str(row["symbol"]).upper(): dict(row) for row in rows}
 
 

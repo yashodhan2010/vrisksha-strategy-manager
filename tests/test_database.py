@@ -131,3 +131,9 @@ def test_symbol_price_ranges_report_coverage(tmp_path: Path) -> None:
     assert ranges["AAA"]["first_date"] == "2024-01-01"
     assert ranges["AAA"]["last_date"] == "2024-01-01"
     assert "BBB" not in ranges
+
+
+def test_symbol_price_ranges_tolerates_uninitialized_database(tmp_path: Path) -> None:
+    ranges = get_symbol_price_ranges(["AAA"], tmp_path / "empty.db")
+
+    assert ranges == {}

@@ -149,6 +149,7 @@ def _history_missing(symbols: list[str], start_date: date, end_date: date) -> tu
 
 
 def _ensure_history_for_finalized_run(args: argparse.Namespace, start_date: date, end_date: date) -> None:
+    initialize_database()
     if args.no_fetch_history:
         print("Skipping history fetch because --no-fetch-history was supplied.")
         return
