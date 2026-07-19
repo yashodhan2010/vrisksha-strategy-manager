@@ -40,10 +40,12 @@ Run these from the repository root.
 
 | Strategy | Purpose | Command |
 |---|---|---|
+| Dual Momentum | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum/strategy_profile.json` |
 | Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000 --selenium-token` |
 | Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum/strategy_profile.json --selenium-token` |
 | Dual Momentum | Generate latest live/paper model portfolio only | `python -m app.main monthly-run --strategy-profile strategies/dual-momentum/strategy_profile.json` |
 | Dual Momentum | Refresh data daily and rebalance only on configured dates | `python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum/strategy_profile.json` |
+| Future strategy | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/<strategy-slug>/strategy_profile.json` |
 | Future strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
 | Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-slug>/strategy_profile.json --selenium-token` |
 
@@ -218,6 +220,14 @@ Strategy knobs are not meant to live in `.env`. The finalized package pipeline g
 ```text
 data/output/finalized/dual_momentum_best_config.json
 ```
+
+Every quarter or half-year, rerun the parameter search and promote the best corrected CAGR row with:
+
+```bash
+python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum/strategy_profile.json
+```
+
+Use `--n-trials 50` for a quick partial smoke run; omit `--n-trials` for the full configured grid.
 
 Strategy identity, public metadata, optimization input path, finalized config path, and package output path live in:
 

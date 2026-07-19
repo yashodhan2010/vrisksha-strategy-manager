@@ -37,8 +37,8 @@ data/output/
 
 Every strategy follows the same lifecycle:
 
-1. Run experiments/Optuna outside the package exporter and write the results CSV.
-2. Promote the best experiment row into a finalized strategy config.
+1. Run experiments/Optuna and write the results CSV.
+2. Promote the best experiment row into a finalized strategy config, or run `refresh-finalized-parameters` to do both together for strategies using the average-rank/buffer optimizer.
 3. Run the finalized backtest and export the full Vriksha strategy package.
 4. Use the lightweight model-portfolio update command for routine subscriber updates.
 
@@ -48,6 +48,12 @@ Public website pages should render `methodology.md` only. `methodology_internal.
 
 ```bash
 python -m app.main finalize-strategy-config --strategy-profile strategies/dual-momentum/strategy_profile.json
+```
+
+Or rerun the average-rank/buffer optimization and promote the new top-CAGR row in one command:
+
+```bash
+python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum/strategy_profile.json
 ```
 
 ```bash
@@ -118,7 +124,8 @@ If `data/output/finalized/dual_momentum_best_config.json` does not exist, run `f
 6. Point `optimization.finalized_config_path` at a strategy-specific JSON file under `data/output/finalized/`.
 7. Point `package.output_dir` at a strategy-specific package folder under `data/output/packages/`.
 8. Add or swap strategy logic under `app/strategy/` only if the new strategy's ranking/allocation rules differ from the current shared implementation.
-9. Run `build-finalized-package` with the new profile for the full public/import package.
-10. Run `build-model-portfolio-update` with the new profile for routine latest portfolio exports.
+9. Run `refresh-finalized-parameters` when the strategy has a tracked optimizer, or `finalize-strategy-config` when an external experiment CSV has already been produced.
+10. Run `build-finalized-package` with the new profile for the full public/import package.
+11. Run `build-model-portfolio-update` with the new profile for routine latest portfolio exports.
 
 Each generated package remains a portable artifact for Vriksha import.

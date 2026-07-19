@@ -120,6 +120,13 @@ def test_monthly_run_requires_finalized_config(tmp_path: Path) -> None:
     assert "Monthly run failed before rebalance" in result.stdout
 
 
+def test_refresh_finalized_parameters_help_works(tmp_path: Path) -> None:
+    result = _run(["refresh-finalized-parameters", "--help"], tmp_path)
+
+    assert result.returncode == 0
+    assert "--n-trials" in result.stdout
+
+
 def test_build_finalized_package_can_skip_history_fetch(tmp_path: Path) -> None:
     trials = tmp_path / "trials.csv"
     pd.DataFrame(

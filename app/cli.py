@@ -16,7 +16,12 @@ from app.data.universe_sync import UniverseSyncError, sync_universe
 from app.execution.kite_session import exchange_request_token, get_login_url, save_access_token_to_env, validate_saved_access_token
 from app.export import build_strategy_package, export_latest_model_portfolio_update
 from app.logging_config import get_logger
-from app.optimization import apply_finalized_config, build_finalized_config_from_results, write_finalized_config
+from app.optimization import (
+    apply_finalized_config,
+    build_finalized_config_from_results,
+    run_average_rank_buffer_optimization,
+    write_finalized_config,
+)
 from app.storage.database import initialize_database
 from app.storage.repositories import (
     add_audit_event,
@@ -404,6 +409,48 @@ def cmd_finalize_strategy_config(args: argparse.Namespace) -> int:
     print(f"Finalized strategy config written to {output_path}")
     print(
         "Selected parameters: "
+        f"top_n={parameters['STRATEGY_TOP_N']}, "
+        f"rebalances_per_month={parameters['BACKTEST_REBALANCES_PER_MONTH']}, "
+        f"sector_cap={parameters['MAX_SECTOR_WEIGHT']:.2f}, "
+        f"high_52w_threshold={parameters['HIGH_52W_THRESHOLD']:.2f}, "
+        f"buffer_pct={parameters.get('BUFFER_PCT')}, "
+        f"weights={parameters['RANKING_MOMENTUM_WEIGHT']}/"
+        f"{parameters['RANKING_BETA_WEIGHT']}/{parameters['RANKING_VOLATILITY_WEIGHT']}."
+    )
+    return 0
+
+
+def cmd_refresh_finalized_parameters(args: argparse.Namespace) -> int:
+    try:
+        apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        results_output = args.results_output or config.OPTIMIZATION_RESULTS_PATH
+        config_output = args.config_output or config.FINALIZED_STRATEGY_CONFIG_PATH
+        optimization_result = run_average_rank_buffer_optimization(
+            years=args.years,
+            objective=args.objective,
+            n_trials=args.n_trials,
+            seed=args.seed,
+            results_output_path=results_output,
+            experiment_output_dir=args.experiment_output_dir,
+        )
+        payload = build_finalized_config_from_results(
+            results_path=optimization_result.results_path,
+            objective=args.objective,
+            rank_column=args.rank_column,
+        )
+        config_path = write_finalized_config(payload, config_output)
+    except (FileNotFoundError, ImportError, ValueError) as exc:
+        print(f"Finalized parameter refresh failed: {exc}")
+        return 1
+
+    parameters = payload["strategy_parameters"]
+    best = optimization_result.best_row
+    print(f"Optimization results written to {optimization_result.results_path}")
+    print(f"Finalized strategy config written to {config_path}")
+    print(
+        "Selected top-CAGR row: "
+        f"rank={best.get('rank_by_cagr')}, "
+        f"cagr={float(best.get('cagr') or 0):.2%}, "
         f"top_n={parameters['STRATEGY_TOP_N']}, "
         f"rebalances_per_month={parameters['BACKTEST_REBALANCES_PER_MONTH']}, "
         f"sector_cap={parameters['MAX_SECTOR_WEIGHT']:.2f}, "
@@ -834,6 +881,18 @@ def build_parser() -> argparse.ArgumentParser:
     finalize_config.add_argument("--rank-column", default="rank_by_cagr")
     finalize_config.add_argument("--row-index", type=int)
     finalize_config.set_defaults(func=cmd_finalize_strategy_config)
+
+    refresh_params = subparsers.add_parser("refresh-finalized-parameters")
+    refresh_params.add_argument("--strategy-profile")
+    refresh_params.add_argument("--years", type=int, default=10)
+    refresh_params.add_argument("--objective", default="cagr")
+    refresh_params.add_argument("--rank-column", default="rank_by_cagr")
+    refresh_params.add_argument("--n-trials", type=int)
+    refresh_params.add_argument("--seed", type=int, default=42)
+    refresh_params.add_argument("--results-output")
+    refresh_params.add_argument("--config-output")
+    refresh_params.add_argument("--experiment-output-dir")
+    refresh_params.set_defaults(func=cmd_refresh_finalized_parameters)
 
     finalized_backtest = subparsers.add_parser("run-finalized-backtest")
     finalized_backtest.add_argument("--strategy-profile")
