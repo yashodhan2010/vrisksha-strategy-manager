@@ -64,6 +64,26 @@ def test_backtest_engine_persists_results(monkeypatch, tmp_path: Path) -> None:
     assert quantity == int(quantity)
 
 
+def test_backtest_engine_keeps_pre_start_prices_for_signal_lookback(tmp_path: Path) -> None:
+    db = tmp_path / "backtest.db"
+    initialize_database(db)
+    dates = _business_dates(date(2022, 1, 3), 320)
+    bars = [
+        PriceBar("AAA", price_date, 100 + index, 100 + index, 100 + index, 100 + index, 100 + index, 1000, "TEST", "now")
+        for index, price_date in enumerate(dates)
+    ]
+    upsert_price_bars(bars, db)
+    start_date = dates[260]
+    engine = BacktestEngine(1, start_date, dates[-1], 100_000, db)
+
+    frame = engine._load_price_frame()
+    pivot = engine._pivot_prices(frame, ["AAA"])
+    rebalance_dates = engine._rebalance_dates(pivot)
+
+    assert min(frame["price_date"]) < start_date
+    assert min(rebalance_dates) >= start_date
+
+
 def test_backtest_engine_persists_safe_asset_holding(monkeypatch, tmp_path: Path) -> None:
     db = tmp_path / "backtest.db"
     initialize_database(db)
@@ -215,13 +235,17 @@ def test_ranking_score_supports_average_rank(monkeypatch, tmp_path: Path) -> Non
         ]
     )
     monkeypatch.setattr("app.backtest.engine.config.STRATEGY_RANKING_METHOD", "AVERAGE_RANK")
+    monkeypatch.setattr("app.backtest.engine.config.RANKING_MOMENTUM_WEIGHT", 0.70)
+    monkeypatch.setattr("app.backtest.engine.config.RANKING_BETA_WEIGHT", 0.15)
+    monkeypatch.setattr("app.backtest.engine.config.RANKING_VOLATILITY_WEIGHT", 0.15)
 
     ranked = engine._add_average_rank_columns(frame)
     scores = engine._ranking_score(ranked)
 
     assert ranked.loc[2, "average_rank"] == pytest.approx(5 / 3)
-    assert scores.loc[2] > scores.loc[1]
-    assert scores.loc[2] == pytest.approx(-5 / 3)
+    assert ranked.loc[0, "weighted_average_rank"] == pytest.approx(1.6)
+    assert scores.loc[0] > scores.loc[1]
+    assert scores.loc[0] == pytest.approx(-1.6)
 
 
 def test_ranking_score_supports_legacy_beta_adjusted_mode(monkeypatch, tmp_path: Path) -> None:

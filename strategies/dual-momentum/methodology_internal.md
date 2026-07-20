@@ -62,7 +62,7 @@ Five interchangeable scoring methods, all higher-score-is-better:
 | `MOMENTUM` | `momentum_score` |
 | `BETA_ADJUSTED` | `momentum_score / max(beta, BETA_FLOOR)` |
 | `VOLATILITY_ADJUSTED` | `momentum_score / max(volatility, 0.01)` |
-| `AVERAGE_RANK` (default) | negative average of momentum, low-beta, and low-volatility ranks - see below |
+| `AVERAGE_RANK` (default) | negative weighted average of momentum, low-beta, and low-volatility ranks - see below |
 | `COMBINED_RANK` | weighted blend of percentile ranks — see below |
 
 ### Average rank
@@ -71,10 +71,18 @@ momentum_rank   = rank(momentum_score, descending)  # higher momentum is better
 beta_rank       = rank(beta, ascending)             # lower beta is better
 volatility_rank = rank(volatility, ascending)       # lower volatility is better
 
-average_rank = average(momentum_rank, beta_rank, volatility_rank)
-score = -average_rank
+total = RANKING_MOMENTUM_WEIGHT + RANKING_BETA_WEIGHT + RANKING_VOLATILITY_WEIGHT
+momentum_weight   = RANKING_MOMENTUM_WEIGHT / total
+beta_weight       = RANKING_BETA_WEIGHT / total
+volatility_weight = RANKING_VOLATILITY_WEIGHT / total
+
+average_rank = average(momentum_rank, beta_rank, volatility_rank)  # stored for diagnostics
+weighted_average_rank = momentum_weight * momentum_rank
+                      + beta_weight * beta_rank
+                      + volatility_weight * volatility_rank
+score = -weighted_average_rank
 ```
-Stocks are sorted descending by `score`, which means the lowest `average_rank` receives final `rank = 1`. With `STRATEGY_TOP_N=25`, the allocation step uses the top 25 average-rank candidates.
+Stocks are sorted descending by `score`, which means the lowest `weighted_average_rank` receives final `rank = 1`. With `STRATEGY_TOP_N=25`, the allocation step uses the top 25 weighted-average-rank candidates.
 
 ### Combined rank
 ```

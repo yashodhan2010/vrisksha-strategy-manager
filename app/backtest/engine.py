@@ -194,7 +194,7 @@ class BacktestEngine:
         if frame.empty:
             return frame
         frame["price_date"] = pd.to_datetime(frame["price_date"]).dt.date
-        frame = frame[(frame["price_date"] >= self.start_date) & (frame["price_date"] <= self.end_date)]
+        frame = frame[frame["price_date"] <= self.end_date]
         frame["price"] = frame["adjusted_close"].fillna(frame["close"])
         return frame.dropna(subset=["price"])
 
@@ -222,7 +222,7 @@ class BacktestEngine:
         if rebalances_per_month <= 0:
             raise ValueError("BACKTEST_REBALANCES_PER_MONTH must be greater than zero.")
 
-        dates = pd.Index(price_pivot.index)
+        dates = pd.Index(item for item in price_pivot.index if self.start_date <= item <= self.end_date)
         months = sorted({(item.year, item.month) for item in dates})
         result: list[date] = []
         for year, month in months:
@@ -300,6 +300,17 @@ class BacktestEngine:
         ranked["beta_rank"] = ranked["beta"].rank(method="average", ascending=True)
         ranked["volatility_rank"] = ranked["volatility"].rank(method="average", ascending=True)
         ranked["average_rank"] = ranked[["momentum_rank", "beta_rank", "volatility_rank"]].mean(axis=1)
+        total = config.RANKING_MOMENTUM_WEIGHT + config.RANKING_BETA_WEIGHT + config.RANKING_VOLATILITY_WEIGHT
+        if total <= 0:
+            raise ValueError("RANKING_MOMENTUM_WEIGHT + RANKING_BETA_WEIGHT + RANKING_VOLATILITY_WEIGHT must be greater than zero.")
+        momentum_weight = config.RANKING_MOMENTUM_WEIGHT / total
+        beta_weight = config.RANKING_BETA_WEIGHT / total
+        volatility_weight = config.RANKING_VOLATILITY_WEIGHT / total
+        ranked["weighted_average_rank"] = (
+            momentum_weight * ranked["momentum_rank"]
+            + beta_weight * ranked["beta_rank"]
+            + volatility_weight * ranked["volatility_rank"]
+        )
         return ranked
 
     def _ranking_score(self, frame: pd.DataFrame) -> pd.Series:
@@ -326,9 +337,9 @@ class BacktestEngine:
                 + volatility_weight * low_volatility_percentile
             )
         if method == "AVERAGE_RANK":
-            if "average_rank" in frame.columns:
-                return -frame["average_rank"]
-            return -self._add_average_rank_columns(frame)["average_rank"]
+            if "weighted_average_rank" in frame.columns:
+                return -frame["weighted_average_rank"]
+            return -self._add_average_rank_columns(frame)["weighted_average_rank"]
         raise ValueError("STRATEGY_RANKING_METHOD must be MOMENTUM, BETA_ADJUSTED, VOLATILITY_ADJUSTED, COMBINED_RANK, or AVERAGE_RANK.")
 
     def _beta(self, stock_prices: pd.Series, benchmark_returns: pd.Series | None) -> float:
