@@ -8,6 +8,10 @@ __pycache__/
 .ruff_cache/
 *.pyc
 logs/*.log
+/experiments/*
+!/experiments/README.md
+strategies/*/experiments/archive/*
+!strategies/*/experiments/archive/README.md
 data/*.db
 data/*.sqlite
 data/*.sqlite3

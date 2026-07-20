@@ -5,7 +5,8 @@ Each finalized strategy gets one folder here. The folder should contain:
 - `strategy_profile.json`: metadata, optimization paths, finalized config path, and package output path.
 - `methodology.md`: public-safe methodology for the Vriksha public strategy page.
 - `methodology_internal.md`: full internal research methodology, not for public rendering.
-- `experiments/`: the strategy-specific production optimizer, notebooks, and research scripts.
+- `experiments/`: the strategy-specific production optimizer and research scripts.
+- `experiments/archive/`: ignored old notebooks, one-off scripts, and generated experiment outputs for that strategy.
 
 To add another strategy, copy `strategies/_template/` into `strategies/<strategy-slug>/` and update the metadata, document text, `optimization.engine_path`, `optimization.search_space`, finalized config path, and package output path.
 
