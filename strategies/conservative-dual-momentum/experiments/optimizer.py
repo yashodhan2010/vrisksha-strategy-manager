@@ -27,6 +27,16 @@ MOMENTUM_SKIP_RECENT_DAYS = 21
 MAX_FORWARD_FILL_DAYS = 5
 MAX_SIGNAL_DAILY_RETURN = 1.0
 MAX_BACKTEST_PERIOD_RETURN = 2.0
+STT_DELIVERY_RATE = 0.001
+EXCHANGE_TRANSACTION_RATE = 0.0000307
+SEBI_TURNOVER_RATE = 0.000001
+STAMP_DUTY_BUY_RATE = 0.00015
+GST_RATE = 0.18
+DP_CHARGE_PER_SOLD_SCRIP = 15.34
+STCG_TAX_RATE = 0.20
+LTCG_TAX_RATE = 0.125
+LTCG_EXEMPTION_PER_FY = 125_000.0
+CESS_RATE = 0.04
 
 
 @dataclass(frozen=True)
@@ -382,6 +392,132 @@ def portfolio_period_return(
     return total, skipped_extreme_returns
 
 
+def _financial_year(value: date) -> str:
+    start_year = value.year if value.month >= 4 else value.year - 1
+    return f"{start_year}-{str(start_year + 1)[-2:]}"
+
+
+def _estimate_implementation_drag(
+    price_pivot: pd.DataFrame,
+    allocations: list[tuple[date, date, dict[str, float]]],
+    gross_final_value: float,
+    gross_max_drawdown: float,
+    quality: DataQualityConfig = DataQualityConfig(),
+) -> dict[str, float | int]:
+    nav = INITIAL_CAPITAL
+    holdings: dict[str, float] = {}
+    lots: dict[str, list[dict[str, float | date]]] = {}
+    buy_turnover = 0.0
+    sell_turnover = 0.0
+    buy_legs = 0
+    sell_legs = 0
+    realized_by_fy: dict[str, dict[str, float]] = {}
+
+    def add_lot(symbol: str, buy_date: date, value: float) -> None:
+        if value > 1e-8:
+            lots.setdefault(symbol, []).append({"date": buy_date, "value": value, "cost": value})
+
+    def sell_lots(symbol: str, sell_date: date, sale_value: float) -> None:
+        remaining = sale_value
+        queue = lots.setdefault(symbol, [])
+        while remaining > 1e-8 and queue:
+            lot = queue[0]
+            lot_value = float(lot["value"])
+            take = min(remaining, lot_value)
+            ratio = take / lot_value if lot_value else 0.0
+            cost = float(lot["cost"]) * ratio
+            gain = take - cost
+            holding_days = (sell_date - lot["date"]).days  # type: ignore[operator]
+            bucket = "ltcg" if holding_days > 365 else "stcg"
+            fy = _financial_year(sell_date)
+            realized_by_fy.setdefault(fy, {"stcg": 0.0, "ltcg": 0.0})[bucket] += gain
+            lot["value"] = lot_value - take
+            lot["cost"] = float(lot["cost"]) - cost
+            remaining -= take
+            if float(lot["value"]) <= 1e-8:
+                queue.pop(0)
+
+    for start, end, weights in allocations:
+        current_symbols = set(holdings)
+        target_symbols = set(weights)
+        for symbol in sorted(current_symbols | target_symbols):
+            current_value = holdings.get(symbol, 0.0)
+            target_value = weights.get(symbol, 0.0) * nav
+            diff = target_value - current_value
+            if diff < -1e-6:
+                sale_value = -diff
+                sell_turnover += sale_value
+                sell_legs += 1
+                sell_lots(symbol, start, sale_value)
+                if target_value <= 1e-6:
+                    holdings.pop(symbol, None)
+                else:
+                    holdings[symbol] = target_value
+            elif diff > 1e-6:
+                buy_turnover += diff
+                buy_legs += 1
+                add_lot(symbol, start, diff)
+                holdings[symbol] = target_value
+
+        for symbol in list(holdings):
+            start_price = price_pivot.at[start, symbol]
+            end_price = price_pivot.at[end, symbol]
+            if pd.isna(start_price) or pd.isna(end_price) or start_price <= 0:
+                continue
+            symbol_return = (float(end_price) / float(start_price)) - 1.0
+            if abs(symbol_return) > quality.max_backtest_period_return:
+                symbol_return = 0.0
+            old_value = holdings[symbol]
+            new_value = old_value * (1.0 + symbol_return)
+            if old_value > 0:
+                ratio = new_value / old_value
+                for lot in lots.get(symbol, []):
+                    lot["value"] = float(lot["value"]) * ratio
+            holdings[symbol] = new_value
+        nav = sum(holdings.values())
+
+    gross_turnover = buy_turnover + sell_turnover
+    exchange_charges = EXCHANGE_TRANSACTION_RATE * gross_turnover
+    sebi_charges = SEBI_TURNOVER_RATE * gross_turnover
+    transaction_charges = (
+        STT_DELIVERY_RATE * gross_turnover
+        + exchange_charges
+        + sebi_charges
+        + STAMP_DUTY_BUY_RATE * buy_turnover
+        + GST_RATE * (exchange_charges + sebi_charges)
+        + DP_CHARGE_PER_SOLD_SCRIP * sell_legs
+    )
+    capital_gains_tax = 0.0
+    for realized in realized_by_fy.values():
+        taxable_stcg = max(0.0, realized["stcg"])
+        taxable_ltcg = max(0.0, realized["ltcg"] - LTCG_EXEMPTION_PER_FY)
+        capital_gains_tax += (taxable_stcg * STCG_TAX_RATE + taxable_ltcg * LTCG_TAX_RATE) * (1.0 + CESS_RATE)
+
+    implementation_drag = transaction_charges + capital_gains_tax
+    net_final_value = max(0.0, gross_final_value - implementation_drag)
+    years = (allocations[-1][1] - allocations[0][0]).days / 365.25 if allocations else np.nan
+    net_total_return = net_final_value / INITIAL_CAPITAL - 1.0
+    net_cagr = (net_final_value / INITIAL_CAPITAL) ** (1.0 / years) - 1.0 if years and years > 0 and net_final_value > 0 else np.nan
+    absolute_drawdown = abs(gross_max_drawdown)
+    return {
+        "buy_turnover": buy_turnover,
+        "sell_turnover": sell_turnover,
+        "gross_turnover": gross_turnover,
+        "buy_legs": buy_legs,
+        "sell_legs": sell_legs,
+        "estimated_transaction_charges": transaction_charges,
+        "estimated_capital_gains_tax": capital_gains_tax,
+        "estimated_implementation_drag": implementation_drag,
+        "net_final_value": net_final_value,
+        "net_total_return": net_total_return,
+        "net_cagr": net_cagr,
+        "net_return_to_drawdown": float(net_cagr / absolute_drawdown) if absolute_drawdown > 0 and pd.notna(net_cagr) else np.nan,
+        "net_calmar_ratio": float(net_cagr / absolute_drawdown) if absolute_drawdown > 0 and pd.notna(net_cagr) else np.nan,
+        "implementation_drag_pct_initial_capital": implementation_drag / INITIAL_CAPITAL,
+        "implementation_drag_pct_gross_final_value": implementation_drag / gross_final_value if gross_final_value > 0 else np.nan,
+    }
+
+
 def run_backtest(
     price_pivot: pd.DataFrame,
     universe_symbols: list[str],
@@ -406,6 +542,7 @@ def run_backtest(
     selected_counts: list[int] = []
     safe_weights: list[float] = []
     skipped_extreme_returns = 0
+    allocations: list[tuple[date, date, dict[str, float]]] = []
 
     for index, start in enumerate(dates[:-1]):
         end = dates[index + 1]
@@ -430,6 +567,7 @@ def run_backtest(
             params.max_stock_weight,
         )
         period_return, skipped = portfolio_period_return(price_pivot, start, end, weights, safe_asset_weight, safe_asset_symbol, quality)
+        allocations.append((start, end, dict(weights)))
         skipped_extreme_returns += skipped
         nav *= 1.0 + period_return
         entries = len(set(selected) - set(previous_holdings))
@@ -449,6 +587,7 @@ def run_backtest(
 
     curve = pd.DataFrame(rows)
     metrics = performance_metrics(curve)
+    metrics.update(_estimate_implementation_drag(price_pivot, allocations, float(metrics["final_value"]), float(metrics["max_drawdown"]), quality))
     metrics.update(
         {
             **asdict(params),
@@ -520,6 +659,7 @@ def run_backtest_on_dates(
     selected_counts: list[int] = []
     safe_weights: list[float] = []
     skipped_extreme_returns = 0
+    allocations: list[tuple[date, date, dict[str, float]]] = []
 
     for index, start in enumerate(dates[:-1]):
         end = dates[index + 1]
@@ -533,6 +673,7 @@ def run_backtest_on_dates(
             params.max_stock_weight,
         )
         period_return, skipped = portfolio_period_return(price_pivot, start, end, weights, safe_asset_weight, safe_asset_symbol, quality)
+        allocations.append((start, end, dict(weights)))
         skipped_extreme_returns += skipped
         nav *= 1.0 + period_return
         turnover_counts.append(len(set(selected) - set(previous_holdings)))
@@ -551,6 +692,7 @@ def run_backtest_on_dates(
 
     curve = pd.DataFrame(rows)
     metrics = performance_metrics(curve)
+    metrics.update(_estimate_implementation_drag(price_pivot, allocations, float(metrics["final_value"]), float(metrics["max_drawdown"]), quality))
     metrics.update(
         {
             **asdict(params),

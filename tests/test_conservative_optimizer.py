@@ -67,3 +67,31 @@ def test_full_grid_uses_direct_exhaustive_evaluator(monkeypatch) -> None:
     assert results.loc[0, "trial"] == 0
     assert "0" in curves
 
+
+def test_implementation_drag_metrics_reduce_net_cagr() -> None:
+    optimizer = _load_optimizer()
+    dates = pd.to_datetime(["2024-01-01", "2024-07-01", "2025-01-01"]).date
+    price_pivot = pd.DataFrame({"AAA": [100.0, 120.0, 140.0], "BBB": [100.0, 90.0, 80.0]}, index=dates)
+    allocations = [
+        (dates[0], dates[1], {"AAA": 1.0}),
+        (dates[1], dates[2], {"BBB": 1.0}),
+    ]
+    curve = pd.DataFrame(
+        [
+            {"date": dates[0], "nav": 1_000_000.0, "period_return": 0.0},
+            {"date": dates[1], "nav": 1_200_000.0, "period_return": 0.2},
+            {"date": dates[2], "nav": 1_066_666.67, "period_return": -0.111111},
+        ]
+    )
+    gross = optimizer.performance_metrics(curve)
+
+    metrics = optimizer._estimate_implementation_drag(
+        price_pivot,
+        allocations,
+        gross["final_value"],
+        gross["max_drawdown"],
+    )
+
+    assert metrics["estimated_implementation_drag"] > 0
+    assert metrics["net_final_value"] < gross["final_value"]
+    assert metrics["net_cagr"] < gross["cagr"]
