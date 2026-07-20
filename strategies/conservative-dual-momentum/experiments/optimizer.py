@@ -463,6 +463,108 @@ def run_backtest(
     return {"metrics": metrics, "curve": curve}
 
 
+@dataclass(frozen=True)
+class ExhaustiveGridStudy:
+    direction: str
+    study_name: str
+    best_value: float | None
+    best_params: dict[str, int | float]
+
+
+def precompute_ranking_cache(
+    price_pivot: pd.DataFrame,
+    universe_symbols: list[str],
+    benchmark_return_series: pd.Series | None,
+    dates_by_rebalance_frequency: dict[int, list[date]],
+    high_cutoff_values: Iterable[int | float],
+    momentum_weight_values: Iterable[int | float],
+    quality: DataQualityConfig = DataQualityConfig(),
+) -> dict[tuple, pd.DataFrame]:
+    cache: dict[tuple, pd.DataFrame] = {}
+    ranking_dates = sorted({item for dates in dates_by_rebalance_frequency.values() for item in dates[:-1]})
+    for start in ranking_dates:
+        for high_cutoff_pct in high_cutoff_values:
+            high_52w_threshold = 1.0 - (float(high_cutoff_pct) / 100.0)
+            for momentum_weight in momentum_weight_values:
+                key = (start, high_52w_threshold, round(float(momentum_weight), 6))
+                cache[key] = rank_on_date(
+                    price_pivot,
+                    benchmark_return_series,
+                    start,
+                    universe_symbols,
+                    high_52w_threshold,
+                    float(momentum_weight),
+                    quality,
+                )
+    return cache
+
+
+def run_backtest_on_dates(
+    price_pivot: pd.DataFrame,
+    sector_by_symbol: dict[str, str],
+    dates: list[date],
+    params: GridParams,
+    ranking_cache: dict[tuple, pd.DataFrame],
+    safe_asset_symbol: str = DEFAULT_SAFE_ASSET_SYMBOL,
+    quality: DataQualityConfig = DataQualityConfig(),
+) -> dict[str, pd.DataFrame | dict]:
+    if len(dates) < 2:
+        raise ValueError("Not enough rebalance dates for this window.")
+    nav = INITIAL_CAPITAL
+    previous_holdings: list[str] = []
+    rows = [{"date": dates[0], "nav": nav, "period_return": 0.0, "selected_count": 0, "safe_asset_weight": 0.0}]
+    turnover_counts: list[int] = []
+    selected_counts: list[int] = []
+    safe_weights: list[float] = []
+    skipped_extreme_returns = 0
+
+    for index, start in enumerate(dates[:-1]):
+        end = dates[index + 1]
+        ranking_key = (start, params.high_52w_threshold, round(params.momentum_weight, 6))
+        ranking = ranking_cache[ranking_key]
+        selected = select_with_buffer(ranking, previous_holdings, params.top_n, params.buffer_pct)
+        weights, safe_asset_weight = equal_weights_with_sector_cap(
+            selected,
+            sector_by_symbol,
+            params.max_sector_weight,
+            params.max_stock_weight,
+        )
+        period_return, skipped = portfolio_period_return(price_pivot, start, end, weights, safe_asset_weight, safe_asset_symbol, quality)
+        skipped_extreme_returns += skipped
+        nav *= 1.0 + period_return
+        turnover_counts.append(len(set(selected) - set(previous_holdings)))
+        selected_counts.append(len(selected))
+        safe_weights.append(safe_asset_weight)
+        rows.append(
+            {
+                "date": end,
+                "nav": nav,
+                "period_return": period_return,
+                "selected_count": len(selected),
+                "safe_asset_weight": safe_asset_weight,
+            }
+        )
+        previous_holdings = selected
+
+    curve = pd.DataFrame(rows)
+    metrics = performance_metrics(curve)
+    metrics.update(
+        {
+            **asdict(params),
+            "beta_weight": params.beta_weight,
+            "volatility_weight": params.volatility_weight,
+            "high_52w_threshold": params.high_52w_threshold,
+            "max_sector_weight": params.max_sector_weight,
+            "max_stock_weight": params.max_stock_weight,
+            "average_selected_count": float(np.mean(selected_counts)) if selected_counts else 0.0,
+            "average_safe_asset_weight": float(np.mean(safe_weights)) if safe_weights else 0.0,
+            "average_entries_per_rebalance": float(np.mean(turnover_counts)) if turnover_counts else 0.0,
+            "skipped_extreme_returns": skipped_extreme_returns,
+        }
+    )
+    return {"metrics": metrics, "curve": curve}
+
+
 def audit_period_contributors(
     price_pivot: pd.DataFrame,
     universe_symbols: list[str],
@@ -570,7 +672,7 @@ def objective_score(metrics: dict, objective_metric: str = "cagr") -> float:
 def search_space(
     momentum_weight_grid: Iterable[float] | None = None,
 ) -> dict[str, list[int | float]]:
-    weights = momentum_weight_grid or np.round(np.arange(0.30, 0.701, 0.05), 2)
+    weights = momentum_weight_grid or np.round(np.arange(0.30, 0.701, 0.1), 2)
     return {
         "rebalances_per_month": [1, 2],
         "top_n": [20, 25, 30, 35, 40],
@@ -597,17 +699,44 @@ def run_optuna_grid(
     seed: int = 42,
     quality: DataQualityConfig = DataQualityConfig(),
 ) -> tuple[object, pd.DataFrame, dict[str, pd.DataFrame]]:
-    try:
-        import optuna
-    except ImportError as exc:
-        raise ImportError("optuna is required. Run `pip install -r requirements.txt`.") from exc
-
     price_pivot = load_price_pivot(quality=quality)
     universe_symbols, sector_by_symbol = load_universe()
     end_date = max(price_pivot.index)
     start_date = end_date - timedelta(days=round(years * 365.25))
     space = search_space(momentum_weight_grid)
     total_trials = count_grid_trials(space)
+    if n_trials is None or n_trials >= total_trials:
+        results, curves = run_exhaustive_grid_from_data(
+            price_pivot,
+            universe_symbols,
+            sector_by_symbol,
+            start_date,
+            end_date,
+            space,
+            objective_metric,
+            quality,
+        )
+        best = results.iloc[0] if not results.empty else {}
+        return (
+            ExhaustiveGridStudy(
+                direction="maximize",
+                study_name=f"average_rank_buffer_{years}y_exhaustive",
+                best_value=float(best.get(objective_metric)) if len(results) and pd.notna(best.get(objective_metric)) else None,
+                best_params={
+                    key: best.get(key)
+                    for key in space
+                    if len(results) and key in best
+                },
+            ),
+            results,
+            curves,
+        )
+
+    try:
+        import optuna
+    except ImportError as exc:
+        raise ImportError("optuna is required for partial trial runs. Run `pip install -r requirements.txt`.") from exc
+
     n_trials = n_trials or total_trials
     ranking_cache: dict[tuple, pd.DataFrame] = {}
     curves: dict[str, pd.DataFrame] = {}
@@ -652,6 +781,7 @@ def run_optuna_grid(
 def run_exhaustive_grid(
     years: int,
     momentum_weight_grid: Iterable[float] | None = None,
+    objective_metric: str = "cagr",
     quality: DataQualityConfig = DataQualityConfig(),
 ) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
     price_pivot = load_price_pivot(quality=quality)
@@ -659,8 +789,42 @@ def run_exhaustive_grid(
     end_date = max(price_pivot.index)
     start_date = end_date - timedelta(days=round(years * 365.25))
     space = search_space(momentum_weight_grid)
+    return run_exhaustive_grid_from_data(
+        price_pivot,
+        universe_symbols,
+        sector_by_symbol,
+        start_date,
+        end_date,
+        space,
+        objective_metric,
+        quality,
+    )
+
+
+def run_exhaustive_grid_from_data(
+    price_pivot: pd.DataFrame,
+    universe_symbols: list[str],
+    sector_by_symbol: dict[str, str],
+    start_date: date,
+    end_date: date,
+    space: dict[str, list[int | float]],
+    objective_metric: str = "cagr",
+    quality: DataQualityConfig = DataQualityConfig(),
+) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
     keys = list(space)
-    ranking_cache: dict[tuple, pd.DataFrame] = {}
+    dates_by_frequency = {
+        int(rebalances_per_month): rebalance_dates(price_pivot, start_date, end_date, int(rebalances_per_month))
+        for rebalances_per_month in space["rebalances_per_month"]
+    }
+    ranking_cache = precompute_ranking_cache(
+        price_pivot,
+        universe_symbols,
+        benchmark_returns(price_pivot),
+        dates_by_frequency,
+        space["high_cutoff_pct"],
+        space["momentum_weight"],
+        quality,
+    )
     rows: list[dict] = []
     curves: dict[str, pd.DataFrame] = {}
     for index, values in enumerate(itertools.product(*(space[key] for key in keys))):
@@ -674,10 +838,18 @@ def run_exhaustive_grid(
             buffer_pct=int(raw["buffer_pct"]),
             max_stock_weight_pct=float(raw.get("max_stock_weight_pct", 5.0)),
         )
-        result = run_backtest(price_pivot, universe_symbols, sector_by_symbol, start_date, end_date, params, ranking_cache, quality=quality)
+        result = run_backtest_on_dates(
+            price_pivot,
+            sector_by_symbol,
+            dates_by_frequency[params.rebalances_per_month],
+            params,
+            ranking_cache,
+            quality=quality,
+        )
         rows.append({"trial": index, **result["metrics"]})
         curves[str(index)] = result["curve"]
-    results = pd.DataFrame(rows).sort_values("cagr", ascending=False).reset_index(drop=True)
+    sort_metric = objective_metric if objective_metric in rows[0] else "cagr"
+    results = pd.DataFrame(rows).sort_values(sort_metric, ascending=False).reset_index(drop=True)
     return results, curves
 
 
