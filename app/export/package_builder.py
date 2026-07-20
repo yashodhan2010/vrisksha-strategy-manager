@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import math
-import shutil
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
@@ -12,7 +11,7 @@ import pandas as pd
 from app import config
 from app.data.universe_loader import load_universe
 from app.export.docs import disclosures_md, import_notes_md, internal_methodology_md, public_methodology_md
-from app.export.schemas import CSV_HEADERS
+from app.export.schemas import CSV_HEADERS, PACKAGE_FILES
 from app.export.validators import validate_csv_rows, validate_manifest, validate_package_files, validate_weights
 from app.export.writers import write_csv, write_json, write_markdown
 from app.storage.database import get_connection
@@ -53,9 +52,7 @@ def build_strategy_package(
     marketcap_exposure = _exposure_rows(manifest["strategy_id"], latest_portfolio, "marketcap_bucket")
 
     output_path = Path(output_dir)
-    if output_path.exists():
-        shutil.rmtree(output_path)
-    output_path.mkdir(parents=True, exist_ok=True)
+    _prepare_output_path(output_path)
 
     validate_manifest(manifest)
     write_json(output_path / "manifest.json", manifest)
@@ -85,6 +82,20 @@ def build_strategy_package(
     write_markdown(output_path / "import_notes.md", import_notes_md(manifest, warnings))
     validate_package_files(output_path)
     return output_path
+
+
+def _prepare_output_path(output_path: Path) -> None:
+    output_path.mkdir(parents=True, exist_ok=True)
+    for filename in PACKAGE_FILES:
+        path = output_path / filename
+        if path.exists():
+            try:
+                path.unlink()
+            except PermissionError as exc:
+                raise PermissionError(
+                    f"Could not replace existing package file because Windows denied access: {path}. "
+                    "Close any app using the package files, pause OneDrive sync if needed, and rerun."
+                ) from exc
 
 
 def _load_backtest_run(backtest_run_id: int | None, database_path: str | Path) -> dict[str, Any]:

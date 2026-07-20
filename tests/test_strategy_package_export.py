@@ -102,6 +102,73 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     assert {row["action"] for row in rebalance_rows} >= {"ADDED", "WEIGHT_CHANGED"}
 
 
+def test_build_strategy_package_overwrites_known_files_without_deleting_output_dir(monkeypatch, tmp_path: Path) -> None:
+    db = tmp_path / "package.db"
+    output_dir = tmp_path / "strategy-package"
+    output_dir.mkdir()
+    sentinel = output_dir / "manual-note.txt"
+    sentinel.write_text("keep me", encoding="utf-8")
+    (output_dir / "manifest.json").write_text('{"old": true}', encoding="utf-8")
+
+    initialize_database(db)
+    monkeypatch.setattr(
+        package_builder,
+        "load_universe",
+        lambda: [
+            UniverseStock("AAA", "Alpha Ltd", "Software", "Technology", isin="INE000A01001"),
+            UniverseStock("BBB", "Beta Ltd", "Banks", "Financial Services", isin="INE000B01001"),
+        ],
+    )
+    run_id = create_backtest_run(
+        date(2024, 1, 1),
+        date(2024, 3, 1),
+        "NIFTY500",
+        {"strategy_top_n": 2},
+        RunStatus.STARTED,
+        db,
+    )
+    _insert_prices(db)
+    for index, snapshot_date in enumerate([date(2024, 2, 1), date(2024, 3, 1)], start=1):
+        insert_portfolio_snapshot(
+            run_id,
+            snapshot_date,
+            "ACTIVE",
+            100_000 + index * 5_000,
+            0.05,
+            index * 0.05,
+            0.0,
+            2,
+            index,
+            db,
+        )
+    insert_holding_snapshots(
+        [
+            _holding(run_id, date(2024, 2, 1), "AAA", "Technology", 0.50, 110.0, "ENTERED", 1),
+            _holding(run_id, date(2024, 2, 1), "BBB", "Financial Services", 0.50, 95.0, "ENTERED", 2),
+            _holding(run_id, date(2024, 3, 1), "AAA", "Technology", 0.60, 120.0, "HELD", 1),
+            _holding(run_id, date(2024, 3, 1), "BBB", "Financial Services", 0.40, 100.0, "HELD", 2),
+        ],
+        db,
+    )
+    update_backtest_run_result(
+        run_id,
+        RunStatus.COMPLETED,
+        date(2024, 1, 1),
+        date(2024, 3, 1),
+        100_000,
+        110_000,
+        {"strategy_top_n": 2, "rebalances_per_month": 1},
+        [],
+        db,
+    )
+
+    path = build_strategy_package(run_id, output_dir, db)
+
+    assert path == output_dir
+    assert sentinel.read_text(encoding="utf-8") == "keep me"
+    assert json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))["strategy_id"] == "dual_momentum_nifty500_v1"
+
+
 def _insert_prices(db: Path) -> None:
     bars: list[PriceBar] = []
     current = date(2024, 1, 1)
