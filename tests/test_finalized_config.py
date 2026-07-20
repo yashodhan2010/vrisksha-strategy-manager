@@ -35,6 +35,7 @@ def test_build_finalized_config_maps_best_experiment_row(tmp_path: Path) -> None
                 "beta_weight": 0.15,
                 "volatility_weight": 0.15,
                 "buffer_pct": 60,
+                "max_stock_weight": 0.035,
                 "cagr": 0.39,
             },
         ]
@@ -46,6 +47,7 @@ def test_build_finalized_config_maps_best_experiment_row(tmp_path: Path) -> None
     assert params["STRATEGY_TOP_N"] == 40
     assert params["BACKTEST_REBALANCES_PER_MONTH"] == 2
     assert params["MAX_SECTOR_WEIGHT"] == 1.0
+    assert params["MAX_STOCK_WEIGHT"] == 0.035
     assert params["HIGH_52W_THRESHOLD"] == 0.8
     assert params["RANKING_MOMENTUM_WEIGHT"] == 0.7
     assert params["BUFFER_PCT"] == 60

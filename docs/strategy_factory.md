@@ -27,6 +27,12 @@ strategies/
     methodology_internal.md
     experiments/
       optimizer.py
+  conservative-dual-momentum/
+    strategy_profile.json
+    methodology.md
+    methodology_internal.md
+    experiments/
+      optimizer.py
 
 experiments/
   Scratch research notebooks/scripts and archived raw outputs. Production optimizers should live under strategies/<slug>/experiments/.
@@ -116,6 +122,18 @@ python -m app.main auto-daily-run --selenium-token --strategy-profile strategies
 ```
 
 If `data/output/finalized/dual_momentum_best_config.json` does not exist, run `finalize-strategy-config` first. This prevents scheduled rebalances from silently using `.env` strategy knobs.
+
+## Conservative Dual Momentum Pipeline
+
+Conservative Dual Momentum uses the same strategy family but optimizes for return-to-drawdown rather than pure CAGR. Its profile owns the objective, search grid, optimizer path, and output paths:
+
+```bash
+python -m app.main refresh-finalized-parameters --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json
+```
+
+```bash
+python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-05-29 --end-date 2026-05-29 --initial-capital 1000000 --selenium-token
+```
 
 ## Adding Another Strategy
 

@@ -63,11 +63,12 @@ def run_average_rank_buffer_optimization(
     if results.empty:
         raise ValueError("Optimization produced no result rows.")
 
-    output = _with_rank_columns(results, years)
+    output = _with_rank_columns(results, years, objective)
     output_path = Path(results_output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output.to_csv(output_path, index=False)
-    best_row = output.sort_values("rank_by_cagr", ascending=True).iloc[0].to_dict()
+    rank_column = f"rank_by_{objective}"
+    best_row = output.sort_values(rank_column if rank_column in output.columns else "rank_by_cagr", ascending=True).iloc[0].to_dict()
     return OptimizationRunResult(output_path, len(output), _clean_mapping(best_row))
 
 
@@ -149,14 +150,20 @@ def _bind_search_space(experiment: Any, search_space: dict[str, list[int | float
     experiment.search_space = configured_search_space
 
 
-def _with_rank_columns(results: pd.DataFrame, years: int) -> pd.DataFrame:
+def _with_rank_columns(results: pd.DataFrame, years: int, objective: str = "cagr") -> pd.DataFrame:
     output = results.copy()
     if "years" not in output.columns:
         output.insert(0, "years", years)
-    output = output.sort_values("cagr", ascending=False).reset_index(drop=True)
     if "rank_by_cagr" in output.columns:
         output = output.drop(columns=["rank_by_cagr"])
+    output = output.sort_values("cagr", ascending=False).reset_index(drop=True)
     output.insert(0, "rank_by_cagr", range(1, len(output) + 1))
+    rank_column = f"rank_by_{objective}"
+    if objective != "cagr" and objective in output.columns:
+        if rank_column in output.columns:
+            output = output.drop(columns=[rank_column])
+        output = output.sort_values(objective, ascending=False).reset_index(drop=True)
+        output.insert(0, rank_column, range(1, len(output) + 1))
     return output
 
 

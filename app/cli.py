@@ -425,11 +425,13 @@ def cmd_refresh_finalized_parameters(args: argparse.Namespace) -> int:
     try:
         profile = apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
         optimization = profile.get("optimization", {})
+        objective = args.objective or optimization.get("objective") or "cagr"
+        rank_column = args.rank_column or optimization.get("rank_column") or f"rank_by_{objective}"
         results_output = args.results_output or config.OPTIMIZATION_RESULTS_PATH
         config_output = args.config_output or config.FINALIZED_STRATEGY_CONFIG_PATH
         optimization_result = run_average_rank_buffer_optimization(
             years=args.years,
-            objective=args.objective,
+            objective=objective,
             n_trials=args.n_trials,
             seed=args.seed,
             results_output_path=results_output,
@@ -442,8 +444,8 @@ def cmd_refresh_finalized_parameters(args: argparse.Namespace) -> int:
         )
         payload = build_finalized_config_from_results(
             results_path=optimization_result.results_path,
-            objective=args.objective,
-            rank_column=args.rank_column,
+            objective=objective,
+            rank_column=rank_column,
         )
         config_path = write_finalized_config(payload, config_output)
     except (FileNotFoundError, ImportError, ValueError) as exc:
@@ -454,9 +456,12 @@ def cmd_refresh_finalized_parameters(args: argparse.Namespace) -> int:
     best = optimization_result.best_row
     print(f"Optimization results written to {optimization_result.results_path}")
     print(f"Finalized strategy config written to {config_path}")
+    selected_rank = best.get(rank_column) or best.get("rank_by_cagr")
+    selected_objective_value = best.get(objective)
     print(
-        "Selected top-CAGR row: "
-        f"rank={best.get('rank_by_cagr')}, "
+        f"Selected top-{objective} row: "
+        f"rank={selected_rank}, "
+        f"{objective}={float(selected_objective_value or 0):.4f}, "
         f"cagr={float(best.get('cagr') or 0):.2%}, "
         f"top_n={parameters['STRATEGY_TOP_N']}, "
         f"rebalances_per_month={parameters['BACKTEST_REBALANCES_PER_MONTH']}, "
@@ -901,8 +906,8 @@ def build_parser() -> argparse.ArgumentParser:
     refresh_params = subparsers.add_parser("refresh-finalized-parameters")
     refresh_params.add_argument("--strategy-profile")
     refresh_params.add_argument("--years", type=int, default=10)
-    refresh_params.add_argument("--objective", default="cagr")
-    refresh_params.add_argument("--rank-column", default="rank_by_cagr")
+    refresh_params.add_argument("--objective")
+    refresh_params.add_argument("--rank-column")
     refresh_params.add_argument("--n-trials", type=int)
     refresh_params.add_argument("--seed", type=int, default=42)
     refresh_params.add_argument("--results-output")

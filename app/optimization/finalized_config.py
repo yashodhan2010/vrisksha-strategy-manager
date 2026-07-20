@@ -102,7 +102,7 @@ def _parameters_from_row(row: pd.Series) -> dict[str, Any]:
         "RANKING_VOLATILITY_WEIGHT": _required_float(row, "volatility_weight"),
         "STRATEGY_ALLOCATION_MODE": "TOP_N_EQUAL",
         "STRATEGY_TOP_N": int(_required_float(row, "top_n")),
-        "MAX_STOCK_WEIGHT": config.MAX_STOCK_WEIGHT,
+        "MAX_STOCK_WEIGHT": _optional_float(row, "max_stock_weight") or config.MAX_STOCK_WEIGHT,
         "MAX_SECTOR_WEIGHT": max_sector_weight,
         "HIGH_52W_THRESHOLD": high_52w_threshold,
         "SAFE_ASSET_SYMBOL": config.SAFE_ASSET_SYMBOL,

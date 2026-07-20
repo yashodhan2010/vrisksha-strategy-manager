@@ -1,0 +1,45 @@
+{
+  "strategy_id": "conservative_dual_momentum_nifty500_v1",
+  "slug": "conservative-dual-momentum",
+  "name": "Conservative Dual Momentum",
+  "short_description": "A lower-drawdown Nifty 500 momentum model portfolio with broader diversification and tighter risk controls.",
+  "category_labels": [
+    "Momentum",
+    "Conservative",
+    "Factor Strategy",
+    "Equity",
+    "Model Portfolio"
+  ],
+  "ra_entity": "Prathamesh Gupta",
+  "sebi_registration_number": "",
+  "universe": "NIFTY 500",
+  "benchmark": "NIFTY 500 TRI",
+  "min_capital_guidance": 0,
+  "backtest": {
+    "benchmark_symbol": "NIFTY500"
+  },
+  "documents": {
+    "public_methodology_path": "strategies/conservative-dual-momentum/methodology.md",
+    "internal_methodology_path": "strategies/conservative-dual-momentum/methodology_internal.md"
+  },
+  "optimization": {
+    "engine_path": "strategies/conservative-dual-momentum/experiments/optimizer.py",
+    "results_path": "data/output/conservative-dual-momentum/conservative_trials_return_to_drawdown.csv",
+    "finalized_config_path": "data/output/finalized/conservative_dual_momentum_best_config.json",
+    "objective": "return_to_drawdown",
+    "rank_column": "rank_by_return_to_drawdown",
+    "search_space": {
+      "rebalances_per_month": [1, 2],
+      "top_n": [35, 40, 50, 60],
+      "sector_cap_pct": [15, 20, 25, 30],
+      "high_cutoff_pct": [30, 25, 20, 15],
+      "momentum_weight": [0.40, 0.45, 0.50, 0.55, 0.60, 0.65],
+      "buffer_pct": [60, 80, 100, 120],
+      "max_stock_weight_pct": [2.5, 3.0, 3.5, 4.0]
+    }
+  },
+  "package": {
+    "version": "1.0.0",
+    "output_dir": "data/output/packages/conservative-dual-momentum/strategy-package"
+  }
+}
