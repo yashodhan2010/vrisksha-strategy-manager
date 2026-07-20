@@ -33,7 +33,7 @@ def test_rebalance_engine_persists_holdings_and_order_proposals(monkeypatch, tmp
             UniverseStock("BBB", "B", "Industry", "Sector"),
         ],
     )
-    dates = _business_dates(date(2023, 1, 2), 270)
+    dates = _business_dates(date(2023, 1, 2), 320)
     bars: list[PriceBar] = []
     for index, price_date in enumerate(dates):
         for symbol, base, drift in [("AAA", 100.0, 0.4), ("BBB", 90.0, 0.2), ("NIFTY500", 1000.0, 0.15)]:

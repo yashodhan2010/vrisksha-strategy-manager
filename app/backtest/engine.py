@@ -243,28 +243,34 @@ class BacktestEngine:
         benchmark_returns: pd.Series | None,
         rebalance_date: date,
     ) -> pd.DataFrame:
-        history = price_pivot.loc[:rebalance_date].tail(config.BETA_LOOKBACK_DAYS + 5)
+        required_history_days = config.BETA_LOOKBACK_DAYS + max(config.MOMENTUM_SKIP_RECENT_DAYS, 0)
+        history = price_pivot.loc[:rebalance_date].tail(required_history_days + 5)
         rows: list[dict[str, Any]] = []
         for symbol in history.columns:
             if symbol == config.SAFE_ASSET_SYMBOL:
                 continue
             series = history[symbol].dropna()
-            if len(series) < config.BETA_LOOKBACK_DAYS:
+            if len(series) < required_history_days:
                 continue
             current = float(series.iloc[-1])
             high_52w = float(series.tail(252).max())
             if high_52w <= 0 or current / high_52w < config.HIGH_52W_THRESHOLD:
                 continue
+            momentum_anchor_index = -1 - max(config.MOMENTUM_SKIP_RECENT_DAYS, 0)
+            if len(series) < abs(momentum_anchor_index):
+                continue
+            momentum_anchor = float(series.iloc[momentum_anchor_index])
             returns = []
             for lookback in [63, 126, 252]:
-                if len(series) <= lookback:
+                lookback_index = momentum_anchor_index - lookback
+                if len(series) < abs(lookback_index):
                     returns = []
                     break
-                lookback_price = float(series.iloc[-lookback - 1])
+                lookback_price = float(series.iloc[lookback_index])
                 if lookback_price <= 0:
                     returns = []
                     break
-                returns.append((current / lookback_price) - 1.0)
+                returns.append((momentum_anchor / lookback_price) - 1.0)
             if not returns:
                 continue
             beta = self._beta(series, benchmark_returns)

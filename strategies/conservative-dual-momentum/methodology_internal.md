@@ -26,11 +26,12 @@ qualifies only if current_price / high_52w >= HIGH_52W_THRESHOLD (default 0.80)
 Stocks more than 20% below their 52-week high are dropped before scoring.
 
 ### 3.2 Momentum score
-Simple (non-log) returns over three trailing windows, approximating 3/6/12 months in trading days:
+Simple (non-log) returns over three trailing windows, approximating 3/6/12 months in trading days, with the most recent trading month skipped:
 ```
-return_3m  = (current_price / price_63d_ago)  - 1
-return_6m  = (current_price / price_126d_ago) - 1
-return_12m = (current_price / price_252d_ago) - 1
+momentum_anchor = price_21d_ago
+return_3m  = (momentum_anchor / price_84d_ago)  - 1
+return_6m  = (momentum_anchor / price_147d_ago) - 1
+return_12m = (momentum_anchor / price_273d_ago) - 1
 momentum_score = average(return_3m, return_6m, return_12m)
 ```
 If any lookback price is unavailable or non-positive, the stock is excluded entirely (no partial momentum score).

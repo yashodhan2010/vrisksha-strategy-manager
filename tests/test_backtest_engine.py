@@ -248,6 +248,29 @@ def test_ranking_score_supports_average_rank(monkeypatch, tmp_path: Path) -> Non
     assert scores.loc[0] == pytest.approx(-1.6)
 
 
+def test_momentum_score_skips_recent_trading_month(monkeypatch, tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2023, 1, 1), date(2024, 12, 31), 100_000, tmp_path / "x.db")
+    dates = _business_dates(date(2023, 1, 2), 320)
+    prices = pd.DataFrame(
+        {
+            "AAA": [float(100 + index) for index in range(len(dates))],
+            "NIFTY500": [float(1000 + index) for index in range(len(dates))],
+        },
+        index=dates,
+    )
+    monkeypatch.setattr("app.backtest.engine.config.MOMENTUM_SKIP_RECENT_DAYS", 21)
+    monkeypatch.setattr("app.backtest.engine.config.HIGH_52W_THRESHOLD", 0.0)
+    monkeypatch.setattr("app.backtest.engine.config.STRATEGY_RANKING_METHOD", "MOMENTUM")
+
+    ranking = engine._rank_on_date(prices, None, dates[-1])
+
+    anchor = prices["AAA"].iloc[-22]
+    row = ranking.loc[ranking["symbol"] == "AAA"].iloc[0]
+    assert row["return_3m"] == pytest.approx((anchor / prices["AAA"].iloc[-85]) - 1.0)
+    assert row["return_6m"] == pytest.approx((anchor / prices["AAA"].iloc[-148]) - 1.0)
+    assert row["return_12m"] == pytest.approx((anchor / prices["AAA"].iloc[-274]) - 1.0)
+
+
 def test_ranking_score_supports_legacy_beta_adjusted_mode(monkeypatch, tmp_path: Path) -> None:
     engine = BacktestEngine(1, date(2023, 1, 1), date(2024, 12, 31), 100_000, tmp_path / "x.db")
     frame = pd.DataFrame([{"symbol": "AAA", "momentum_score": 0.20, "beta": 2.0, "volatility": 0.20}])

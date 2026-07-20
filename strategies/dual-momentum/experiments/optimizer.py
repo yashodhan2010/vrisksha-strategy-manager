@@ -23,6 +23,7 @@ DEFAULT_SAFE_ASSET_SYMBOL = "LIQUIDBEES"
 INITIAL_CAPITAL = 1_000_000.0
 BETA_LOOKBACK_DAYS = 252
 BETA_FLOOR = 0.25
+MOMENTUM_SKIP_RECENT_DAYS = 21
 MAX_FORWARD_FILL_DAYS = 5
 MAX_SIGNAL_DAILY_RETURN = 1.0
 MAX_BACKTEST_PERIOD_RETURN = 2.0
@@ -190,19 +191,21 @@ def rank_on_date(
     quality: DataQualityConfig = DataQualityConfig(),
 ) -> pd.DataFrame:
     history = price_pivot.loc[:rebalance_date, [symbol for symbol in universe_symbols if symbol in price_pivot.columns]]
-    history = history.tail(BETA_LOOKBACK_DAYS + 5)
-    if len(history) <= 252:
+    required_history_days = BETA_LOOKBACK_DAYS + MOMENTUM_SKIP_RECENT_DAYS
+    history = history.tail(required_history_days + 5)
+    if len(history) <= required_history_days:
         return pd.DataFrame(columns=["symbol", "score", "rank"])
 
-    valid_columns = history.columns[history.notna().sum() > 252]
+    valid_columns = history.columns[history.notna().sum() > required_history_days]
     if len(valid_columns) == 0:
         return pd.DataFrame(columns=["symbol", "score", "rank"])
     history = history[valid_columns]
     current = history.iloc[-1]
+    momentum_anchor = history.iloc[-1 - MOMENTUM_SKIP_RECENT_DAYS]
     high_52w = history.tail(252).max()
-    lookback_3m = history.iloc[-64]
-    lookback_6m = history.iloc[-127]
-    lookback_12m = history.iloc[-253]
+    lookback_3m = history.iloc[-64 - MOMENTUM_SKIP_RECENT_DAYS]
+    lookback_6m = history.iloc[-127 - MOMENTUM_SKIP_RECENT_DAYS]
+    lookback_12m = history.iloc[-253 - MOMENTUM_SKIP_RECENT_DAYS]
     valid = (
         current.notna()
         & high_52w.gt(0)
@@ -224,9 +227,9 @@ def rank_on_date(
     current = current.loc[valid_symbols]
     returns = pd.DataFrame(
         {
-            "return_3m": current / lookback_3m.loc[valid_symbols] - 1.0,
-            "return_6m": current / lookback_6m.loc[valid_symbols] - 1.0,
-            "return_12m": current / lookback_12m.loc[valid_symbols] - 1.0,
+            "return_3m": momentum_anchor.loc[valid_symbols] / lookback_3m.loc[valid_symbols] - 1.0,
+            "return_6m": momentum_anchor.loc[valid_symbols] / lookback_6m.loc[valid_symbols] - 1.0,
+            "return_12m": momentum_anchor.loc[valid_symbols] / lookback_12m.loc[valid_symbols] - 1.0,
         }
     ).replace([np.inf, -np.inf], np.nan)
     stock_returns = selected_history.pct_change(fill_method=None).replace([np.inf, -np.inf], np.nan)
