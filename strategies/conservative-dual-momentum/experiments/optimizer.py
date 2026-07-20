@@ -16,7 +16,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DATABASE_PATH = PROJECT_ROOT / "data" / "research_factory.db"
 UNIVERSE_JSON_PATH = PROJECT_ROOT / "data" / "reference" / "nifty500_universe.json"
-OUTPUT_DIR = PROJECT_ROOT / "data" / "output" / "dual-momentum" / "experiments"
+OUTPUT_DIR = PROJECT_ROOT / "data" / "output" / "conservative-dual-momentum" / "experiments"
 
 DEFAULT_BENCHMARK_SYMBOL = "NIFTY500"
 DEFAULT_SAFE_ASSET_SYMBOL = "LIQUIDBEES"
@@ -652,15 +652,24 @@ def performance_metrics(curve: pd.DataFrame) -> dict[str, float]:
     sharpe_like = float(cagr / annualized_volatility) if annualized_volatility and annualized_volatility > 0 else np.nan
     drawdown = curve["nav"] / curve["nav"].cummax() - 1.0
     max_drawdown = float(drawdown.min())
-    return_to_drawdown = float(cagr / abs(max_drawdown)) if max_drawdown < 0 else np.nan
+    absolute_drawdown = abs(max_drawdown)
+    return_to_drawdown = float(cagr / absolute_drawdown) if max_drawdown < 0 else np.nan
+    total_return_to_drawdown = float(total_return / absolute_drawdown) if max_drawdown < 0 else np.nan
     return {
         "final_value": final_value,
         "total_return": float(total_return),
         "cagr": float(cagr),
         "max_drawdown": max_drawdown,
+        "absolute_drawdown": absolute_drawdown,
         "return_to_drawdown": return_to_drawdown,
+        "cagr_to_drawdown": return_to_drawdown,
+        "drawdown_to_cagr": float(absolute_drawdown / cagr) if cagr and cagr > 0 else np.nan,
+        "total_return_to_drawdown": total_return_to_drawdown,
+        "calmar_ratio": return_to_drawdown,
         "annualized_volatility": annualized_volatility,
+        "volatility": annualized_volatility,
         "sharpe_like": sharpe_like,
+        "sharpe_ratio": sharpe_like,
         "periods": int(len(period_returns)),
     }
 
