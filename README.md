@@ -143,6 +143,7 @@ If Kite does not return an instrument token for a universe symbol, the ingestion
 Kite requests are throttled and retried to reduce rate-limit failures:
 
 ```text
+KITE_REQUEST_TIMEOUT_SECONDS=30
 KITE_REQUEST_SLEEP_SECONDS=0.4
 KITE_MAX_RETRIES=5
 KITE_RETRY_BACKOFF_SECONDS=2.0

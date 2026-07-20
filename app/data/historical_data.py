@@ -99,7 +99,7 @@ class KiteHistoricalMarketDataProvider:
             from kiteconnect import KiteConnect
         except ImportError as exc:
             raise ImportError("kiteconnect is required for Kite historical data. Run pip install -r requirements.txt.") from exc
-        self._kite = KiteConnect(api_key=api_key)
+        self._kite = KiteConnect(api_key=api_key, timeout=config.KITE_REQUEST_TIMEOUT_SECONDS)
         self._kite.set_access_token(access_token)
         self._instrument_cache: dict[str, int] | None = None
         self.warnings: list[str] = []
@@ -193,19 +193,39 @@ class KiteHistoricalMarketDataProvider:
                 return call()
             except Exception as exc:
                 last_error = exc
-                message = str(exc).lower()
-                if "too many requests" not in message and "rate" not in message:
+                if not _is_retryable_kite_error(exc):
                     raise
                 if attempt >= config.KITE_MAX_RETRIES:
                     break
                 sleep_seconds = config.KITE_RETRY_BACKOFF_SECONDS * (attempt + 1)
                 self.warnings.append(
-                    f"Kite rate limit hit; retrying in {sleep_seconds:.1f}s "
+                    f"Kite request failed transiently ({exc}); retrying in {sleep_seconds:.1f}s "
                     f"(attempt {attempt + 1}/{config.KITE_MAX_RETRIES})."
                 )
                 time.sleep(sleep_seconds)
         assert last_error is not None
         raise last_error
+
+
+def _is_retryable_kite_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    retryable_fragments = [
+        "too many requests",
+        "rate",
+        "read timed out",
+        "readtimeout",
+        "timed out",
+        "connection aborted",
+        "connection reset",
+        "temporarily unavailable",
+        "bad gateway",
+        "service unavailable",
+        "gateway timeout",
+        "502",
+        "503",
+        "504",
+    ]
+    return any(fragment in message for fragment in retryable_fragments)
 
 
 def iter_date_chunks(start_date: date, end_date: date, max_days: int) -> list[tuple[date, date]]:

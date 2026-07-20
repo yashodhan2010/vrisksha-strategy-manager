@@ -185,14 +185,16 @@ def test_kite_provider_reads_current_runtime_token(monkeypatch: pytest.MonkeyPat
     tokens: list[str] = []
 
     class FakeKite:
-        def __init__(self, api_key: str) -> None:
+        def __init__(self, api_key: str, timeout: int | None = None) -> None:
             self.api_key = api_key
+            self.timeout = timeout
 
         def set_access_token(self, access_token: str) -> None:
             tokens.append(access_token)
 
     monkeypatch.setattr("app.data.historical_data.config.KITE_API_KEY", "key")
     monkeypatch.setattr("app.data.historical_data.config.KITE_ACCESS_TOKEN", "fresh-token")
+    monkeypatch.setattr("app.data.historical_data.config.KITE_REQUEST_TIMEOUT_SECONDS", 30)
     monkeypatch.setitem(__import__("sys").modules, "kiteconnect", type("FakeModule", (), {"KiteConnect": FakeKite}))
 
     KiteHistoricalMarketDataProvider()
@@ -209,6 +211,26 @@ def test_kite_request_retries_rate_limit(monkeypatch: pytest.MonkeyPatch) -> Non
         attempts["count"] += 1
         if attempts["count"] == 1:
             raise Exception("Too many requests")
+        return "ok"
+
+    monkeypatch.setattr("app.data.historical_data.config.KITE_MAX_RETRIES", 2)
+    monkeypatch.setattr("app.data.historical_data.config.KITE_RETRY_BACKOFF_SECONDS", 0)
+    monkeypatch.setattr("app.data.historical_data.time.sleep", lambda seconds: None)
+
+    assert provider._kite_request(flaky_call) == "ok"
+    assert attempts["count"] == 2
+    assert provider.warnings
+
+
+def test_kite_request_retries_read_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    provider = KiteHistoricalMarketDataProvider.__new__(KiteHistoricalMarketDataProvider)
+    provider.warnings = []
+    attempts = {"count": 0}
+
+    def flaky_call() -> str:
+        attempts["count"] += 1
+        if attempts["count"] == 1:
+            raise Exception("HTTPSConnectionPool(host='api.kite.trade'): Read timed out. (read timeout=7)")
         return "ok"
 
     monkeypatch.setattr("app.data.historical_data.config.KITE_MAX_RETRIES", 2)
