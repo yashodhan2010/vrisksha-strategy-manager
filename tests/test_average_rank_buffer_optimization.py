@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from app.optimization.average_rank_buffer import run_average_rank_buffer_optimization
+from app.optimization.average_rank_buffer import _with_rank_columns
 from app.storage.database import initialize_database, get_connection
 
 
@@ -166,6 +167,25 @@ def test_run_average_rank_buffer_optimization_ranks_by_non_cagr_objective(monkey
     assert rows.loc[0, "rank_by_return_to_drawdown"] == 1
     assert rows.loc[0, "trial"] == 1
     assert rows.sort_values("rank_by_cagr").iloc[0]["trial"] == 2
+
+
+def test_lowest_drawdown_cagr_hurdle_rank_excludes_low_cagr_rows() -> None:
+    output = _with_rank_columns(
+        pd.DataFrame(
+            [
+                {"trial": 1, "cagr": 0.19, "absolute_drawdown": 0.10},
+                {"trial": 2, "cagr": 0.21, "absolute_drawdown": 0.18},
+                {"trial": 3, "cagr": 0.20, "absolute_drawdown": 0.16},
+            ]
+        ),
+        years=10,
+        objective="lowest_drawdown_cagr_gt_20_score",
+    )
+
+    best = output.sort_values("rank_by_lowest_drawdown_cagr_gt_20_score").iloc[0]
+    assert best["trial"] == 3
+    assert best["lowest_drawdown_cagr_gt_20_eligible"]
+    assert output.loc[output["trial"] == 1, "lowest_drawdown_cagr_gt_20_eligible"].iloc[0] == False
 
 
 def test_run_average_rank_buffer_optimization_requires_market_prices(tmp_path: Path) -> None:

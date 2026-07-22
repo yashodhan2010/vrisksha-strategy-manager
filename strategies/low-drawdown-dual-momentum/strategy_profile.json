@@ -1,0 +1,45 @@
+{
+  "strategy_id": "low_drawdown_dual_momentum_nifty500_v1",
+  "slug": "low-drawdown-dual-momentum",
+  "name": "Low Drawdown Dual Momentum",
+  "short_description": "A Nifty 500 dual-momentum model portfolio selected for the lowest historical drawdown among parameter sets with 10-year CAGR above 20%.",
+  "category_labels": [
+    "Momentum",
+    "Low Drawdown",
+    "Factor Strategy",
+    "Equity",
+    "Model Portfolio"
+  ],
+  "ra_entity": "Prathamesh Gupta",
+  "sebi_registration_number": "",
+  "universe": "NIFTY 500",
+  "benchmark": "NIFTY 500 TRI",
+  "min_capital_guidance": 0,
+  "backtest": {
+    "benchmark_symbol": "NIFTY500"
+  },
+  "documents": {
+    "public_methodology_path": "strategies/low-drawdown-dual-momentum/methodology.md",
+    "internal_methodology_path": "strategies/low-drawdown-dual-momentum/methodology_internal.md"
+  },
+  "optimization": {
+    "engine_path": "strategies/low-drawdown-dual-momentum/experiments/optimizer.py",
+    "results_path": "data/output/low-drawdown-dual-momentum/low_drawdown_trials_cagr_gt_20.csv",
+    "finalized_config_path": "data/output/finalized/low_drawdown_dual_momentum_best_config.json",
+    "objective": "lowest_drawdown_cagr_gt_20_score",
+    "rank_column": "rank_by_lowest_drawdown_cagr_gt_20_score",
+    "search_space": {
+      "rebalances_per_month": [1, 2],
+      "top_n": [35, 40, 50, 60],
+      "sector_cap_pct": [15, 20, 25, 30],
+      "high_cutoff_pct": [30, 25, 20, 15],
+      "momentum_weight": [0.40, 0.50, 0.60],
+      "buffer_pct": [60, 80, 100, 120],
+      "max_stock_weight_pct": [2.5, 3.0, 3.5, 4.0]
+    }
+  },
+  "package": {
+    "version": "1.0.0",
+    "output_dir": "data/output/packages/low-drawdown-dual-momentum/strategy-package"
+  }
+}

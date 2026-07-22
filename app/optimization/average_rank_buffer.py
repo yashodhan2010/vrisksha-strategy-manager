@@ -152,6 +152,10 @@ def _bind_search_space(experiment: Any, search_space: dict[str, list[int | float
 
 def _with_rank_columns(results: pd.DataFrame, years: int, objective: str = "cagr") -> pd.DataFrame:
     output = results.copy()
+    if "lowest_drawdown_cagr_gt_20_score" not in output.columns and {"cagr", "absolute_drawdown"}.issubset(output.columns):
+        eligible = output["cagr"] >= 0.20
+        output["lowest_drawdown_cagr_gt_20_eligible"] = eligible
+        output["lowest_drawdown_cagr_gt_20_score"] = output["absolute_drawdown"].where(eligible, 1e9) * -1.0
     if "years" not in output.columns:
         output.insert(0, "years", years)
     if "rank_by_cagr" in output.columns:

@@ -797,6 +797,7 @@ def performance_metrics(curve: pd.DataFrame) -> dict[str, float]:
     absolute_drawdown = abs(max_drawdown)
     return_to_drawdown = float(cagr / absolute_drawdown) if max_drawdown < 0 else np.nan
     total_return_to_drawdown = float(total_return / absolute_drawdown) if max_drawdown < 0 else np.nan
+    lowest_drawdown_cagr_gt_20_score = -absolute_drawdown if cagr >= 0.20 else -1e9
     return {
         "final_value": final_value,
         "total_return": float(total_return),
@@ -808,6 +809,8 @@ def performance_metrics(curve: pd.DataFrame) -> dict[str, float]:
         "drawdown_to_cagr": float(absolute_drawdown / cagr) if cagr and cagr > 0 else np.nan,
         "total_return_to_drawdown": total_return_to_drawdown,
         "calmar_ratio": return_to_drawdown,
+        "lowest_drawdown_cagr_gt_20_score": lowest_drawdown_cagr_gt_20_score,
+        "lowest_drawdown_cagr_gt_20_eligible": bool(cagr >= 0.20),
         "annualized_volatility": annualized_volatility,
         "volatility": annualized_volatility,
         "sharpe_like": sharpe_like,

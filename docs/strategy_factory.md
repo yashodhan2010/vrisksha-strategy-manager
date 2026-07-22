@@ -135,6 +135,12 @@ python -m app.main refresh-finalized-parameters --strategy-profile strategies/co
 python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-05-29 --end-date 2026-05-29 --initial-capital 1000000 --selenium-token
 ```
 
+Low Drawdown Dual Momentum uses the same strategy family but applies a constrained finalization rule: eligible rows must clear 20% 10-year CAGR, and the winner is the lowest absolute max drawdown among those rows.
+
+```bash
+python -m app.main refresh-finalized-parameters --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json
+```
+
 ## Adding Another Strategy
 
 1. Copy `strategies/_template/` to `strategies/<strategy-slug>/`.
