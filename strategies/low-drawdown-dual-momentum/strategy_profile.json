@@ -18,6 +18,11 @@
   "backtest": {
     "benchmark_symbol": "NIFTY500"
   },
+  "rebalance_schedule": {
+    "type": "monthly_target_days",
+    "target_days": [1, 15],
+    "timezone": "Asia/Kolkata"
+  },
   "documents": {
     "public_methodology_path": "strategies/low-drawdown-dual-momentum/methodology.md",
     "internal_methodology_path": "strategies/low-drawdown-dual-momentum/methodology_internal.md"

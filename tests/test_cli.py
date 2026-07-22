@@ -135,6 +135,17 @@ def test_validate_strategies_cli_works(tmp_path: Path) -> None:
     assert "Strategy registry validation passed" in result.stdout
 
 
+def test_export_admin_dashboard_cli_works(tmp_path: Path) -> None:
+    output = tmp_path / "strategy_dashboard.json"
+    result = _run(["export-admin-dashboard", "--output", str(output)], tmp_path)
+
+    assert result.returncode == 0
+    assert "Admin dashboard snapshot written" in result.stdout
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["content_policy"]["performance_metrics_included"] is False
+    assert payload["strategies"]
+
+
 def test_build_finalized_package_can_skip_history_fetch(tmp_path: Path) -> None:
     trials = tmp_path / "trials.csv"
     pd.DataFrame(

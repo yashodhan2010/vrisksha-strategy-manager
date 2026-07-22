@@ -17,6 +17,7 @@ from app.data.universe_sync import UniverseSyncError, sync_universe
 from app.execution.kite_session import exchange_request_token, get_login_url, save_access_token_to_env, validate_saved_access_token
 from app.export import build_strategy_package, export_latest_model_portfolio_update
 from app.logging_config import get_logger
+from app.admin_dashboard_snapshot import export_admin_dashboard_snapshot
 from app.optimization import (
     apply_finalized_config,
     build_finalized_config_from_results,
@@ -212,6 +213,21 @@ def cmd_validate_strategies(args: argparse.Namespace) -> int:
     if not report.ok:
         return 1
     print("Strategy registry validation passed.")
+    return 0
+
+
+def cmd_export_admin_dashboard(args: argparse.Namespace) -> int:
+    try:
+        as_of_date = _parse_date(args.as_of_date) if args.as_of_date else None
+        output_path = export_admin_dashboard_snapshot(
+            output_path=args.output,
+            registry_path=args.registry,
+            as_of_date=as_of_date,
+        )
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Admin dashboard export failed: {exc}")
+        return 1
+    print(f"Admin dashboard snapshot written to {output_path}")
     return 0
 
 
@@ -904,6 +920,11 @@ def build_parser() -> argparse.ArgumentParser:
     validate_strategies = subparsers.add_parser("validate-strategies")
     validate_strategies.add_argument("--registry", default="strategies/registry.json")
     validate_strategies.set_defaults(func=cmd_validate_strategies)
+    admin_dashboard = subparsers.add_parser("export-admin-dashboard")
+    admin_dashboard.add_argument("--registry", default="strategies/registry.json")
+    admin_dashboard.add_argument("--output", default="data/admin/strategy_dashboard.json")
+    admin_dashboard.add_argument("--as-of-date")
+    admin_dashboard.set_defaults(func=cmd_export_admin_dashboard)
     subparsers.add_parser("sync-universe").set_defaults(func=cmd_sync_universe)
     subparsers.add_parser("manual-run").set_defaults(func=cmd_manual_run)
     monthly_run = subparsers.add_parser("monthly-run")

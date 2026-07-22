@@ -1,0 +1,174 @@
+{
+  "as_of_date": "2026-07-22",
+  "content_policy": {
+    "broker_secrets_included": false,
+    "holdings_rows_included": false,
+    "performance_metrics_included": false,
+    "subscriber_logic_included": false
+  },
+  "generated_at": "2026-07-22T19:46:01+05:30",
+  "schema_version": "1.0.0",
+  "source_registry": "strategies/registry.json",
+  "strategies": [
+    {
+      "benchmark": "NIFTY 500 TRI",
+      "category_labels": [
+        "Momentum",
+        "Factor Strategy",
+        "Equity",
+        "Model Portfolio"
+      ],
+      "commands": {
+        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
+        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum/strategy_profile.json --selenium-token",
+        "export_admin_dashboard": "python -m app.main export-admin-dashboard",
+        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum/strategy_profile.json --no-fetch-history",
+        "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
+        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum/strategy_profile.json",
+        "validate_strategies": "python -m app.main validate-strategies"
+      },
+      "file_status": {
+        "finalized_config_exists": true,
+        "model_update_exists": true,
+        "optimization_results_exists": true,
+        "profile_exists": true,
+        "strategy_package_exists": true
+      },
+      "finalized_config_path": "data/output/finalized/dual_momentum_best_config.json",
+      "last_successful_run": {
+        "date": "2026-07-20",
+        "generated_at": null,
+        "run_id": 1,
+        "type": "model_portfolio_update"
+      },
+      "latest_model_portfolio_as_of": "2026-07-20",
+      "latest_model_portfolio_exists": true,
+      "latest_model_portfolio_path": "data/output/packages/dual-momentum/model-portfolio-update/latest_model_portfolio.csv",
+      "model_portfolio_update_dir": "data/output/packages/dual-momentum/model-portfolio-update",
+      "name": "Dual Momentum",
+      "next_due_date": "2026-08-03",
+      "package_output_dir": "data/output/packages/dual-momentum/strategy-package",
+      "profile_path": "strategies/dual-momentum/strategy_profile.json",
+      "rebalance_schedule": {
+        "target_days": [
+          1,
+          15
+        ],
+        "timezone": "Asia/Kolkata",
+        "type": "monthly_target_days"
+      },
+      "slug": "dual-momentum",
+      "strategy_id": "dual_momentum_nifty500_v1",
+      "universe": "NIFTY 500"
+    },
+    {
+      "benchmark": "NIFTY 500 TRI",
+      "category_labels": [
+        "Momentum",
+        "Conservative",
+        "Factor Strategy",
+        "Equity",
+        "Model Portfolio"
+      ],
+      "commands": {
+        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
+        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --selenium-token",
+        "export_admin_dashboard": "python -m app.main export-admin-dashboard",
+        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --no-fetch-history",
+        "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
+        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json",
+        "validate_strategies": "python -m app.main validate-strategies"
+      },
+      "file_status": {
+        "finalized_config_exists": true,
+        "model_update_exists": false,
+        "optimization_results_exists": true,
+        "profile_exists": true,
+        "strategy_package_exists": true
+      },
+      "finalized_config_path": "data/output/finalized/conservative_dual_momentum_best_net_config.json",
+      "last_successful_run": {
+        "date": "2026-07-16",
+        "generated_at": "2026-07-22T18:43:46+05:30",
+        "run_id": null,
+        "type": "strategy_package"
+      },
+      "latest_model_portfolio_as_of": "2026-07-16",
+      "latest_model_portfolio_exists": true,
+      "latest_model_portfolio_path": "data/output/packages/conservative-dual-momentum/strategy-package/latest_model_portfolio.csv",
+      "model_portfolio_update_dir": "data/output/packages/conservative-dual-momentum/model-portfolio-update",
+      "name": "Conservative Dual Momentum",
+      "next_due_date": "2026-08-03",
+      "package_output_dir": "data/output/packages/conservative-dual-momentum/strategy-package",
+      "profile_path": "strategies/conservative-dual-momentum/strategy_profile.json",
+      "rebalance_schedule": {
+        "target_days": [
+          1,
+          15
+        ],
+        "timezone": "Asia/Kolkata",
+        "type": "monthly_target_days"
+      },
+      "slug": "conservative-dual-momentum",
+      "strategy_id": "conservative_dual_momentum_nifty500_v1",
+      "universe": "NIFTY 500"
+    },
+    {
+      "benchmark": "NIFTY 500 TRI",
+      "category_labels": [
+        "Momentum",
+        "Low Drawdown",
+        "Factor Strategy",
+        "Equity",
+        "Model Portfolio"
+      ],
+      "commands": {
+        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
+        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --selenium-token",
+        "export_admin_dashboard": "python -m app.main export-admin-dashboard",
+        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --no-fetch-history",
+        "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
+        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json",
+        "validate_strategies": "python -m app.main validate-strategies"
+      },
+      "file_status": {
+        "finalized_config_exists": true,
+        "model_update_exists": false,
+        "optimization_results_exists": true,
+        "profile_exists": true,
+        "strategy_package_exists": true
+      },
+      "finalized_config_path": "data/output/finalized/low_drawdown_dual_momentum_best_config.json",
+      "last_successful_run": {
+        "date": "2026-07-16",
+        "generated_at": "2026-07-22T18:54:35+05:30",
+        "run_id": null,
+        "type": "strategy_package"
+      },
+      "latest_model_portfolio_as_of": "2026-07-16",
+      "latest_model_portfolio_exists": true,
+      "latest_model_portfolio_path": "data/output/packages/low-drawdown-dual-momentum/strategy-package/latest_model_portfolio.csv",
+      "model_portfolio_update_dir": "data/output/packages/low-drawdown-dual-momentum/model-portfolio-update",
+      "name": "Low Drawdown Dual Momentum",
+      "next_due_date": "2026-08-03",
+      "package_output_dir": "data/output/packages/low-drawdown-dual-momentum/strategy-package",
+      "profile_path": "strategies/low-drawdown-dual-momentum/strategy_profile.json",
+      "rebalance_schedule": {
+        "target_days": [
+          1,
+          15
+        ],
+        "timezone": "Asia/Kolkata",
+        "type": "monthly_target_days"
+      },
+      "slug": "low-drawdown-dual-momentum",
+      "strategy_id": "low_drawdown_dual_momentum_nifty500_v1",
+      "universe": "NIFTY 500"
+    }
+  ],
+  "validation": {
+    "issues": [],
+    "ok": true,
+    "profile_count": 3
+  }
+}

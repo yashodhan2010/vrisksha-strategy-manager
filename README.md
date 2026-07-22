@@ -18,6 +18,7 @@ data/output/finalized/*.json       Best parameters promoted from experiment/Optu
 app/optimization/                  Converts experiment results into finalized configs.
 app/backtest/                      Runs the finalized strategy simulation.
 app/export/                        Creates the portable Vriksha strategy package.
+dashboards/admin_app.py            Read-only admin catalogue from a safe JSON snapshot.
 ```
 
 ## Dual Momentum Package Pipeline
@@ -56,6 +57,8 @@ Run these from the repository root.
 | Future strategy | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/<strategy-slug>/strategy_profile.json` |
 | Future strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
 | Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-slug>/strategy_profile.json --selenium-token` |
+| All strategies | Export safe Streamlit admin snapshot | `python -m app.main export-admin-dashboard` |
+| All strategies | Open local admin dashboard | `streamlit run dashboards/admin_app.py` |
 
 Before committing any strategy/profile/doc change, run:
 
@@ -63,6 +66,25 @@ Before committing any strategy/profile/doc change, run:
 python -m app.main validate-strategies
 pytest -q
 ```
+
+## Admin Dashboard Snapshot
+
+The Streamlit Community Cloud admin app reads only one safe JSON file:
+
+```bash
+python -m app.main export-admin-dashboard
+streamlit run dashboards/admin_app.py
+```
+
+The generated file is:
+
+```text
+data/admin/strategy_dashboard.json
+```
+
+Commit and push that snapshot when you want the Streamlit Cloud dashboard to refresh. It contains strategy catalogue, next due date, last successful run, file paths, file existence flags, and copy-paste commands. It deliberately excludes returns, holdings rows, broker secrets, raw SQLite data, and Vriksha payment/login/subscriber logic.
+
+For Streamlit Community Cloud, deploy `dashboards/admin_app.py` from this GitHub repo, keep the app private for the two admin emails, and optionally set `ADMIN_DASHBOARD_PASSWORD` in Streamlit secrets for a second lightweight gate.
 
 For each strategy, optimization knobs live in that strategy's profile under `optimization.search_space`, and the production optimizer is pointed to by `optimization.engine_path`. For Dual Momentum, those are:
 
