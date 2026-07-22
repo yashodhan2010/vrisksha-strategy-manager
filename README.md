@@ -378,6 +378,8 @@ streamlit run dashboards/backtest_app.py
 
 The Live / Paper dashboard shows operational metadata and market-data summaries. The Backtest dashboard displays backtest-run metadata from SQLite.
 
+The dashboard is live https://vrisksha-strategy-manager-hnqts9v2lylz4oappwtbixu.streamlit.app/
+
 ## Modes
 
 `RANK_ONLY` is the current default and will eventually calculate rankings without execution. `PAPER` will model orders and holdings locally. `LIVE` is reserved for future Zerodha Kite execution after explicit implementation and safeguards.
