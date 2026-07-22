@@ -271,6 +271,51 @@ def test_momentum_score_skips_recent_trading_month(monkeypatch, tmp_path: Path) 
     assert row["return_12m"] == pytest.approx((anchor / prices["AAA"].iloc[-274]) - 1.0)
 
 
+def test_period_return_skips_extreme_optimizer_style_return(monkeypatch, tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2024, 1, 1), date(2024, 2, 1), 100_000, tmp_path / "x.db")
+    prices = pd.DataFrame(
+        {
+            "AAA": [100.0, 450.0],
+            "LIQUIDBEES": [100.0, 101.0],
+        },
+        index=[date(2024, 1, 1), date(2024, 2, 1)],
+    )
+    monkeypatch.setattr("app.backtest.engine.config.MAX_BACKTEST_PERIOD_RETURN", 2.0)
+
+    period_return = engine._portfolio_period_return(
+        prices,
+        date(2024, 1, 1),
+        date(2024, 2, 1),
+        {"AAA": 0.5},
+        "LIQUIDBEES",
+        0.5,
+    )
+
+    assert period_return == pytest.approx(0.005)
+    assert "Skipped extreme backtest period return for AAA" in engine.warnings[0]
+
+
+def test_top_n_allocation_uses_runtime_max_stock_weight(monkeypatch) -> None:
+    from app.strategy.selection import allocate_from_ranking
+
+    ranking = pd.DataFrame(
+        [
+            {"symbol": "AAA", "score": 3.0, "rank": 1},
+            {"symbol": "BBB", "score": 2.0, "rank": 2},
+            {"symbol": "CCC", "score": 1.0, "rank": 3},
+        ]
+    )
+    monkeypatch.setattr("app.strategy.selection.config.STRATEGY_ALLOCATION_MODE", "TOP_N_EQUAL")
+    monkeypatch.setattr("app.strategy.selection.config.STRATEGY_TOP_N", 3)
+    monkeypatch.setattr("app.strategy.selection.config.MAX_STOCK_WEIGHT", 0.025)
+    monkeypatch.setattr("app.strategy.selection.config.MAX_SECTOR_WEIGHT", 1.0)
+
+    result = allocate_from_ranking(ranking)
+
+    assert set(result.allocation.stock_weights.values()) == {0.025}
+    assert result.allocation.safe_asset_weight == pytest.approx(0.925)
+
+
 def test_ranking_score_supports_legacy_beta_adjusted_mode(monkeypatch, tmp_path: Path) -> None:
     engine = BacktestEngine(1, date(2023, 1, 1), date(2024, 12, 31), 100_000, tmp_path / "x.db")
     frame = pd.DataFrame([{"symbol": "AAA", "momentum_score": 0.20, "beta": 2.0, "volatility": 0.20}])

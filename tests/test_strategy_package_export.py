@@ -73,7 +73,16 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
         date(2024, 3, 1),
         100_000,
         110_000,
-        {"strategy_top_n": 2, "rebalances_per_month": 1, "strategy_ranking_method": "AVERAGE_RANK"},
+        {
+            "strategy_top_n": 2,
+            "rebalances_per_month": 1,
+            "strategy_ranking_method": "AVERAGE_RANK",
+            "cagr": 0.1234,
+            "annualized_volatility": 0.0567,
+            "max_drawdown": -0.089,
+            "sharpe_ratio": 2.1764,
+            "calmar_ratio": 1.3865,
+        },
         [],
         db,
     )
@@ -98,6 +107,12 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     assert latest_rows[0]["target_weight"] == "0.6"
     daily_rows = _read_csv(path / "returns_daily.csv")
     assert len(daily_rows) > 2
+    metrics = json.loads((path / "backtest_metrics.json").read_text(encoding="utf-8"))
+    assert metrics["cagr"] == 0.1234
+    assert metrics["volatility"] == 0.0567
+    assert metrics["max_drawdown"] == -0.089
+    assert metrics["sharpe"] == 2.1764
+    assert metrics["calmar"] == 1.3865
     rebalance_rows = _read_csv(path / "rebalance_history.csv")
     assert {row["action"] for row in rebalance_rows} >= {"ADDED", "WEIGHT_CHANGED"}
 

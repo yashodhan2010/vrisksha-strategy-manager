@@ -313,6 +313,7 @@ def _metrics(
     benchmark: list[dict[str, Any]],
     holdings: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    summary = json.loads(run.get("summary_json") or "{}")
     daily_returns = pd.Series([float(row["return"]) for row in daily if row["date"] != run["actual_start_date"]])
     benchmark_returns = pd.Series([float(row["return"]) for row in benchmark[1:]]) if benchmark else pd.Series(dtype=float)
     total_return = (float(run["final_value"]) / float(run["initial_capital"])) - 1.0
@@ -327,16 +328,22 @@ def _metrics(
     max_drawdown = min((row["drawdown"] for row in _drawdowns(daily)), default=0.0)
     calmar = cagr / abs(max_drawdown) if max_drawdown < 0 else 0.0
     beta, alpha = _alpha_beta(daily_returns, benchmark_returns, cagr)
+    official_cagr = _summary_float(summary, "cagr", "annualized_return", default=cagr)
+    official_total_return = _summary_float(summary, "total_return", default=total_return)
+    official_volatility = _summary_float(summary, "volatility", "annualized_volatility", default=volatility)
+    official_max_drawdown = _summary_float(summary, "max_drawdown", default=max_drawdown)
+    official_sharpe = _summary_float(summary, "sharpe_ratio", "sharpe_like", default=sharpe)
+    official_calmar = _summary_float(summary, "calmar_ratio", default=calmar)
     monthly_values = [float(row["return"]) for row in monthly]
     yearly_values = [float(row["return"]) for row in yearly]
     return {
-        "cagr": _clean_float(cagr),
-        "absolute_return": _clean_float(total_return),
-        "volatility": _clean_float(volatility),
-        "max_drawdown": _clean_float(max_drawdown),
-        "sharpe": _clean_float(sharpe),
+        "cagr": _clean_float(official_cagr),
+        "absolute_return": _clean_float(official_total_return),
+        "volatility": _clean_float(official_volatility),
+        "max_drawdown": _clean_float(official_max_drawdown),
+        "sharpe": _clean_float(official_sharpe),
         "sortino": _clean_float(sortino),
-        "calmar": _clean_float(calmar),
+        "calmar": _clean_float(official_calmar),
         "beta": _clean_float(beta),
         "alpha": _clean_float(alpha),
         "turnover": _clean_float(_average_turnover(holdings)),
@@ -361,6 +368,17 @@ def _alpha_beta(strategy: pd.Series, benchmark: pd.Series, cagr: float) -> tuple
     beta = float(aligned.iloc[:, 0].cov(aligned.iloc[:, 1]) / variance)
     benchmark_cagr = (1.0 + aligned.iloc[:, 1]).prod() ** (252 / len(aligned)) - 1.0
     return beta, cagr - beta * benchmark_cagr
+
+
+def _summary_float(summary: dict[str, Any], *keys: str, default: float) -> float:
+    for key in keys:
+        value = summary.get(key)
+        if value is None:
+            continue
+        number = float(value)
+        if math.isfinite(number):
+            return number
+    return default
 
 
 def _latest_model_portfolio(

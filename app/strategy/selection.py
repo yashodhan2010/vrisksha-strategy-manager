@@ -24,6 +24,7 @@ def allocate_from_ranking(
     dynamic_min_weight: float | None = None,
     dynamic_max_weight: float | None = None,
     safe_asset_symbol: str | None = None,
+    max_stock_weight: float | None = None,
     max_sector_weight: float | None = None,
     sector_by_symbol: dict[str, str] | None = None,
     previous_symbols: set[str] | None = None,
@@ -34,6 +35,7 @@ def allocate_from_ranking(
     dynamic_min_weight = dynamic_min_weight if dynamic_min_weight is not None else config.DYNAMIC_MIN_WEIGHT
     dynamic_max_weight = dynamic_max_weight if dynamic_max_weight is not None else config.DYNAMIC_MAX_WEIGHT
     safe_asset_symbol = safe_asset_symbol or config.SAFE_ASSET_SYMBOL
+    max_stock_weight = max_stock_weight if max_stock_weight is not None else config.MAX_STOCK_WEIGHT
     max_sector_weight = max_sector_weight if max_sector_weight is not None else config.MAX_SECTOR_WEIGHT
     sector_by_symbol = sector_by_symbol or _sector_map_from_ranking(ranking)
     previous_symbols = {symbol.strip().upper() for symbol in (previous_symbols or set())}
@@ -51,6 +53,7 @@ def allocate_from_ranking(
         selected = select_with_buffer(ranking, top_n, previous_symbols, buffer_pct)
         allocation = allocate_equal_weight_with_cap(
             selected,
+            max_stock_weight=max_stock_weight,
             safe_asset_symbol=safe_asset_symbol,
             sector_by_symbol=sector_by_symbol,
             max_sector_weight=max_sector_weight,

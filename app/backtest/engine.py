@@ -7,6 +7,7 @@ from math import floor
 from pathlib import Path
 from typing import Any
 
+import math
 import pandas as pd
 
 from app import config
@@ -73,6 +74,7 @@ class BacktestEngine:
 
         nav = self.initial_capital
         nav_values: list[float] = [nav]
+        period_returns: list[float] = []
         previous_holdings: set[str] = set()
         total_months_held: dict[str, int] = {}
         consecutive_months_held: dict[str, int] = {}
@@ -98,6 +100,7 @@ class BacktestEngine:
             previous_nav = nav
             nav = nav * (1.0 + month_return)
             nav_values.append(nav)
+            period_returns.append(month_return)
 
             holdings = set(allocation.stock_weights)
             for symbol in list(consecutive_months_held):
@@ -144,10 +147,19 @@ class BacktestEngine:
         years = max((actual_end - actual_start).days / 365.25, 0)
         annualized_return = (nav / self.initial_capital) ** (1 / years) - 1 if years > 0 else None
         max_drawdown = self._max_drawdown(nav_values)
+        annualized_volatility = self._annualized_volatility(period_returns, years)
+        sharpe_like = annualized_return / annualized_volatility if annualized_return is not None and annualized_volatility > 0 else None
         summary = {
             "total_return": total_return,
             "annualized_return": annualized_return,
+            "cagr": annualized_return,
             "max_drawdown": max_drawdown,
+            "absolute_drawdown": abs(max_drawdown),
+            "annualized_volatility": annualized_volatility,
+            "volatility": annualized_volatility,
+            "sharpe_like": sharpe_like,
+            "sharpe_ratio": sharpe_like,
+            "calmar_ratio": annualized_return / abs(max_drawdown) if annualized_return is not None and max_drawdown < 0 else None,
             "rebalance_count": len(rebalance_dates) - 1,
             "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
             "strategy_ranking_method": config.STRATEGY_RANKING_METHOD,
@@ -244,59 +256,63 @@ class BacktestEngine:
         rebalance_date: date,
     ) -> pd.DataFrame:
         required_history_days = config.BETA_LOOKBACK_DAYS + max(config.MOMENTUM_SKIP_RECENT_DAYS, 0)
-        history = price_pivot.loc[:rebalance_date].tail(required_history_days + 5)
-        rows: list[dict[str, Any]] = []
-        for symbol in history.columns:
-            if symbol == config.SAFE_ASSET_SYMBOL:
-                continue
-            series = history[symbol].dropna()
-            if len(series) < required_history_days:
-                continue
-            current = float(series.iloc[-1])
-            high_52w = float(series.tail(252).max())
-            if high_52w <= 0 or current / high_52w < config.HIGH_52W_THRESHOLD:
-                continue
-            momentum_anchor_index = -1 - max(config.MOMENTUM_SKIP_RECENT_DAYS, 0)
-            if len(series) < abs(momentum_anchor_index):
-                continue
-            momentum_anchor = float(series.iloc[momentum_anchor_index])
-            returns = []
-            for lookback in [63, 126, 252]:
-                lookback_index = momentum_anchor_index - lookback
-                if len(series) < abs(lookback_index):
-                    returns = []
-                    break
-                lookback_price = float(series.iloc[lookback_index])
-                if lookback_price <= 0:
-                    returns = []
-                    break
-                returns.append((momentum_anchor / lookback_price) - 1.0)
-            if not returns:
-                continue
-            beta = self._beta(series, benchmark_returns)
-            stock_returns = series.pct_change(fill_method=None).dropna()
-            volatility = float(stock_returns.tail(config.BETA_LOOKBACK_DAYS).std(ddof=0) * (252**0.5)) if len(stock_returns) else None
-            momentum_score = sum(returns) / len(returns)
-            rows.append(
-                {
-                    "symbol": symbol,
-                    "momentum_score": momentum_score,
-                    "beta": beta,
-                    "volatility": volatility,
-                    "return_3m": returns[0],
-                    "return_6m": returns[1],
-                    "return_12m": returns[2],
-                }
-            )
-        if not rows:
+        history = price_pivot.loc[:rebalance_date, [symbol for symbol in price_pivot.columns if symbol != config.SAFE_ASSET_SYMBOL]]
+        history = history.tail(required_history_days + 5)
+        if len(history) <= required_history_days:
             return pd.DataFrame(columns=["symbol", "score", "rank"])
-        frame = pd.DataFrame(rows).dropna(subset=["momentum_score", "beta", "volatility"])
+
+        valid_columns = history.columns[history.notna().sum() > required_history_days]
+        if len(valid_columns) == 0:
+            return pd.DataFrame(columns=["symbol", "score", "rank"])
+        history = history[valid_columns]
+        current = history.iloc[-1]
+        momentum_anchor = history.iloc[-1 - max(config.MOMENTUM_SKIP_RECENT_DAYS, 0)]
+        high_52w = history.tail(252).max()
+        lookback_3m = history.iloc[-64 - max(config.MOMENTUM_SKIP_RECENT_DAYS, 0)]
+        lookback_6m = history.iloc[-127 - max(config.MOMENTUM_SKIP_RECENT_DAYS, 0)]
+        lookback_12m = history.iloc[-253 - max(config.MOMENTUM_SKIP_RECENT_DAYS, 0)]
+        valid = (
+            current.notna()
+            & high_52w.gt(0)
+            & (current / high_52w).ge(config.HIGH_52W_THRESHOLD)
+            & lookback_3m.gt(0)
+            & lookback_6m.gt(0)
+            & lookback_12m.gt(0)
+        )
+        if not valid.any():
+            return pd.DataFrame(columns=["symbol", "score", "rank"])
+
+        selected_history = history.loc[:, valid]
+        recent_returns = selected_history.pct_change(fill_method=None).replace([float("inf"), float("-inf")], pd.NA)
+        clean_columns = (recent_returns.abs().le(config.MAX_SIGNAL_DAILY_RETURN) | recent_returns.isna()).all(axis=0)
+        selected_history = selected_history.loc[:, clean_columns]
+        if selected_history.empty:
+            return pd.DataFrame(columns=["symbol", "score", "rank"])
+
+        valid_symbols = selected_history.columns
+        returns = pd.DataFrame(
+            {
+                "return_3m": momentum_anchor.loc[valid_symbols] / lookback_3m.loc[valid_symbols] - 1.0,
+                "return_6m": momentum_anchor.loc[valid_symbols] / lookback_6m.loc[valid_symbols] - 1.0,
+                "return_12m": momentum_anchor.loc[valid_symbols] / lookback_12m.loc[valid_symbols] - 1.0,
+            }
+        ).replace([float("inf"), float("-inf")], pd.NA)
+        stock_returns = selected_history.pct_change(fill_method=None).replace([float("inf"), float("-inf")], pd.NA)
+        volatility = stock_returns.tail(config.BETA_LOOKBACK_DAYS).std(ddof=0) * (252**0.5)
+        beta = self._beta_frame(stock_returns, benchmark_returns)
+        frame = returns.assign(
+            symbol=returns.index,
+            momentum_score=returns[["return_3m", "return_6m", "return_12m"]].mean(axis=1),
+            beta=beta.reindex(returns.index).fillna(1.0).clip(lower=config.BETA_FLOOR),
+            volatility=volatility.reindex(returns.index),
+        ).dropna(subset=["momentum_score", "beta", "volatility"])
+        frame.index.name = None
         if frame.empty:
             return pd.DataFrame(columns=["symbol", "score", "rank"])
         if config.STRATEGY_RANKING_METHOD.strip().upper() == "AVERAGE_RANK":
             frame = self._add_average_rank_columns(frame)
         frame["score"] = self._ranking_score(frame)
-        frame = frame.sort_values("score", ascending=False).reset_index(drop=True)
+        frame = frame.sort_values(["score", "symbol"], ascending=[False, True]).reset_index(drop=True)
         frame["rank"] = frame.index + 1
         return frame
 
@@ -367,6 +383,22 @@ class BacktestEngine:
         beta = float(covariance / variance)
         return beta if beta > 0 else config.BETA_FLOOR
 
+    def _beta_frame(self, stock_returns: pd.DataFrame, benchmark_returns: pd.Series | None) -> pd.Series:
+        if benchmark_returns is None or stock_returns.empty:
+            return pd.Series(1.0, index=stock_returns.columns)
+        benchmark = benchmark_returns.reindex(stock_returns.index).replace([float("inf"), float("-inf")], pd.NA)
+        variance = benchmark.var()
+        if pd.isna(variance) or variance <= 0:
+            return pd.Series(1.0, index=stock_returns.columns)
+        mask = stock_returns.notna() & benchmark.notna().to_numpy()[:, None]
+        counts = mask.sum(axis=0)
+        demeaned_benchmark = benchmark - benchmark.mean()
+        demeaned_stocks = stock_returns - stock_returns.mean(axis=0)
+        covariance = demeaned_stocks.mul(demeaned_benchmark, axis=0).where(mask).sum(axis=0) / (counts - 1)
+        beta = covariance / variance
+        beta = beta.where(counts >= 30, 1.0).fillna(1.0)
+        return beta.where(beta > 0, config.BETA_FLOOR)
+
     def _portfolio_period_return(
         self,
         price_pivot: pd.DataFrame,
@@ -382,7 +414,13 @@ class BacktestEngine:
             end_price = price_pivot.at[end_date, symbol]
             if pd.isna(start_price) or pd.isna(end_price) or start_price <= 0:
                 continue
-            result += weight * ((float(end_price) / float(start_price)) - 1.0)
+            symbol_return = (float(end_price) / float(start_price)) - 1.0
+            if abs(symbol_return) > config.MAX_BACKTEST_PERIOD_RETURN:
+                self.warnings.append(
+                    f"Skipped extreme backtest period return for {symbol} from {start_date} to {end_date}: {symbol_return:.2%}."
+                )
+                continue
+            result += weight * symbol_return
         result += self._safe_asset_period_return(price_pivot, start_date, end_date, safe_asset_symbol, safe_asset_weight)
         return result
 
@@ -408,7 +446,13 @@ class BacktestEngine:
                 self.warnings.append(f"Safe asset {safe_asset_symbol} had unusable prices; residual allocation treated as cash.")
                 self._safe_asset_warning_added = True
             return 0.0
-        return safe_asset_weight * ((float(end_price) / float(start_price)) - 1.0)
+        symbol_return = (float(end_price) / float(start_price)) - 1.0
+        if abs(symbol_return) > config.MAX_BACKTEST_PERIOD_RETURN:
+            self.warnings.append(
+                f"Skipped extreme backtest period return for {safe_asset_symbol} from {start_date} to {end_date}: {symbol_return:.2%}."
+            )
+            return 0.0
+        return safe_asset_weight * symbol_return
 
     def _holding_rows(
         self,
@@ -516,6 +560,13 @@ class BacktestEngine:
             if peak > 0:
                 max_drawdown = min(max_drawdown, (value / peak) - 1.0)
         return max_drawdown
+
+    def _annualized_volatility(self, period_returns: list[float], years: float) -> float:
+        if not period_returns or years <= 0:
+            return 0.0
+        series = pd.Series(period_returns)
+        periods_per_year = len(series) / years
+        return float(series.std(ddof=0) * math.sqrt(periods_per_year)) if periods_per_year > 0 else 0.0
 
 
 def _bounded_forward_fill(frame: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
