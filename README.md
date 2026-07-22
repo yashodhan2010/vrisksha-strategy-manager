@@ -58,6 +58,7 @@ Run these from the repository root.
 | Future strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
 | Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-slug>/strategy_profile.json --selenium-token` |
 | All strategies | Export safe Streamlit admin snapshot | `python -m app.main export-admin-dashboard` |
+| All strategies | Publish updated Streamlit admin snapshot | `python -m app.main export-admin-dashboard; git add data/admin/strategy_dashboard.json; git commit -m "Update admin dashboard snapshot"; git push origin main` |
 | All strategies | Open local admin dashboard | `streamlit run dashboards/admin_app.py` |
 
 Before committing any strategy/profile/doc change, run:
