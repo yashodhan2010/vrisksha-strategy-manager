@@ -2,7 +2,7 @@
 
 This document explains the actual dual-momentum methodology implemented in code — the signals, filters, ranking math, allocation logic, rebalance cadence, and order sizing. See [README.md](../../README.md) for setup/architecture and command usage.
 
-The conservative variant uses the same signal family as Dual Momentum, but its optimizer ranks candidates primarily by return-to-drawdown and searches broader diversification, tighter stock caps, sector caps, and higher holding buffers.
+The conservative variant uses the same signal family as Dual Momentum, but its optimizer ranks candidates primarily by net return-to-drawdown / net Calmar after estimated implementation drag. It searches broader diversification, tighter stock caps, sector caps, and higher holding buffers.
 
 The same ranking/allocation logic (`app/backtest/engine.py::_rank_on_date` + `app/strategy/selection.py::allocate_from_ranking`) is shared by the backtest engine and the live/paper `RebalanceEngine`, so backtested behavior and live behavior are computed identically.
 

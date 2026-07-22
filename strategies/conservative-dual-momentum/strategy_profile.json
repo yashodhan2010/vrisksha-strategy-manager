@@ -24,10 +24,10 @@
   },
   "optimization": {
     "engine_path": "strategies/conservative-dual-momentum/experiments/optimizer.py",
-    "results_path": "data/output/conservative-dual-momentum/conservative_trials_return_to_drawdown.csv",
-    "finalized_config_path": "data/output/finalized/conservative_dual_momentum_best_config.json",
-    "objective": "return_to_drawdown",
-    "rank_column": "rank_by_return_to_drawdown",
+    "results_path": "data/output/conservative-dual-momentum/conservative_trials_net_return_to_drawdown.csv",
+    "finalized_config_path": "data/output/finalized/conservative_dual_momentum_best_net_config.json",
+    "objective": "net_return_to_drawdown",
+    "rank_column": "rank_by_net_return_to_drawdown",
     "search_space": {
       "rebalances_per_month": [1, 2],
       "top_n": [35, 40, 50, 60],

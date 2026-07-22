@@ -54,6 +54,35 @@ def test_build_finalized_config_maps_best_experiment_row(tmp_path: Path) -> None
     assert payload["source_row"]["rank_by_cagr"] == 1
 
 
+def test_build_finalized_config_maps_max_stock_weight_pct(tmp_path: Path) -> None:
+    results_path = tmp_path / "trials.csv"
+    pd.DataFrame(
+        [
+            {
+                "rank_by_net_return_to_drawdown": 1,
+                "rebalances_per_month": 2,
+                "top_n": 60,
+                "sector_cap_pct": 30,
+                "high_cutoff_pct": 15,
+                "momentum_weight": 0.6,
+                "beta_weight": 0.2,
+                "volatility_weight": 0.2,
+                "buffer_pct": 60,
+                "max_stock_weight_pct": 3.5,
+                "net_return_to_drawdown": 1.5,
+            }
+        ]
+    ).to_csv(results_path, index=False)
+
+    payload = build_finalized_config_from_results(
+        results_path,
+        objective="net_return_to_drawdown",
+        rank_column="rank_by_net_return_to_drawdown",
+    )
+
+    assert payload["strategy_parameters"]["MAX_STOCK_WEIGHT"] == 0.035
+
+
 def test_apply_finalized_config_updates_runtime_config(tmp_path: Path) -> None:
     payload = {
         "strategy_parameters": {

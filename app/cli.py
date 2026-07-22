@@ -393,13 +393,16 @@ def cmd_backtest(args: argparse.Namespace) -> int:
 
 def cmd_finalize_strategy_config(args: argparse.Namespace) -> int:
     try:
-        apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        profile = apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        optimization = profile.get("optimization", {})
         input_path = args.input or config.OPTIMIZATION_RESULTS_PATH
         output_path_arg = args.output or config.FINALIZED_STRATEGY_CONFIG_PATH
+        objective = args.objective or optimization.get("objective") or "cagr"
+        rank_column = args.rank_column or optimization.get("rank_column") or f"rank_by_{objective}"
         payload = build_finalized_config_from_results(
             results_path=input_path,
-            objective=args.objective,
-            rank_column=args.rank_column,
+            objective=objective,
+            rank_column=rank_column,
             row_index=args.row_index,
         )
         output_path = write_finalized_config(payload, output_path_arg)
@@ -496,7 +499,8 @@ def cmd_finalized_backtest(args: argparse.Namespace) -> int:
 
 def cmd_finalized_package(args: argparse.Namespace) -> int:
     try:
-        apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        profile = apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        optimization = profile.get("optimization", {})
         start_date = _parse_date(args.start_date)
         end_date = _parse_date(args.end_date)
         if start_date > end_date:
@@ -505,11 +509,13 @@ def cmd_finalized_package(args: argparse.Namespace) -> int:
         input_path = args.input or config.OPTIMIZATION_RESULTS_PATH
         config_output = args.config_output or config.FINALIZED_STRATEGY_CONFIG_PATH
         package_output = args.package_output or config.STRATEGY_PACKAGE_OUTPUT_DIR
+        objective = args.objective or optimization.get("objective") or "cagr"
+        rank_column = args.rank_column or optimization.get("rank_column") or f"rank_by_{objective}"
         if Path(input_path).exists():
             payload = build_finalized_config_from_results(
                 results_path=input_path,
-                objective=args.objective,
-                rank_column=args.rank_column,
+                objective=objective,
+                rank_column=rank_column,
                 row_index=args.row_index,
             )
             config_path = write_finalized_config(payload, config_output)
@@ -898,8 +904,8 @@ def build_parser() -> argparse.ArgumentParser:
     finalize_config.add_argument("--strategy-profile")
     finalize_config.add_argument("--input")
     finalize_config.add_argument("--output")
-    finalize_config.add_argument("--objective", default="cagr")
-    finalize_config.add_argument("--rank-column", default="rank_by_cagr")
+    finalize_config.add_argument("--objective")
+    finalize_config.add_argument("--rank-column")
     finalize_config.add_argument("--row-index", type=int)
     finalize_config.set_defaults(func=cmd_finalize_strategy_config)
 
@@ -929,8 +935,8 @@ def build_parser() -> argparse.ArgumentParser:
     finalized_package.add_argument("--input")
     finalized_package.add_argument("--config-output")
     finalized_package.add_argument("--package-output")
-    finalized_package.add_argument("--objective", default="cagr")
-    finalized_package.add_argument("--rank-column", default="rank_by_cagr")
+    finalized_package.add_argument("--objective")
+    finalized_package.add_argument("--rank-column")
     finalized_package.add_argument("--row-index", type=int)
     finalized_package.add_argument("--start-date", required=True)
     finalized_package.add_argument("--end-date", required=True)

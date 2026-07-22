@@ -125,7 +125,7 @@ If `data/output/finalized/dual_momentum_best_config.json` does not exist, run `f
 
 ## Conservative Dual Momentum Pipeline
 
-Conservative Dual Momentum uses the same strategy family but optimizes for return-to-drawdown rather than pure CAGR. Its profile owns the objective, search grid, optimizer path, and output paths:
+Conservative Dual Momentum uses the same strategy family but optimizes for net return-to-drawdown / net Calmar rather than pure CAGR. Its optimizer estimates delivery transaction charges and capital-gains tax drag per trial, then ranks on the net risk-adjusted result. Its profile owns the objective, search grid, optimizer path, and output paths:
 
 ```bash
 python -m app.main refresh-finalized-parameters --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json

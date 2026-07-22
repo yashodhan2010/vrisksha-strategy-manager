@@ -10,7 +10,7 @@ The strategy uses the locally maintained Nifty 500 universe. The universe is ref
 
 ## Strategy Design
 
-The model evaluates stocks using a proprietary blend of price trend, consistency of movement, and risk controls. The conservative variant is tuned to prefer more resilient parameter sets rather than simply maximizing CAGR.
+The model evaluates stocks using a proprietary blend of price trend, consistency of movement, implementation-cost awareness, and risk controls. The conservative variant is tuned to prefer stronger net Calmar-style outcomes rather than simply maximizing gross CAGR.
 
 Exact ranking formulas, lookback windows, optimized weights, thresholds, buffers, and tie-break rules are private strategy parameters and are not exposed in the public methodology.
 
@@ -29,4 +29,3 @@ When the model has fewer qualifying opportunities or portfolio constraints preve
 ## Public Disclosure Boundary
 
 This public methodology intentionally omits exact implementation parameters. Vriksha should not render internal methodology files, finalized configuration files, experiment outputs, or exact scoring parameters on public pages.
-

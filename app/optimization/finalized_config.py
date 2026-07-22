@@ -92,8 +92,12 @@ def _select_row(frame: pd.DataFrame, objective: str, rank_column: str, row_index
 def _parameters_from_row(row: pd.Series) -> dict[str, Any]:
     sector_cap_pct = _optional_float(row, "sector_cap_pct")
     high_cutoff_pct = _optional_float(row, "high_cutoff_pct")
+    max_stock_weight = _optional_float(row, "max_stock_weight")
+    max_stock_weight_pct = _optional_float(row, "max_stock_weight_pct")
     max_sector_weight = 1.0 if sector_cap_pct in (None, 0.0) else sector_cap_pct / 100.0
     high_52w_threshold = 0.80 if high_cutoff_pct is None else (100.0 - high_cutoff_pct) / 100.0
+    if max_stock_weight is None and max_stock_weight_pct is not None:
+        max_stock_weight = max_stock_weight_pct / 100.0
     return {
         "BACKTEST_REBALANCES_PER_MONTH": int(_required_float(row, "rebalances_per_month")),
         "STRATEGY_RANKING_METHOD": "AVERAGE_RANK",
@@ -102,7 +106,7 @@ def _parameters_from_row(row: pd.Series) -> dict[str, Any]:
         "RANKING_VOLATILITY_WEIGHT": _required_float(row, "volatility_weight"),
         "STRATEGY_ALLOCATION_MODE": "TOP_N_EQUAL",
         "STRATEGY_TOP_N": int(_required_float(row, "top_n")),
-        "MAX_STOCK_WEIGHT": _optional_float(row, "max_stock_weight") or config.MAX_STOCK_WEIGHT,
+        "MAX_STOCK_WEIGHT": max_stock_weight or config.MAX_STOCK_WEIGHT,
         "MAX_SECTOR_WEIGHT": max_sector_weight,
         "HIGH_52W_THRESHOLD": high_52w_threshold,
         "SAFE_ASSET_SYMBOL": config.SAFE_ASSET_SYMBOL,

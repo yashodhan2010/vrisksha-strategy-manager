@@ -184,6 +184,85 @@ def test_build_finalized_package_can_skip_history_fetch(tmp_path: Path) -> None:
     assert "No market prices found" in result.stdout
 
 
+def test_build_finalized_package_uses_profile_objective(tmp_path: Path) -> None:
+    trials = tmp_path / "trials.csv"
+    finalized = tmp_path / "finalized.json"
+    pd.DataFrame(
+        [
+            {
+                "rank_by_cagr": 1,
+                "rank_by_net_return_to_drawdown": 2,
+                "rebalances_per_month": 1,
+                "top_n": 35,
+                "sector_cap_pct": 15,
+                "high_cutoff_pct": 20,
+                "momentum_weight": 0.4,
+                "beta_weight": 0.3,
+                "volatility_weight": 0.3,
+                "buffer_pct": 120,
+                "max_stock_weight_pct": 2.5,
+                "cagr": 0.35,
+                "net_return_to_drawdown": 1.1,
+            },
+            {
+                "rank_by_cagr": 2,
+                "rank_by_net_return_to_drawdown": 1,
+                "rebalances_per_month": 2,
+                "top_n": 60,
+                "sector_cap_pct": 30,
+                "high_cutoff_pct": 15,
+                "momentum_weight": 0.6,
+                "beta_weight": 0.2,
+                "volatility_weight": 0.2,
+                "buffer_pct": 60,
+                "max_stock_weight_pct": 3.5,
+                "cagr": 0.31,
+                "net_return_to_drawdown": 1.5,
+            },
+        ]
+    ).to_csv(trials, index=False)
+    profile = tmp_path / "strategy_profile.json"
+    profile.write_text(
+        f"""
+        {{
+          "strategy_id": "test_strategy_v1",
+          "slug": "test-strategy",
+          "name": "Test Strategy",
+          "optimization": {{
+            "results_path": "{trials.as_posix()}",
+            "finalized_config_path": "{finalized.as_posix()}",
+            "objective": "net_return_to_drawdown",
+            "rank_column": "rank_by_net_return_to_drawdown"
+          }},
+          "package": {{
+            "output_dir": "{(tmp_path / 'package').as_posix()}"
+          }}
+        }}
+        """,
+        encoding="utf-8",
+    )
+
+    result = _run(
+        [
+            "build-finalized-package",
+            "--strategy-profile",
+            str(profile),
+            "--start-date",
+            "2024-01-01",
+            "--end-date",
+            "2024-12-31",
+            "--no-fetch-history",
+        ],
+        tmp_path,
+    )
+
+    payload = json.loads(finalized.read_text(encoding="utf-8"))
+    assert result.returncode == 1
+    assert payload["selection"]["objective"] == "net_return_to_drawdown"
+    assert payload["strategy_parameters"]["STRATEGY_TOP_N"] == 60
+    assert payload["strategy_parameters"]["MAX_STOCK_WEIGHT"] == 0.035
+
+
 def test_build_finalized_package_uses_existing_config_when_trials_missing(tmp_path: Path) -> None:
     finalized = tmp_path / "finalized.json"
     finalized.write_text(

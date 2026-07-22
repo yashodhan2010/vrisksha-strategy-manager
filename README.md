@@ -46,7 +46,7 @@ Run these from the repository root.
 | Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum/strategy_profile.json --selenium-token` |
 | Dual Momentum | Generate latest live/paper model portfolio only | `python -m app.main monthly-run --strategy-profile strategies/dual-momentum/strategy_profile.json` |
 | Dual Momentum | Refresh data daily and rebalance only on configured dates | `python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum/strategy_profile.json` |
-| Conservative Dual Momentum | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json` |
+| Conservative Dual Momentum | Rerun net-Calmar optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json` |
 | Conservative Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-05-29 --end-date 2026-05-29 --initial-capital 1000000 --selenium-token` |
 | Conservative Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --selenium-token` |
 | Future strategy | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/<strategy-slug>/strategy_profile.json` |
