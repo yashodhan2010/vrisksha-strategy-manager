@@ -33,6 +33,7 @@ from app.storage.repositories import (
 )
 from app.storage.market_data_repository import get_symbol_price_ranges
 from app.strategy_profile import apply_strategy_profile
+from app.strategy_registry import validate_strategy_registry
 from app.strategy.rebalance import RebalanceEngine
 from app.strategy.models import RunMode, RunStatus, RunType
 
@@ -196,6 +197,21 @@ def cmd_init_db(_args: argparse.Namespace) -> int:
 
 def cmd_show_config(_args: argparse.Namespace) -> int:
     print(json.dumps(config.public_config(), indent=2))
+    return 0
+
+
+def cmd_validate_strategies(args: argparse.Namespace) -> int:
+    try:
+        report = validate_strategy_registry(args.registry)
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Strategy validation failed: {exc}")
+        return 1
+    print(f"Validated {report.profile_count} strategy profiles from {report.registry_path}.")
+    for issue in report.issues:
+        print(f"{issue.severity}: {issue.profile_path}: {issue.message}")
+    if not report.ok:
+        return 1
+    print("Strategy registry validation passed.")
     return 0
 
 
@@ -885,6 +901,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("init-db").set_defaults(func=cmd_init_db)
     subparsers.add_parser("show-config").set_defaults(func=cmd_show_config)
+    validate_strategies = subparsers.add_parser("validate-strategies")
+    validate_strategies.add_argument("--registry", default="strategies/registry.json")
+    validate_strategies.set_defaults(func=cmd_validate_strategies)
     subparsers.add_parser("sync-universe").set_defaults(func=cmd_sync_universe)
     subparsers.add_parser("manual-run").set_defaults(func=cmd_manual_run)
     monthly_run = subparsers.add_parser("monthly-run")

@@ -1,0 +1,7 @@
+{
+  "strategies": [
+    "strategies/dual-momentum/strategy_profile.json",
+    "strategies/conservative-dual-momentum/strategy_profile.json",
+    "strategies/low-drawdown-dual-momentum/strategy_profile.json"
+  ]
+}

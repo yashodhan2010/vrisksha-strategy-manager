@@ -8,6 +8,14 @@ Each finalized strategy gets one folder here. The folder should contain:
 - `experiments/`: the strategy-specific production optimizer and research scripts.
 - `experiments/archive/`: ignored old notebooks, one-off scripts, and generated experiment outputs for that strategy.
 
+`strategies/registry.json` is the authoritative list of active strategy profiles. Add every new finalized strategy profile there.
+
 To add another strategy, copy `strategies/_template/` into `strategies/<strategy-slug>/` and update the metadata, document text, `optimization.engine_path`, `optimization.search_space`, finalized config path, and package output path.
+
+Before committing, run:
+
+```bash
+python -m app.main validate-strategies
+```
 
 The strategy profile and methodology files do not contain website, payment, login, subscription, or access-control logic.

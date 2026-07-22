@@ -128,6 +128,13 @@ def test_refresh_finalized_parameters_help_works(tmp_path: Path) -> None:
     assert "--n-trials" in result.stdout
 
 
+def test_validate_strategies_cli_works(tmp_path: Path) -> None:
+    result = _run(["validate-strategies"], tmp_path)
+
+    assert result.returncode == 0
+    assert "Strategy registry validation passed" in result.stdout
+
+
 def test_build_finalized_package_can_skip_history_fetch(tmp_path: Path) -> None:
     trials = tmp_path / "trials.csv"
     pd.DataFrame(

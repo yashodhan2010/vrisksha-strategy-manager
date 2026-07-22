@@ -4,6 +4,8 @@ This repository is organized as a research and packaging factory for model-portf
 
 The repository/folder should use the generic name `vrisksha-strategy-manager`. Strategy-specific folders, such as `strategies/dual-momentum`, are intentionally named by strategy slug.
 
+Use [strategy_harness.md](strategy_harness.md) as the strict operating contract before adding or changing strategy profiles.
+
 ## Folder Responsibilities
 
 ```text
@@ -16,6 +18,7 @@ app/
   storage/        SQLite schema and repositories.
 
 strategies/
+  registry.json
   _template/
     strategy_profile.json
     methodology.md
@@ -56,8 +59,13 @@ Every strategy follows the same lifecycle:
 2. Promote the best experiment row into a finalized strategy config, or run `refresh-finalized-parameters` to do both together for strategies using the average-rank/buffer optimizer.
 3. Run the finalized backtest and export the full Vriksha strategy package.
 4. Use the lightweight model-portfolio update command for routine subscriber updates.
+5. Run `validate-strategies` before committing profile, methodology, optimizer, or finalized-config changes.
 
 Public website pages should render `methodology.md` only. `methodology_internal.md`, finalized config JSON, experiment outputs, and exact parameters are private/internal artifacts.
+
+```bash
+python -m app.main validate-strategies
+```
 
 ## Dual Momentum Pipeline
 

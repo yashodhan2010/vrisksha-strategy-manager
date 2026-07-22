@@ -2,7 +2,7 @@
 
 Local Python foundation for Indian-equities strategy research, optimization, backtesting, model-portfolio generation, and portable Vriksha strategy-package exports.
 
-This repository currently contains three strategy profiles: Dual Momentum, Conservative Dual Momentum, and Low Drawdown Dual Momentum. Each strategy owns its profile, methodology files, optimizer path, finalized config path, and Vriksha package output folder. See [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
+This repository currently contains three strategy profiles: Dual Momentum, Conservative Dual Momentum, and Low Drawdown Dual Momentum. Each strategy owns its profile, methodology files, optimizer path, finalized config path, and Vriksha package output folder. See [docs/strategy_harness.md](docs/strategy_harness.md) for the strict operating contract and [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
 
 This repository does not own Vriksha website accounts, payments, subscriptions, or access control.
 
@@ -13,6 +13,7 @@ This repository does not own Vriksha website accounts, payments, subscriptions, 
 strategies/<slug>/strategy_profile.json
                                   Strategy identity, public metadata, optimizer path/search grid, and package output path.
 strategies/<slug>/experiments/    Strategy-specific production optimizer and research scripts.
+strategies/registry.json          Authoritative list of active strategy profiles.
 data/output/finalized/*.json       Best parameters promoted from experiment/Optuna output.
 app/optimization/                  Converts experiment results into finalized configs.
 app/backtest/                      Runs the finalized strategy simulation.
@@ -55,6 +56,13 @@ Run these from the repository root.
 | Future strategy | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/<strategy-slug>/strategy_profile.json` |
 | Future strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
 | Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-slug>/strategy_profile.json --selenium-token` |
+
+Before committing any strategy/profile/doc change, run:
+
+```bash
+python -m app.main validate-strategies
+pytest -q
+```
 
 For each strategy, optimization knobs live in that strategy's profile under `optimization.search_space`, and the production optimizer is pointed to by `optimization.engine_path`. For Dual Momentum, those are:
 
