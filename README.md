@@ -2,7 +2,7 @@
 
 Local Python foundation for Indian-equities strategy research, optimization, backtesting, model-portfolio generation, and portable Vriksha strategy-package exports.
 
-Dual Momentum is the first strategy profile in this repository. See [strategies/dual-momentum/methodology.md](strategies/dual-momentum/methodology.md) for the public-safe methodology and [strategies/dual-momentum/methodology_internal.md](strategies/dual-momentum/methodology_internal.md) for internal implementation details. See [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
+This repository currently contains three strategy profiles: Dual Momentum, Conservative Dual Momentum, and Low Drawdown Dual Momentum. Each strategy owns its profile, methodology files, optimizer path, finalized config path, and Vriksha package output folder. See [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
 
 This repository does not own Vriksha website accounts, payments, subscriptions, or access control.
 
@@ -24,16 +24,16 @@ app/export/                        Creates the portable Vriksha strategy package
 Use the default Dual Momentum profile:
 
 ```bash
-python -m app.main build-finalized-package --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000 --selenium-token
+python -m app.main build-finalized-package --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --selenium-token
 ```
 
 Or pass it explicitly:
 
 ```bash
-python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000
 ```
 
-That command selects the best CAGR-ranked experiment row, writes a finalized config, applies those parameters, syncs/fetches missing Kite history, runs the backtest, and exports the full public Vriksha package. For routine model-portfolio updates after parameters are finalized, use `build-model-portfolio-update`; it refreshes only recent Kite history by default and does not run the long historical backtest.
+For Dual Momentum, that command selects the best CAGR-ranked experiment row, writes a finalized config, applies those parameters, syncs/fetches missing Kite history, runs the backtest, and exports the full public Vriksha package. Other strategy profiles use their own `optimization.objective` and `optimization.rank_column`. For routine model-portfolio updates after parameters are finalized, use `build-model-portfolio-update`; it refreshes only recent Kite history by default and does not run the long historical backtest.
 
 ## Strategy Command Grid
 
@@ -42,12 +42,12 @@ Run these from the repository root.
 | Strategy | Purpose | Command |
 |---|---|---|
 | Dual Momentum | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum/strategy_profile.json` |
-| Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000 --selenium-token` |
+| Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
 | Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum/strategy_profile.json --selenium-token` |
 | Dual Momentum | Generate latest live/paper model portfolio only | `python -m app.main monthly-run --strategy-profile strategies/dual-momentum/strategy_profile.json` |
 | Dual Momentum | Refresh data daily and rebalance only on configured dates | `python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum/strategy_profile.json` |
 | Conservative Dual Momentum | Rerun net-Calmar optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json` |
-| Conservative Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-05-29 --end-date 2026-05-29 --initial-capital 1000000 --selenium-token` |
+| Conservative Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
 | Conservative Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --selenium-token` |
 | Low Drawdown Dual Momentum | Rerun low-drawdown-with-CAGR-hurdle optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json` |
 | Low Drawdown Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
@@ -262,7 +262,7 @@ Strategy identity, public metadata, optimization input path, finalized config pa
 strategies/dual-momentum/strategy_profile.json
 ```
 
-Use `STRATEGY_RANKING_METHOD=AVERAGE_RANK` to rank stocks independently by 3M/6M/12M momentum, low beta, and low volatility, then sort by the average of those three ranks. Momentum uses `MOMENTUM_SKIP_RECENT_DAYS=21` by default, so the newest trading month is skipped before calculating the 3M/6M/12M returns. With `STRATEGY_TOP_N=25`, the allocator uses the top 25 average-rank candidates. Other supported ranking methods are `MOMENTUM`, `BETA_ADJUSTED`, `VOLATILITY_ADJUSTED`, and `COMBINED_RANK`; `COMBINED_RANK` uses a weighted percentile blend and normalizes the three `RANKING_*_WEIGHT` values internally.
+Use `STRATEGY_RANKING_METHOD=AVERAGE_RANK` to rank stocks independently by 3M/6M/12M momentum, low beta, and low volatility, then sort by the average of those three ranks. Momentum uses `MOMENTUM_SKIP_RECENT_DAYS=21` by default, so the newest trading month is skipped before calculating the 3M/6M/12M returns. The allocator uses the finalized profile's `STRATEGY_TOP_N` average-rank candidates. Other supported ranking methods are `MOMENTUM`, `BETA_ADJUSTED`, `VOLATILITY_ADJUSTED`, and `COMBINED_RANK`; `COMBINED_RANK` uses a weighted percentile blend and normalizes the three `RANKING_*_WEIGHT` values internally.
 
 Use `STRATEGY_ALLOCATION_MODE=TOP_N_EQUAL` to buy the top N ranked stocks with equal weights capped by `MAX_STOCK_WEIGHT`. Use `STRATEGY_ALLOCATION_MODE=DYNAMIC` to buy the top N positive-score stocks with weights tilted toward stronger scores and constrained by `DYNAMIC_MIN_WEIGHT` / `DYNAMIC_MAX_WEIGHT`. `MAX_SECTOR_WEIGHT` caps the combined allocation to any one sector; excess weight moves to `SAFE_ASSET_SYMBOL` / cash. Set `SAFE_ASSET_SYMBOL=GOLDBEES`, `LIQUIDBEES`, or another stored symbol to use that asset for residual allocation when fewer than the target number of stocks qualify or caps leave unallocated weight.
 

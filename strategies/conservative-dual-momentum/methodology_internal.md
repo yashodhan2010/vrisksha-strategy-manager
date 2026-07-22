@@ -85,7 +85,7 @@ weighted_average_rank = momentum_weight * momentum_rank
                       + volatility_weight * volatility_rank
 score = -weighted_average_rank
 ```
-Stocks are sorted descending by `score`, which means the lowest `weighted_average_rank` receives final `rank = 1`. With `STRATEGY_TOP_N=25`, the allocation step uses the top 25 weighted-average-rank candidates.
+Stocks are sorted descending by `score`, which means the lowest `weighted_average_rank` receives final `rank = 1`. The allocation step uses the finalized config's `STRATEGY_TOP_N` weighted-average-rank candidates.
 
 ### Combined rank
 ```
@@ -107,7 +107,7 @@ Weights are normalized internally, so `RANKING_*_WEIGHT` values don't need to su
 ## 5. Selection & Allocation (`STRATEGY_ALLOCATION_MODE`)
 
 ### 5.1 `TOP_N_EQUAL` (default)
-- Select the top `STRATEGY_TOP_N` (default 25) ranked symbols.
+- Select the top `STRATEGY_TOP_N` ranked symbols.
 - Equal-weight each: `weight = min(1/N, MAX_STOCK_WEIGHT)` (default cap 5%).
 - Apply sector caps (see below).
 - Any unallocated weight (from the per-stock cap, sector caps, or fewer than N qualifying stocks) becomes the safe-asset/cash residual.

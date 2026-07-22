@@ -1,6 +1,6 @@
 # Low Drawdown Dual Momentum Strategy Details
 
-This strategy reuses the dual-momentum signal, ranking, allocation, and implementation-cost model used by the Conservative Dual Momentum optimizer.
+This strategy reuses the dual-momentum signal, ranking, allocation, and implementation-cost model used by the Conservative Dual Momentum optimizer. Its profile owns a separate strategy id, slug, objective, results path, finalized config path, and package output path.
 
 ## Finalization Rule
 
@@ -13,6 +13,7 @@ objective score = -1e9 for ineligible rows
 ```
 
 The highest objective score therefore selects the lowest absolute drawdown among parameter sets whose 10-year CAGR clears the 20% hurdle.
+The strategy profile expresses this as `objective = lowest_drawdown_cagr_gt_20_score` and `rank_column = rank_by_lowest_drawdown_cagr_gt_20_score`.
 
 The current selected trial from the 10-year grid is trial `3236`.
 

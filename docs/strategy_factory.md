@@ -33,6 +33,12 @@ strategies/
     methodology_internal.md
     experiments/
       optimizer.py
+  low-drawdown-dual-momentum/
+    strategy_profile.json
+    methodology.md
+    methodology_internal.md
+    experiments/
+      optimizer.py
 
 experiments/
   Scratch research notebooks/scripts and archived raw outputs. Production optimizers should live under strategies/<slug>/experiments/.
@@ -66,7 +72,7 @@ python -m app.main refresh-finalized-parameters --strategy-profile strategies/du
 ```
 
 ```bash
-python -m app.main run-finalized-backtest --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000 --force
+python -m app.main run-finalized-backtest --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --force
 ```
 
 ```bash
@@ -76,13 +82,13 @@ python -m app.main export-strategy-package --strategy-profile strategies/dual-mo
 Or run the complete chain:
 
 ```bash
-python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000
 ```
 
 `build-finalized-package` syncs the universe and checks local price coverage before the backtest. If required history is missing or stale, it fetches Kite history from the earliest missing date through the requested end date. Use `--selenium-token` to let the command refresh today's Kite token through the configured Selenium auto-login flow:
 
 ```bash
-python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2025-12-31 --initial-capital 1000000 --selenium-token
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --selenium-token
 ```
 
 Use `--no-fetch-history` only when intentionally running against already stored local data.
@@ -132,13 +138,17 @@ python -m app.main refresh-finalized-parameters --strategy-profile strategies/co
 ```
 
 ```bash
-python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-05-29 --end-date 2026-05-29 --initial-capital 1000000 --selenium-token
+python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history
 ```
 
 Low Drawdown Dual Momentum uses the same strategy family but applies a constrained finalization rule: eligible rows must clear 20% 10-year CAGR, and the winner is the lowest absolute max drawdown among those rows.
 
 ```bash
 python -m app.main refresh-finalized-parameters --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json
+```
+
+```bash
+python -m app.main build-finalized-package --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history
 ```
 
 ## Adding Another Strategy
