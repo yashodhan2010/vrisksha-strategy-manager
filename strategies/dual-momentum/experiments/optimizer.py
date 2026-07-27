@@ -155,9 +155,17 @@ def load_price_pivot(
     return pivot.ffill(limit=quality.max_forward_fill_days)
 
 
-def rebalance_dates(price_pivot: pd.DataFrame, start_date: date, end_date: date, rebalances_per_month: int) -> list[date]:
+def rebalance_dates(
+    price_pivot: pd.DataFrame,
+    start_date: date,
+    end_date: date,
+    rebalances_per_month: int,
+    target_days: tuple[int, ...] | None = None,
+) -> list[date]:
     if rebalances_per_month <= 0:
         raise ValueError("rebalances_per_month must be greater than zero.")
+    if target_days is not None and any(day < 1 or day > 31 for day in target_days):
+        raise ValueError("target_days must contain day-of-month values from 1 to 31.")
     dates = [item for item in price_pivot.index if start_date <= item <= end_date]
     months = sorted({(item.year, item.month) for item in dates})
     result: list[date] = []
@@ -165,9 +173,12 @@ def rebalance_dates(price_pivot: pd.DataFrame, start_date: date, end_date: date,
         month_dates = [item for item in dates if item.year == year and item.month == month]
         if not month_dates:
             continue
-        _, days_in_month = calendar.monthrange(year, month)
-        for offset in range(rebalances_per_month):
-            target_day = 1 + (offset * days_in_month // rebalances_per_month)
+        if target_days is None:
+            _, days_in_month = calendar.monthrange(year, month)
+            month_target_days = tuple(1 + (offset * days_in_month // rebalances_per_month) for offset in range(rebalances_per_month))
+        else:
+            month_target_days = tuple(sorted(set(target_days)))
+        for target_day in month_target_days:
             candidates = [item for item in month_dates if item.day >= target_day]
             if candidates and candidates[0] not in result:
                 result.append(candidates[0])
@@ -384,11 +395,12 @@ def run_backtest(
     end_date: date,
     params: GridParams,
     ranking_cache: dict[tuple, pd.DataFrame] | None = None,
+    target_days: tuple[int, ...] | None = None,
     safe_asset_symbol: str = DEFAULT_SAFE_ASSET_SYMBOL,
     benchmark_symbol: str = DEFAULT_BENCHMARK_SYMBOL,
     quality: DataQualityConfig = DataQualityConfig(),
 ) -> dict[str, pd.DataFrame | dict]:
-    dates = rebalance_dates(price_pivot, start_date, end_date, params.rebalances_per_month)
+    dates = rebalance_dates(price_pivot, start_date, end_date, params.rebalances_per_month, target_days)
     if len(dates) < 2:
         raise ValueError("Not enough rebalance dates for this window.")
     ranking_cache = ranking_cache if ranking_cache is not None else {}

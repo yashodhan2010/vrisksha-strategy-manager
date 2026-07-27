@@ -44,16 +44,22 @@ class BacktestEngine:
         end_date: date,
         initial_capital: float = 1_000_000.0,
         database_path: str | Path = config.DATABASE_PATH,
+        rebalance_target_days: list[int] | tuple[int, ...] | None = None,
     ) -> None:
         self.backtest_run_id = backtest_run_id
         self.start_date = start_date
         self.end_date = end_date
         self.initial_capital = initial_capital
         self.database_path = database_path
+        self.rebalance_target_days = tuple(rebalance_target_days) if rebalance_target_days is not None else None
         self.warnings: list[str] = []
         self._safe_asset_warning_added = False
         if self.initial_capital <= 0:
             raise ValueError("initial_capital must be greater than zero.")
+        if self.rebalance_target_days is not None:
+            invalid_days = [day for day in self.rebalance_target_days if day < 1 or day > 31]
+            if invalid_days:
+                raise ValueError("rebalance_target_days must contain day-of-month values from 1 to 31.")
 
     def run(self) -> BacktestResult:
         prices = self._load_price_frame()
@@ -162,6 +168,7 @@ class BacktestEngine:
             "calmar_ratio": annualized_return / abs(max_drawdown) if annualized_return is not None and max_drawdown < 0 else None,
             "rebalance_count": len(rebalance_dates) - 1,
             "rebalances_per_month": config.BACKTEST_REBALANCES_PER_MONTH,
+            "rebalance_target_days": list(self.rebalance_target_days) if self.rebalance_target_days is not None else None,
             "strategy_ranking_method": config.STRATEGY_RANKING_METHOD,
             "ranking_momentum_weight": config.RANKING_MOMENTUM_WEIGHT,
             "ranking_beta_weight": config.RANKING_BETA_WEIGHT,
@@ -241,13 +248,18 @@ class BacktestEngine:
             month_dates = [item for item in dates if item.year == year and item.month == month]
             if not month_dates:
                 continue
-            _, days_in_month = calendar.monthrange(year, month)
-            for offset in range(rebalances_per_month):
-                target_day = 1 + (offset * days_in_month // rebalances_per_month)
+            target_days = self._target_days_for_month(year, month, rebalances_per_month)
+            for target_day in target_days:
                 candidates = [item for item in month_dates if item.day >= target_day]
                 if candidates and candidates[0] not in result:
                     result.append(candidates[0])
         return result
+
+    def _target_days_for_month(self, year: int, month: int, rebalances_per_month: int) -> tuple[int, ...]:
+        if self.rebalance_target_days is not None:
+            return tuple(sorted(set(self.rebalance_target_days)))
+        _, days_in_month = calendar.monthrange(year, month)
+        return tuple(1 + (offset * days_in_month // rebalances_per_month) for offset in range(rebalances_per_month))
 
     def _rank_on_date(
         self,

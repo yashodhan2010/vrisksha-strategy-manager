@@ -141,6 +141,40 @@ def test_rebalance_dates_can_run_more_than_once_per_month(monkeypatch, tmp_path:
     ]
 
 
+def test_rebalance_dates_can_use_explicit_target_days(tmp_path: Path) -> None:
+    engine = BacktestEngine(
+        1,
+        date(2024, 1, 1),
+        date(2024, 2, 29),
+        100_000,
+        tmp_path / "x.db",
+        rebalance_target_days=[5, 20],
+    )
+    dates = _business_dates(date(2024, 1, 1), 44)
+    prices = pd.DataFrame({"AAA": [100.0 + index for index in range(len(dates))]}, index=dates)
+
+    rebalance_dates = engine._rebalance_dates(prices)
+
+    assert rebalance_dates == [
+        date(2024, 1, 5),
+        date(2024, 1, 22),
+        date(2024, 2, 5),
+        date(2024, 2, 20),
+    ]
+
+
+def test_rebalance_dates_reject_invalid_explicit_target_days(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="rebalance_target_days"):
+        BacktestEngine(
+            1,
+            date(2024, 1, 1),
+            date(2024, 2, 29),
+            100_000,
+            tmp_path / "x.db",
+            rebalance_target_days=[0],
+        )
+
+
 def test_rebalance_dates_reject_invalid_frequency(monkeypatch, tmp_path: Path) -> None:
     engine = BacktestEngine(1, date(2024, 1, 1), date(2024, 1, 31), 100_000, tmp_path / "x.db")
     prices = pd.DataFrame({"AAA": [100.0]}, index=[date(2024, 1, 1)])
