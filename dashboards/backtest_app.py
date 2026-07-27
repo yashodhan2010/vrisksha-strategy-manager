@@ -35,6 +35,57 @@ def _format_percent(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.2%}"
 
 
+def _range_options() -> dict[str, pd.DateOffset | None]:
+    return {
+        "1M": pd.DateOffset(months=1),
+        "6M": pd.DateOffset(months=6),
+        "1Y": pd.DateOffset(years=1),
+        "5Y": pd.DateOffset(years=5),
+        "Max (10Y)": pd.DateOffset(years=10),
+    }
+
+
+def _filter_chart_range(chart_data: pd.DataFrame, range_label: str) -> pd.DataFrame:
+    offset = _range_options()[range_label]
+    if chart_data.empty:
+        return chart_data.copy()
+    end_date = chart_data.index.max()
+    filtered = chart_data[chart_data.index >= end_date - offset].copy()
+    return filtered if not filtered.empty else chart_data.tail(1).copy()
+
+
+def _range_kpis(chart_data: pd.DataFrame) -> dict[str, float | None]:
+    if chart_data.empty:
+        return {
+            "total_return": None,
+            "annualized_return": None,
+            "max_drawdown": None,
+            "best_month": None,
+            "worst_month": None,
+            "win_rate": None,
+        }
+    nav = chart_data["portfolio_nav"].astype(float)
+    start_nav = float(nav.iloc[0])
+    normalized_nav = nav / start_nav if start_nav > 0 else nav * 0.0 + 1.0
+    total_return = float(normalized_nav.iloc[-1] - 1.0)
+    elapsed_years = max((chart_data.index[-1] - chart_data.index[0]).days / 365.25, 0.0)
+    annualized_return = (
+        (1.0 + total_return) ** (1 / elapsed_years) - 1.0
+        if elapsed_years > 0 and total_return > -1.0
+        else None
+    )
+    drawdown = normalized_nav / normalized_nav.cummax() - 1.0
+    returns = chart_data["monthly_return"].astype(float).dropna()
+    return {
+        "total_return": total_return,
+        "annualized_return": annualized_return,
+        "max_drawdown": float(drawdown.min()) if len(drawdown) else None,
+        "best_month": float(returns.max()) if len(returns) else None,
+        "worst_month": float(returns.min()) if len(returns) else None,
+        "win_rate": float((returns > 0).sum() / len(returns)) if len(returns) else None,
+    }
+
+
 def _selected_run(runs: list[dict[str, Any]]) -> dict[str, Any] | None:
     if not runs:
         return None
@@ -102,11 +153,35 @@ def main() -> None:
             chart_data = snapshots.copy()
             chart_data["snapshot_date"] = pd.to_datetime(chart_data["snapshot_date"])
             chart_data = chart_data.set_index("snapshot_date")
-            st.subheader("Portfolio NAV")
-            st.line_chart(chart_data[["portfolio_nav"]])
+            selected_range = st.radio(
+                "Performance range",
+                list(_range_options()),
+                index=2,
+                horizontal=True,
+            )
+            range_data = _filter_chart_range(chart_data, selected_range)
+            kpis = _range_kpis(range_data)
+            kpi_cols = st.columns(6)
+            kpi_cols[0].metric("Return", _format_percent(kpis["total_return"]))
+            kpi_cols[1].metric("Annualized", _format_percent(kpis["annualized_return"]))
+            kpi_cols[2].metric("Max drawdown", _format_percent(kpis["max_drawdown"]))
+            kpi_cols[3].metric("Best month", _format_percent(kpis["best_month"]))
+            kpi_cols[4].metric("Worst month", _format_percent(kpis["worst_month"]))
+            kpi_cols[5].metric("Win rate", _format_percent(kpis["win_rate"]))
+
+            normalized_nav = range_data[["portfolio_nav"]].copy()
+            start_nav = float(normalized_nav["portfolio_nav"].iloc[0])
+            normalized_nav["portfolio_nav"] = (
+                normalized_nav["portfolio_nav"] / start_nav if start_nav > 0 else 1.0
+            )
+            st.caption(
+                f"{range_data.index[0].date().isoformat()} to {range_data.index[-1].date().isoformat()}"
+            )
+            st.subheader("Portfolio Growth")
+            st.line_chart(normalized_nav.rename(columns={"portfolio_nav": "growth_of_1"}))
             st.subheader("Monthly Return")
-            st.bar_chart(chart_data[["monthly_return"]])
-            drawdown = chart_data["portfolio_nav"] / chart_data["portfolio_nav"].cummax() - 1.0
+            st.bar_chart(range_data[["monthly_return"]])
+            drawdown = normalized_nav["portfolio_nav"] / normalized_nav["portfolio_nav"].cummax() - 1.0
             st.subheader("Drawdown")
             st.line_chart(drawdown.rename("drawdown"))
 

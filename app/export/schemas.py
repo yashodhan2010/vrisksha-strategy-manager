@@ -3,6 +3,7 @@ from __future__ import annotations
 PACKAGE_FILES = [
     "manifest.json",
     "backtest_metrics.json",
+    "performance_showcases.json",
     "returns_daily.csv",
     "returns_monthly.csv",
     "returns_yearly.csv",

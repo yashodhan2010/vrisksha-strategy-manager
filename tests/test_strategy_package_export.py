@@ -113,6 +113,11 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     assert metrics["max_drawdown"] == -0.089
     assert metrics["sharpe"] == 2.1764
     assert metrics["calmar"] == 1.3865
+    showcases = json.loads((path / "performance_showcases.json").read_text(encoding="utf-8"))
+    assert showcases["default_range"] == "1Y"
+    assert [item["key"] for item in showcases["ranges"]] == ["1M", "6M", "1Y", "5Y", "MAX"]
+    assert showcases["ranges"][-1]["kpis"]["total_return"] > 0
+    assert showcases["ranges"][-1]["chart"][0]["equity_curve"] == 1.0
     rebalance_rows = _read_csv(path / "rebalance_history.csv")
     assert {row["action"] for row in rebalance_rows} >= {"ADDED", "WEIGHT_CHANGED"}
 

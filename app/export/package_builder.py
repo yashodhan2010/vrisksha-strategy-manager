@@ -44,6 +44,7 @@ def build_strategy_package(
     yearly = _yearly_returns(daily)
     drawdowns = _drawdowns(daily)
     metrics = _metrics(run, snapshots, daily, monthly, yearly, benchmark, holdings)
+    performance_showcases = _performance_showcases(daily, benchmark)
     manifest = _manifest(run, summary)
     latest_portfolio = _latest_model_portfolio(manifest["strategy_id"], holdings, universe)
     holdings_history = _holdings_history(manifest["strategy_id"], holdings, universe)
@@ -57,6 +58,7 @@ def build_strategy_package(
     validate_manifest(manifest)
     write_json(output_path / "manifest.json", manifest)
     write_json(output_path / "backtest_metrics.json", metrics)
+    write_json(output_path / "performance_showcases.json", performance_showcases)
     _write_csv(output_path, "returns_daily.csv", daily)
     _write_csv(output_path, "returns_monthly.csv", monthly)
     _write_csv(output_path, "returns_yearly.csv", yearly)
@@ -302,6 +304,104 @@ def _drawdowns(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:
         drawdown = (equity / peak) - 1.0 if peak > 0 else 0.0
         rows.append({"strategy_id": config.STRATEGY_PACKAGE_ID, "date": row["date"], "drawdown": _clean_float(drawdown)})
     return rows
+
+
+def _performance_showcases(
+    daily: list[dict[str, Any]],
+    benchmark: list[dict[str, Any]],
+) -> dict[str, Any]:
+    frame = pd.DataFrame(daily)
+    ranges = [
+        ("1M", "1 month", pd.DateOffset(months=1)),
+        ("6M", "6 months", pd.DateOffset(months=6)),
+        ("1Y", "1 year", pd.DateOffset(years=1)),
+        ("5Y", "5 years", pd.DateOffset(years=5)),
+        ("MAX", "Max (10 years)", pd.DateOffset(years=10)),
+    ]
+    if frame.empty:
+        return {"default_range": "1Y", "ranges": []}
+
+    frame["date"] = pd.to_datetime(frame["date"])
+    frame["return"] = frame["return"].astype(float)
+    frame["equity_curve"] = frame["equity_curve"].astype(float)
+    frame = frame.sort_values("date").reset_index(drop=True)
+    benchmark_frame = _benchmark_frame(benchmark)
+    end_date = frame.iloc[-1]["date"]
+    items = []
+    for key, label, offset in ranges:
+        range_frame = frame[frame["date"] >= end_date - offset].copy()
+        if range_frame.empty:
+            range_frame = frame.tail(1).copy()
+        range_benchmark = _matching_benchmark_range(benchmark_frame, range_frame)
+        items.append(_performance_range_payload(key, label, range_frame, range_benchmark))
+    return {"default_range": "1Y", "ranges": items}
+
+
+def _benchmark_frame(benchmark: list[dict[str, Any]]) -> pd.DataFrame:
+    frame = pd.DataFrame(benchmark)
+    if frame.empty:
+        return frame
+    frame["date"] = pd.to_datetime(frame["date"])
+    frame["return"] = frame["return"].astype(float)
+    frame["equity_curve"] = frame["equity_curve"].astype(float)
+    return frame.sort_values("date").reset_index(drop=True)
+
+
+def _matching_benchmark_range(benchmark: pd.DataFrame, frame: pd.DataFrame) -> pd.DataFrame:
+    if benchmark.empty or frame.empty:
+        return pd.DataFrame()
+    return benchmark[(benchmark["date"] >= frame.iloc[0]["date"]) & (benchmark["date"] <= frame.iloc[-1]["date"])].copy()
+
+
+def _performance_range_payload(
+    key: str,
+    label: str,
+    frame: pd.DataFrame,
+    benchmark: pd.DataFrame,
+) -> dict[str, Any]:
+    start_equity = float(frame.iloc[0]["equity_curve"]) if not frame.empty else 1.0
+    normalized = frame.copy()
+    normalized["display_equity_curve"] = normalized["equity_curve"] / start_equity if start_equity > 0 else 1.0
+    drawdown = normalized["display_equity_curve"] / normalized["display_equity_curve"].cummax() - 1.0
+    total_return = float(normalized.iloc[-1]["display_equity_curve"] - 1.0) if not normalized.empty else 0.0
+    years = max((normalized.iloc[-1]["date"] - normalized.iloc[0]["date"]).days / 365.25, 0.0) if len(normalized) else 0.0
+    cagr = ((1.0 + total_return) ** (1 / years) - 1.0) if years > 0 and total_return > -1.0 else 0.0
+    returns = normalized["return"].astype(float)
+    volatility = float(returns.std(ddof=0) * math.sqrt(252)) if len(returns) > 1 else 0.0
+    benchmark_total_return = _range_total_return(benchmark)
+    return {
+        "key": key,
+        "label": label,
+        "start_date": normalized.iloc[0]["date"].date().isoformat(),
+        "end_date": normalized.iloc[-1]["date"].date().isoformat(),
+        "kpis": {
+            "total_return": _clean_float(total_return),
+            "cagr": _clean_float(cagr),
+            "volatility": _clean_float(volatility),
+            "max_drawdown": _clean_float(float(drawdown.min()) if len(drawdown) else 0.0),
+            "best_day": _clean_float(float(returns.max()) if len(returns) else 0.0),
+            "worst_day": _clean_float(float(returns.min()) if len(returns) else 0.0),
+            "win_rate": _clean_float(float((returns > 0).sum() / len(returns)) if len(returns) else 0.0),
+            "benchmark_total_return": _clean_float(benchmark_total_return),
+            "excess_return": _clean_float(total_return - benchmark_total_return),
+        },
+        "chart": [
+            {
+                "date": row.date.date().isoformat(),
+                "equity_curve": _clean_float(row.display_equity_curve),
+                "return": _clean_float(row.return_),
+            }
+            for row in normalized.rename(columns={"return": "return_"}).itertuples()
+        ],
+    }
+
+
+def _range_total_return(frame: pd.DataFrame) -> float:
+    if frame.empty:
+        return 0.0
+    start_equity = float(frame.iloc[0]["equity_curve"])
+    end_equity = float(frame.iloc[-1]["equity_curve"])
+    return (end_equity / start_equity - 1.0) if start_equity > 0 else 0.0
 
 
 def _metrics(
