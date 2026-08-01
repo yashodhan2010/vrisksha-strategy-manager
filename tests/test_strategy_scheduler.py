@@ -57,3 +57,32 @@ def test_due_rebalance_reminders_skip_other_days(tmp_path: Path) -> None:
     registry = _write_registry(tmp_path, [11, 21])
 
     assert due_rebalance_reminders(registry, as_of_date=date(2026, 8, 13)) == []
+
+
+def test_due_rebalance_reminders_support_quarterly_first_trading_day(tmp_path: Path) -> None:
+    strategy_dir = tmp_path / "strategies" / "income"
+    strategy_dir.mkdir(parents=True)
+    profile = strategy_dir / "strategy_profile.json"
+    profile.write_text(
+        json.dumps(
+            {
+                "strategy_id": "income_v1",
+                "slug": "income",
+                "name": "Income",
+                "rebalance_schedule": {
+                    "type": "quarterly_first_trading_day",
+                    "quarter_start_months": [1, 4, 7, 10],
+                    "timezone": "Asia/Kolkata",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    registry = tmp_path / "strategies" / "registry.json"
+    registry.write_text(json.dumps({"strategies": [str(profile)]}), encoding="utf-8")
+
+    reminders = due_rebalance_reminders(registry, as_of_date=date(2026, 9, 30))
+
+    assert len(reminders) == 1
+    assert reminders[0].reminder_type == "due_tomorrow"
+    assert reminders[0].due_date == date(2026, 10, 1)

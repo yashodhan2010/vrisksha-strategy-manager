@@ -113,9 +113,13 @@ def _validate_profile(
             warn(f"{key} is not under the strategy slug folder: {doc_path}")
 
     optimization = profile.get("optimization") or {}
+    optimization_enabled = bool(optimization.get("enabled", True))
     objective = str(optimization.get("objective") or "")
     rank_column = str(optimization.get("rank_column") or "")
-    for key in ["engine_path", "results_path", "finalized_config_path", "objective", "rank_column", "search_space"]:
+    required_optimization_keys = ["engine_path"]
+    if optimization_enabled:
+        required_optimization_keys.extend(["results_path", "finalized_config_path", "objective", "rank_column", "search_space"])
+    for key in required_optimization_keys:
         if key not in optimization:
             error(f"optimization.{key} is required.")
     engine_path = Path(str(optimization.get("engine_path") or ""))
@@ -124,50 +128,69 @@ def _validate_profile(
     elif slug not in engine_path.as_posix():
         warn(f"optimization.engine_path is not under the strategy slug folder: {engine_path}")
 
-    search_space = optimization.get("search_space") or {}
-    if not isinstance(search_space, dict) or not search_space:
-        error("optimization.search_space must be a non-empty object.")
-    else:
-        for key, values in search_space.items():
-            if not isinstance(values, list) or not values:
-                error(f"optimization.search_space.{key} must be a non-empty list.")
+    if optimization_enabled:
+        search_space = optimization.get("search_space") or {}
+        if not isinstance(search_space, dict) or not search_space:
+            error("optimization.search_space must be a non-empty object.")
+        else:
+            for key, values in search_space.items():
+                if not isinstance(values, list) or not values:
+                    error(f"optimization.search_space.{key} must be a non-empty list.")
 
-    results_path = Path(str(optimization.get("results_path") or ""))
-    if not results_path.exists():
-        warn(f"optimization.results_path does not exist yet: {results_path}")
-    else:
-        try:
-            columns = set(pd.read_csv(results_path, nrows=1).columns)
-            if objective and objective not in columns:
-                error(f"objective column '{objective}' missing from results CSV: {results_path}")
-            if rank_column and rank_column not in columns:
-                error(f"rank column '{rank_column}' missing from results CSV: {results_path}")
-        except Exception as exc:
-            error(f"Could not read optimization results CSV {results_path}: {exc}")
+    if optimization_enabled:
+        results_path = Path(str(optimization.get("results_path") or ""))
+        if not results_path.exists():
+            warn(f"optimization.results_path does not exist yet: {results_path}")
+        else:
+            try:
+                columns = set(pd.read_csv(results_path, nrows=1).columns)
+                if objective and objective not in columns:
+                    error(f"objective column '{objective}' missing from results CSV: {results_path}")
+                if rank_column and rank_column not in columns:
+                    error(f"rank column '{rank_column}' missing from results CSV: {results_path}")
+            except Exception as exc:
+                error(f"Could not read optimization results CSV {results_path}: {exc}")
 
-    finalized_path = Path(str(optimization.get("finalized_config_path") or ""))
-    if not finalized_path.exists():
-        warn(f"optimization.finalized_config_path does not exist yet: {finalized_path}")
-    else:
+    if optimization_enabled:
+        finalized_path = Path(str(optimization.get("finalized_config_path") or ""))
+        if not finalized_path.exists():
+            warn(f"optimization.finalized_config_path does not exist yet: {finalized_path}")
+        else:
+            try:
+                payload = json.loads(finalized_path.read_text(encoding="utf-8"))
+                selection = payload.get("selection") or {}
+                if selection.get("objective") != objective:
+                    error(
+                        "Finalized config objective does not match profile: "
+                        f"{selection.get('objective')} != {objective}"
+                    )
+                if selection.get("rank_column") != rank_column:
+                    error(
+                        "Finalized config rank column does not match profile: "
+                        f"{selection.get('rank_column')} != {rank_column}"
+                    )
+                if payload.get("strategy_id") != strategy_id:
+                    error(f"Finalized config strategy_id does not match profile: {payload.get('strategy_id')} != {strategy_id}")
+                if payload.get("strategy_slug") != slug:
+                    error(f"Finalized config strategy_slug does not match profile: {payload.get('strategy_slug')} != {slug}")
+            except Exception as exc:
+                error(f"Could not read finalized config {finalized_path}: {exc}")
+
+    allocation = profile.get("allocation") or {}
+    assets = allocation.get("assets") or []
+    if assets:
         try:
-            payload = json.loads(finalized_path.read_text(encoding="utf-8"))
-            selection = payload.get("selection") or {}
-            if selection.get("objective") != objective:
-                error(
-                    "Finalized config objective does not match profile: "
-                    f"{selection.get('objective')} != {objective}"
-                )
-            if selection.get("rank_column") != rank_column:
-                error(
-                    "Finalized config rank column does not match profile: "
-                    f"{selection.get('rank_column')} != {rank_column}"
-                )
-            if payload.get("strategy_id") != strategy_id:
-                error(f"Finalized config strategy_id does not match profile: {payload.get('strategy_id')} != {strategy_id}")
-            if payload.get("strategy_slug") != slug:
-                error(f"Finalized config strategy_slug does not match profile: {payload.get('strategy_slug')} != {slug}")
-        except Exception as exc:
-            error(f"Could not read finalized config {finalized_path}: {exc}")
+            total_weight = sum(float(item.get("weight")) for item in assets)
+        except (TypeError, ValueError) as exc:
+            error(f"allocation.assets weights must be numeric: {exc}")
+        else:
+            if abs(total_weight - 1.0) > 1e-9:
+                error(f"allocation.assets weights must sum to 1.0, got {total_weight:.6f}.")
+        symbols = [str(item.get("symbol") or "").strip().upper() for item in assets]
+        if any(not symbol for symbol in symbols):
+            error("Each allocation.assets item must include a symbol.")
+        if len(symbols) != len(set(symbols)):
+            error("allocation.assets symbols must be unique.")
 
     package = profile.get("package") or {}
     output_dir = Path(str(package.get("output_dir") or ""))

@@ -102,10 +102,19 @@ def _schedule_frame(strategies: list[dict[str, Any]]) -> pd.DataFrame:
                 "Last successful run": last_run.get("date"),
                 "Last run type": last_run.get("type"),
                 "Model portfolio as of": item.get("latest_model_portfolio_as_of"),
-                "Target days": ", ".join(str(day) for day in schedule.get("target_days", [])),
+                "Schedule": _schedule_label(schedule),
             }
         )
     return pd.DataFrame(rows)
+
+
+def _schedule_label(schedule: dict[str, Any]) -> str:
+    if schedule.get("target_days"):
+        return ", ".join(str(day) for day in schedule.get("target_days", []))
+    if schedule.get("type") == "quarterly_first_trading_day":
+        months = ", ".join(str(month) for month in schedule.get("quarter_start_months", []))
+        return f"First trading day of quarter months: {months}"
+    return str(schedule.get("type") or "")
 
 
 def _files_frame(strategies: list[dict[str, Any]]) -> pd.DataFrame:
@@ -115,6 +124,8 @@ def _files_frame(strategies: list[dict[str, Any]]) -> pd.DataFrame:
                 "Strategy": item.get("name"),
                 "Latest model portfolio": item.get("latest_model_portfolio_path"),
                 "Exists": item.get("latest_model_portfolio_exists"),
+                "Income events": (item.get("distribution") or {}).get("events_path"),
+                "Income events exist": (item.get("distribution") or {}).get("events_file_exists"),
                 "Package folder": item.get("package_output_dir"),
                 "Finalized config exists": (item.get("file_status") or {}).get("finalized_config_exists"),
                 "Optimization output exists": (item.get("file_status") or {}).get("optimization_results_exists"),

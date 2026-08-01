@@ -165,6 +165,17 @@ python -m app.main refresh-finalized-parameters --strategy-profile strategies/du
 python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history
 ```
 
+## Diversified Asset Income Pipeline
+
+Diversified Asset Income is a fixed-allocation multi-asset strategy. It does not run parameter optimization. The profile stores fixed 20% target weights across InvIT, REIT, gold, debt, and Nifty 50 sleeves, with rebalancing on the first trading day of each quarter.
+
+```bash
+python -m app.main fetch-history --start-date 2021-01-01 --end-date 2026-07-20 --symbols PGINVIT EMBASSY GOLDBEES LIQUIDBEES NIFTYBEES --no-benchmark --no-safe-asset
+python -m app.main run-fixed-allocation-backtest --strategy-profile strategies/multi-asset-strategies/diversified-asset-income/strategy_profile.json --start-date 2021-01-01 --end-date 2026-07-20 --initial-capital 1000000
+```
+
+The run writes `fixed_allocation_summary.csv` and `fixed_allocation_net_returns_detail.csv` under `data/output/diversified-asset-income/`. The detailed file includes gross period returns, turnover, estimated transaction costs, cost drag, net period returns, and sleeve-level contributions.
+
 ## Adding Another Strategy
 
 1. Copy `strategies/_template/` to `strategies/<strategy-slug>/`.

@@ -58,6 +58,11 @@ def _write_profile(root: Path) -> Path:
                     "target_days": [11, 21],
                     "timezone": "Asia/Kolkata",
                 },
+                "distribution": {
+                    "frequency": "quarterly",
+                    "mode": "income_distribution",
+                    "events_path": str(root / "data" / "reference" / "sample_distributions.csv"),
+                },
                 "documents": {
                     "public_methodology_path": str(folder / "methodology.md"),
                     "internal_methodology_path": str(folder / "methodology_internal.md"),
@@ -93,6 +98,7 @@ def test_build_admin_dashboard_snapshot_contains_safe_operational_metadata(tmp_p
     assert snapshot["content_policy"]["holdings_rows_included"] is False
     assert strategy["latest_model_portfolio_as_of"] == "2026-07-20"
     assert strategy["last_successful_run"]["type"] == "model_portfolio_update"
+    assert strategy["distribution"]["events_path"].endswith("sample_distributions.csv")
     assert "refresh-finalized-parameters" in strategy["commands"]["refresh_finalized_parameters"]
     assert "target_weight" not in json.dumps(snapshot).lower()
 

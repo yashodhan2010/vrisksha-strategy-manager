@@ -6,7 +6,7 @@
     "performance_metrics_included": false,
     "subscriber_logic_included": false
   },
-  "generated_at": "2026-08-01T16:27:19+05:30",
+  "generated_at": "2026-08-01T22:43:07+05:30",
   "schema_version": "1.0.0",
   "source_registry": "strategies/registry.json",
   "strategies": [
@@ -26,6 +26,12 @@
         "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
         "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json",
         "validate_strategies": "python -m app.main validate-strategies"
+      },
+      "distribution": {
+        "events_file_exists": false,
+        "events_path": "",
+        "frequency": null,
+        "mode": null
       },
       "file_status": {
         "finalized_config_exists": true,
@@ -79,6 +85,12 @@
         "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json",
         "validate_strategies": "python -m app.main validate-strategies"
       },
+      "distribution": {
+        "events_file_exists": false,
+        "events_path": "",
+        "frequency": null,
+        "mode": null
+      },
       "file_status": {
         "finalized_config_exists": true,
         "model_update_exists": false,
@@ -131,6 +143,12 @@
         "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json",
         "validate_strategies": "python -m app.main validate-strategies"
       },
+      "distribution": {
+        "events_file_exists": false,
+        "events_path": "",
+        "frequency": null,
+        "mode": null
+      },
       "file_status": {
         "finalized_config_exists": true,
         "model_update_exists": false,
@@ -164,11 +182,62 @@
       "slug": "low-drawdown-dual-momentum",
       "strategy_id": "low_drawdown_dual_momentum_nifty500_v1",
       "universe": "NIFTY 500"
+    },
+    {
+      "benchmark": "NIFTY 50 TRI",
+      "category_labels": [
+        "Multi Asset",
+        "Income",
+        "Fixed Allocation",
+        "Model Portfolio"
+      ],
+      "commands": {
+        "export_admin_dashboard": "python -m app.main export-admin-dashboard",
+        "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
+        "run_fixed_allocation_backtest": "python -m app.main run-fixed-allocation-backtest --strategy-profile strategies/multi-asset-strategies/diversified-asset-income/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000",
+        "validate_strategies": "python -m app.main validate-strategies"
+      },
+      "distribution": {
+        "events_file_exists": true,
+        "events_path": "data/reference/diversified_asset_income_distributions.csv",
+        "frequency": "quarterly",
+        "mode": "income_distribution"
+      },
+      "file_status": {
+        "finalized_config_exists": false,
+        "model_update_exists": false,
+        "optimization_results_exists": false,
+        "profile_exists": true,
+        "strategy_package_exists": false
+      },
+      "finalized_config_path": "",
+      "last_successful_run": null,
+      "latest_model_portfolio_as_of": null,
+      "latest_model_portfolio_exists": false,
+      "latest_model_portfolio_path": "data/output/packages/diversified-asset-income/strategy-package/latest_model_portfolio.csv",
+      "model_portfolio_update_dir": "data/output/packages/diversified-asset-income/model-portfolio-update",
+      "name": "Diversified Asset Income",
+      "next_due_date": "2026-10-01",
+      "package_output_dir": "data/output/packages/diversified-asset-income/strategy-package",
+      "profile_path": "strategies/multi-asset-strategies/diversified-asset-income/strategy_profile.json",
+      "rebalance_schedule": {
+        "quarter_start_months": [
+          1,
+          4,
+          7,
+          10
+        ],
+        "timezone": "Asia/Kolkata",
+        "type": "quarterly_first_trading_day"
+      },
+      "slug": "diversified-asset-income",
+      "strategy_id": "diversified_asset_income_v1",
+      "universe": "InvIT, REIT, Gold, Debt, Nifty 50"
     }
   ],
   "validation": {
     "issues": [],
     "ok": true,
-    "profile_count": 3
+    "profile_count": 4
   }
 }

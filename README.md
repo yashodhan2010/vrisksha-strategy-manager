@@ -2,7 +2,7 @@
 
 Local Python foundation for Indian-equities strategy research, optimization, backtesting, model-portfolio generation, and portable Vriksha strategy-package exports.
 
-This repository currently contains three strategy profiles: Dual Momentum, Conservative Dual Momentum, and Low Drawdown Dual Momentum. Each strategy owns its profile, methodology files, optimizer path, finalized config path, and Vriksha package output folder. See [docs/strategy_harness.md](docs/strategy_harness.md) for the strict operating contract and [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
+This repository currently contains four strategy profiles: Dual Momentum, Conservative Dual Momentum, Low Drawdown Dual Momentum, and Diversified Asset Income. Each strategy owns its profile, methodology files, engine or optimizer path, and Vriksha package output folder. See [docs/strategy_harness.md](docs/strategy_harness.md) for the strict operating contract and [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
 
 This repository does not own Vriksha website accounts, payments, subscriptions, or access control.
 
@@ -54,6 +54,7 @@ Run these from the repository root.
 | Low Drawdown Dual Momentum | Rerun low-drawdown-with-CAGR-hurdle optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json` |
 | Low Drawdown Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
 | Low Drawdown Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --selenium-token` |
+| Diversified Asset Income | Run fixed-allocation historical performance | `python -m app.main run-fixed-allocation-backtest --strategy-profile strategies/multi-asset-strategies/diversified-asset-income/strategy_profile.json --start-date 2021-01-01 --end-date 2026-07-20 --initial-capital 1000000` |
 | Future strategy | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/<strategy-family>/<strategy-slug>/strategy_profile.json` |
 | Future strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
 | Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-slug>/strategy_profile.json --selenium-token` |
@@ -253,6 +254,19 @@ Advanced: fetch full synced universe history after today's token has been saved:
 
 ```bash
 python -m app.main fetch-history --start-date 2016-01-01 --end-date 2025-12-31
+```
+
+For Diversified Asset Income, fetch the configured listed instruments explicitly:
+
+```bash
+python -m app.main fetch-history --start-date 2021-01-01 --end-date 2026-07-20 --symbols PGINVIT EMBASSY GOLDBEES LIQUIDBEES NIFTYBEES --no-benchmark --no-safe-asset
+```
+
+Its fixed-allocation backtest writes experiment-style outputs to:
+
+```text
+data/output/diversified-asset-income/fixed_allocation_summary.csv
+data/output/diversified-asset-income/fixed_allocation_net_returns_detail.csv
 ```
 
 `fetch-history`, `run-backtest`, and `auto-daily-run` automatically include the benchmark (`DEFAULT_BENCHMARK_SYMBOL`) and the configured safe asset (`SAFE_ASSET_SYMBOL`) alongside the requested/universe symbols, so `LIQUIDBEES`/`GOLDBEES` prices are fetched without listing them explicitly. Use `--no-benchmark` or `--no-safe-asset` to skip either.

@@ -8,13 +8,14 @@ from pathlib import Path
 
 from app import config
 from app.automation.kite_selenium import capture_request_token
-from app.automation.schedule import is_rebalance_day, rebalance_dates_for_month
+from app.automation.schedule import rebalance_dates_for_schedule
 from app.automation.strategy_scheduler import (
     format_rebalance_reminder,
     send_due_rebalance_reminders,
     _target_days_from_schedule,
 )
 from app.backtest.engine import BacktestEngine
+from app.backtest.fixed_allocation import FixedAllocationBacktestEngine
 from app.data.trading_calendar import WeekdayTradingCalendar
 from app.data.price_ingestion import fetch_and_store_history
 from app.data.universe_loader import load_universe
@@ -122,6 +123,15 @@ def _target_days_for_strategy_profile(strategy_profile: str | None = None) -> li
     profile = load_strategy_profile(strategy_profile or config.STRATEGY_PROFILE_PATH)
     schedule = profile.get("rebalance_schedule") or {}
     return _target_days_from_schedule(schedule, Path(strategy_profile or config.STRATEGY_PROFILE_PATH))
+
+
+def _schedule_for_strategy_profile(strategy_profile: str | None = None) -> dict[str, object]:
+    profile_path = Path(strategy_profile or config.STRATEGY_PROFILE_PATH)
+    profile = load_strategy_profile(profile_path)
+    schedule = profile.get("rebalance_schedule") or {}
+    if not schedule:
+        raise ValueError(f"Strategy profile has no rebalance_schedule: {profile_path}")
+    return schedule
 
 
 def _refresh_kite_token_if_needed(use_selenium: bool, timeout_seconds: int) -> None:
@@ -563,6 +573,51 @@ def cmd_finalized_backtest(args: argparse.Namespace) -> int:
     return cmd_backtest(backtest_args)
 
 
+def cmd_fixed_allocation_backtest(args: argparse.Namespace) -> int:
+    initialize_database()
+    start_date = _parse_date(args.start_date)
+    end_date = _parse_date(args.end_date)
+    if start_date > end_date:
+        print("--start-date must be on or before --end-date.")
+        return 2
+    try:
+        profile = apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        benchmark_symbol = str((profile.get("backtest") or {}).get("benchmark_symbol") or config.DEFAULT_BENCHMARK_SYMBOL)
+        run_id = create_backtest_run(
+            start_date,
+            end_date,
+            benchmark_symbol,
+            {
+                "strategy_profile_path": args.strategy_profile or config.STRATEGY_PROFILE_PATH,
+                "strategy_id": profile.get("strategy_id"),
+                "strategy_slug": profile.get("slug"),
+                "strategy_type": profile.get("strategy_type") or "fixed_allocation",
+                "initial_capital": args.initial_capital,
+            },
+            RunStatus.STARTED,
+        )
+        result = FixedAllocationBacktestEngine(
+            run_id,
+            args.strategy_profile or config.STRATEGY_PROFILE_PATH,
+            start_date,
+            end_date,
+            args.initial_capital,
+        ).run()
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Fixed-allocation backtest failed: {exc}")
+        return 1
+    print(
+        f"Fixed-allocation backtest run {result.backtest_run_id} completed: "
+        f"final value {result.final_value:,.2f}, total return {result.total_return:.2%}, "
+        f"rebalances {result.rebalance_count}."
+    )
+    if result.warnings:
+        print("Warnings:")
+        for warning in result.warnings[:10]:
+            print(f"- {warning}")
+    return 0
+
+
 def cmd_finalized_package(args: argparse.Namespace) -> int:
     try:
         profile = apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
@@ -893,11 +948,11 @@ def cmd_auto_daily_run(args: argparse.Namespace) -> int:
     today = date.today()
     calendar = WeekdayTradingCalendar()
     try:
-        target_days = _target_days_for_strategy_profile(args.strategy_profile)
+        schedule = _schedule_for_strategy_profile(args.strategy_profile)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         print(f"Daily automation failed: {exc}")
         return 1
-    rebalance_dates = rebalance_dates_for_month(today.year, today.month, target_days, calendar)
+    rebalance_dates = rebalance_dates_for_schedule(today.year, today.month, schedule, calendar)
     print(f"Automation date: {today.isoformat()}")
     print(f"This month's rebalance dates: {', '.join(item.isoformat() for item in rebalance_dates)}")
 
@@ -936,7 +991,7 @@ def cmd_auto_daily_run(args: argparse.Namespace) -> int:
         print(f"Daily automation failed: {exc}")
         return 1
 
-    if is_rebalance_day(today, target_days, calendar):
+    if today in rebalance_dates:
         print("Today is a configured rebalance day. Running scheduled rebalance workflow...")
         return cmd_monthly_run(
             argparse.Namespace(
@@ -1012,6 +1067,12 @@ def build_parser() -> argparse.ArgumentParser:
     finalized_backtest.add_argument("--initial-capital", type=float, default=1_000_000.0)
     finalized_backtest.add_argument("--force", action="store_true")
     finalized_backtest.set_defaults(func=cmd_finalized_backtest)
+    fixed_backtest = subparsers.add_parser("run-fixed-allocation-backtest")
+    fixed_backtest.add_argument("--strategy-profile", required=True)
+    fixed_backtest.add_argument("--start-date", required=True)
+    fixed_backtest.add_argument("--end-date", required=True)
+    fixed_backtest.add_argument("--initial-capital", type=float, default=1_000_000.0)
+    fixed_backtest.set_defaults(func=cmd_fixed_allocation_backtest)
 
     finalized_package = subparsers.add_parser("build-finalized-package")
     finalized_package.add_argument("--strategy-profile")

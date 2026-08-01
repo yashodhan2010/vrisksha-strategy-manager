@@ -181,6 +181,36 @@ def test_kite_provider_fetches_daily_prices_in_chunks(monkeypatch: pytest.Monkey
     assert frame["symbol"].tolist() == ["ABC", "ABC", "ABC"]
 
 
+def test_kite_provider_resolves_reit_and_invit_symbol_aliases(monkeypatch: pytest.MonkeyPatch) -> None:
+    tokens: list[int] = []
+
+    class FakeKite:
+        def historical_data(self, token: int, start_date: date, end_date: date, interval: str, continuous: bool, oi: bool):
+            tokens.append(token)
+            return [
+                {
+                    "date": start_date,
+                    "open": 1,
+                    "high": 2,
+                    "low": 0.5,
+                    "close": 1.5,
+                    "volume": 100,
+                }
+            ]
+
+    provider = KiteHistoricalMarketDataProvider.__new__(KiteHistoricalMarketDataProvider)
+    provider._kite = FakeKite()
+    provider._instrument_cache = {"EMBASSY-RR": 2402049, "PGINVIT-IV": 894465}
+    provider.warnings = []
+    monkeypatch.setattr("app.data.historical_data.config.KITE_HISTORICAL_DAY_CHUNK_DAYS", 10)
+    monkeypatch.setattr("app.data.historical_data.config.KITE_REQUEST_SLEEP_SECONDS", 0)
+
+    frame = provider.get_daily_prices(["EMBASSY", "PGINVIT"], date(2024, 1, 1), date(2024, 1, 2))
+
+    assert tokens == [2402049, 894465]
+    assert frame["symbol"].tolist() == ["EMBASSY", "PGINVIT"]
+
+
 def test_kite_provider_reads_current_runtime_token(monkeypatch: pytest.MonkeyPatch) -> None:
     tokens: list[str] = []
 

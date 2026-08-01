@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import calendar
 from datetime import date, timedelta
+from typing import Any
 
 from app.data.trading_calendar import TradingCalendar, WeekdayTradingCalendar
 
@@ -39,6 +40,27 @@ def rebalance_dates_for_month(
         if candidate.month == month and candidate not in result:
             result.append(candidate)
     return result
+
+
+def rebalance_dates_for_schedule(
+    year: int,
+    month: int,
+    schedule: dict[str, Any],
+    trading_calendar: TradingCalendar | None = None,
+) -> list[date]:
+    schedule_type = str(schedule.get("type") or "monthly_target_days")
+    trading_calendar = trading_calendar or WeekdayTradingCalendar()
+    if schedule_type == "monthly_target_days":
+        target_days = schedule.get("target_days")
+        if not target_days:
+            raise ValueError("rebalance_schedule.target_days is required for monthly_target_days.")
+        return rebalance_dates_for_month(year, month, [int(day) for day in target_days], trading_calendar)
+    if schedule_type == "quarterly_first_trading_day":
+        quarter_start_months = schedule.get("quarter_start_months") or [1, 4, 7, 10]
+        if month not in {int(item) for item in quarter_start_months}:
+            return []
+        return rebalance_dates_for_month(year, month, [1], trading_calendar)
+    raise ValueError(f"Unsupported rebalance_schedule.type: {schedule_type}")
 
 
 def is_rebalance_day(

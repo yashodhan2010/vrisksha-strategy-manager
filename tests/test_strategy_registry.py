@@ -87,3 +87,46 @@ def test_validate_strategy_registry_reports_duplicate_slug_and_bad_results(tmp_p
     assert not report.ok
     assert "Duplicate slug" in messages
     assert "objective column 'missing_metric' missing" in messages
+
+
+def test_validate_strategy_registry_accepts_fixed_allocation_without_optimization(tmp_path: Path) -> None:
+    folder = tmp_path / "strategies" / "fixed-income"
+    folder.mkdir(parents=True)
+    (folder / "methodology.md").write_text("# Public\n", encoding="utf-8")
+    (folder / "methodology_internal.md").write_text("# Internal\n", encoding="utf-8")
+    (folder / "engine.py").write_text("# engine\n", encoding="utf-8")
+    profile = folder / "strategy_profile.json"
+    profile.write_text(
+        json.dumps(
+            {
+                "strategy_id": "fixed_income_v1",
+                "slug": "fixed-income",
+                "name": "Fixed Income",
+                "documents": {
+                    "public_methodology_path": str(folder / "methodology.md"),
+                    "internal_methodology_path": str(folder / "methodology_internal.md"),
+                },
+                "optimization": {
+                    "enabled": False,
+                    "engine_path": str(folder / "engine.py"),
+                },
+                "allocation": {
+                    "assets": [
+                        {"symbol": "AAA", "weight": 0.5},
+                        {"symbol": "BBB", "weight": 0.5},
+                    ]
+                },
+                "package": {
+                    "version": "1.0.0",
+                    "output_dir": str(tmp_path / "data" / "output" / "packages" / "fixed-income" / "strategy-package"),
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    registry = tmp_path / "strategies" / "registry.json"
+    registry.write_text(json.dumps({"strategies": [str(profile)]}), encoding="utf-8")
+
+    report = validate_strategy_registry(registry)
+
+    assert report.ok

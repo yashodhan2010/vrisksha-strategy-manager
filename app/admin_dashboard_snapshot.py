@@ -6,7 +6,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from app.automation.schedule import rebalance_dates_for_month
+from app.automation.schedule import rebalance_dates_for_schedule
 from app.data.trading_calendar import WeekdayTradingCalendar
 from app.strategy_registry import DEFAULT_REGISTRY_PATH, load_strategy_registry, validate_strategy_registry
 
@@ -75,6 +75,7 @@ def _strategy_status(profile_path: Path, today: date) -> dict[str, Any]:
     latest_portfolio_as_of = _latest_portfolio_as_of(preferred_portfolio)
     last_successful_run = _last_successful_run(update_manifest, package_manifest, latest_portfolio_as_of)
     schedule = _schedule_status(profile.get("rebalance_schedule") or {}, today)
+    distribution = _distribution_status(profile.get("distribution") or {})
     return {
         "strategy_id": profile.get("strategy_id"),
         "slug": slug,
@@ -92,14 +93,15 @@ def _strategy_status(profile_path: Path, today: date) -> dict[str, Any]:
         "last_successful_run": last_successful_run,
         "next_due_date": schedule["next_due_date"],
         "rebalance_schedule": schedule["schedule"],
+        "distribution": distribution,
         "file_status": {
             "profile_exists": profile_path.exists(),
-            "finalized_config_exists": Path(str(optimization.get("finalized_config_path") or "")).exists(),
-            "optimization_results_exists": Path(str(optimization.get("results_path") or "")).exists(),
+            "finalized_config_exists": _path_exists(optimization.get("finalized_config_path")),
+            "optimization_results_exists": _path_exists(optimization.get("results_path")),
             "strategy_package_exists": package_dir.exists(),
             "model_update_exists": model_update_dir.exists(),
         },
-        "commands": _commands(profile_path, slug),
+        "commands": _commands(profile_path, slug, profile),
     }
 
 
@@ -112,6 +114,10 @@ def _read_json(path: str | Path) -> dict[str, Any]:
 
 def _display_path(path: str | Path) -> str:
     return Path(str(path)).as_posix() if path else ""
+
+
+def _path_exists(path: object) -> bool:
+    return bool(path) and Path(str(path)).exists()
 
 
 def _latest_portfolio_as_of(path: Path) -> str | None:
@@ -149,28 +155,47 @@ def _last_successful_run(
 
 
 def _schedule_status(schedule: dict[str, Any], today: date) -> dict[str, Any]:
-    target_days = schedule.get("target_days") or [1, 15]
-    target_days = [int(item) for item in target_days]
+    normalized_schedule = _normalize_schedule(schedule)
     calendar = WeekdayTradingCalendar()
     for year, month in _month_cursor(today):
-        candidates = rebalance_dates_for_month(year, month, target_days, calendar)
+        candidates = rebalance_dates_for_schedule(year, month, normalized_schedule, calendar)
         future = [item for item in candidates if item >= today]
         if future:
             return {
                 "next_due_date": min(future).isoformat(),
-                "schedule": {
-                    "type": schedule.get("type") or "monthly_target_days",
-                    "target_days": target_days,
-                    "timezone": schedule.get("timezone") or "Asia/Kolkata",
-                },
+                "schedule": normalized_schedule,
             }
     return {
         "next_due_date": None,
-        "schedule": {
-            "type": schedule.get("type") or "monthly_target_days",
-            "target_days": target_days,
-            "timezone": schedule.get("timezone") or "Asia/Kolkata",
-        },
+        "schedule": normalized_schedule,
+    }
+
+
+def _normalize_schedule(schedule: dict[str, Any]) -> dict[str, Any]:
+    schedule_type = str(schedule.get("type") or "monthly_target_days")
+    result: dict[str, Any] = {
+        "type": schedule_type,
+        "timezone": schedule.get("timezone") or "Asia/Kolkata",
+    }
+    if schedule_type == "monthly_target_days":
+        result["target_days"] = [int(item) for item in (schedule.get("target_days") or [1, 15])]
+    elif schedule_type == "quarterly_first_trading_day":
+        result["quarter_start_months"] = [int(item) for item in (schedule.get("quarter_start_months") or [1, 4, 7, 10])]
+    return result
+
+
+def _distribution_status(distribution: dict[str, Any]) -> dict[str, Any]:
+    events_path = (
+        distribution.get("events_path")
+        or distribution.get("dividend_events_path")
+        or distribution.get("distributions_path")
+        or ""
+    )
+    return {
+        "frequency": distribution.get("frequency"),
+        "mode": distribution.get("mode"),
+        "events_path": _display_path(events_path),
+        "events_file_exists": _path_exists(events_path),
     }
 
 
@@ -187,22 +212,33 @@ def _month_cursor(start: date) -> list[tuple[int, int]]:
     return months
 
 
-def _commands(profile_path: Path, slug: str) -> dict[str, str]:
-    profile = str(profile_path).replace("\\", "/")
+def _commands(profile_path: Path, slug: str, profile: dict[str, Any]) -> dict[str, str]:
+    profile_arg = str(profile_path).replace("\\", "/")
+    if str(profile.get("strategy_type") or "").strip().lower() == "fixed_allocation":
+        return {
+            "run_fixed_allocation_backtest": (
+                "python -m app.main run-fixed-allocation-backtest "
+                f"--strategy-profile {profile_arg} "
+                "--start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000"
+            ),
+            "export_admin_dashboard": "python -m app.main export-admin-dashboard",
+            "validate_strategies": "python -m app.main validate-strategies",
+            "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
+        }
     return {
-        "refresh_finalized_parameters": f"python -m app.main refresh-finalized-parameters --strategy-profile {profile}",
+        "refresh_finalized_parameters": f"python -m app.main refresh-finalized-parameters --strategy-profile {profile_arg}",
         "build_finalized_package": (
             "python -m app.main build-finalized-package "
-            f"--strategy-profile {profile} "
+            f"--strategy-profile {profile_arg} "
             "--start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token"
         ),
         "build_model_portfolio_update": (
             "python -m app.main build-model-portfolio-update "
-            f"--strategy-profile {profile} --selenium-token"
+            f"--strategy-profile {profile_arg} --selenium-token"
         ),
         "local_model_portfolio_update_no_fetch": (
             "python -m app.main build-model-portfolio-update "
-            f"--strategy-profile {profile} --no-fetch-history"
+            f"--strategy-profile {profile_arg} --no-fetch-history"
         ),
         "export_admin_dashboard": "python -m app.main export-admin-dashboard",
         "validate_strategies": "python -m app.main validate-strategies",

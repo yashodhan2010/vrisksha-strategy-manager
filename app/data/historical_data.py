@@ -161,9 +161,12 @@ class KiteHistoricalMarketDataProvider:
         normalized = symbol.strip().upper()
         if self._instrument_cache is None:
             self._instrument_cache = self._build_instrument_cache()
-        if normalized not in self._instrument_cache:
-            return None
-        return self._instrument_cache[normalized]
+        if normalized in self._instrument_cache:
+            return self._instrument_cache[normalized]
+        for candidate in _kite_symbol_aliases(normalized):
+            if candidate in self._instrument_cache:
+                return self._instrument_cache[candidate]
+        return None
 
     def _build_instrument_cache(self) -> dict[str, int]:
         cache: dict[str, int] = {}
@@ -226,6 +229,13 @@ def _is_retryable_kite_error(exc: Exception) -> bool:
         "504",
     ]
     return any(fragment in message for fragment in retryable_fragments)
+
+
+def _kite_symbol_aliases(symbol: str) -> list[str]:
+    return [
+        f"{symbol}-RR",
+        f"{symbol}-IV",
+    ]
 
 
 def iter_date_chunks(start_date: date, end_date: date, max_days: int) -> list[tuple[date, date]]:

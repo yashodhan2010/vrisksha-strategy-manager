@@ -1,0 +1,77 @@
+{
+  "strategy_id": "diversified_asset_income_v1",
+  "slug": "diversified-asset-income",
+  "name": "Diversified Asset Income",
+  "short_description": "A fixed-weight multi-asset portfolio across InvIT, REIT, gold, debt, and Nifty 50 sleeves with quarterly rebalancing.",
+  "strategy_type": "fixed_allocation",
+  "category_labels": [
+    "Multi Asset",
+    "Income",
+    "Fixed Allocation",
+    "Model Portfolio"
+  ],
+  "ra_entity": "Prathamesh Gupta",
+  "sebi_registration_number": "",
+  "universe": "InvIT, REIT, Gold, Debt, Nifty 50",
+  "benchmark": "NIFTY 50 TRI",
+  "min_capital_guidance": 0,
+  "backtest": {
+    "benchmark_symbol": "NIFTY50"
+  },
+  "rebalance_schedule": {
+    "type": "quarterly_first_trading_day",
+    "quarter_start_months": [1, 4, 7, 10],
+    "timezone": "Asia/Kolkata"
+  },
+  "distribution": {
+    "frequency": "quarterly",
+    "mode": "income_distribution",
+    "events_path": "data/reference/diversified_asset_income_distributions.csv"
+  },
+  "allocation": {
+    "method": "fixed_equal_weight",
+    "assets": [
+      {
+        "sleeve": "InvIT",
+        "symbol": "PGINVIT",
+        "weight": 0.2
+      },
+      {
+        "sleeve": "REIT",
+        "symbol": "EMBASSY",
+        "weight": 0.2
+      },
+      {
+        "sleeve": "Gold",
+        "symbol": "GOLDBEES",
+        "weight": 0.2
+      },
+      {
+        "sleeve": "Debt",
+        "symbol": "LIQUIDBEES",
+        "weight": 0.2
+      },
+      {
+        "sleeve": "Nifty 50",
+        "symbol": "NIFTYBEES",
+        "weight": 0.2
+      }
+    ]
+  },
+  "experiment_outputs": {
+    "summary_path": "data/output/diversified-asset-income/fixed_allocation_summary.csv",
+    "net_returns_detail_path": "data/output/diversified-asset-income/fixed_allocation_net_returns_detail.csv"
+  },
+  "documents": {
+    "public_methodology_path": "strategies/multi-asset-strategies/diversified-asset-income/methodology.md",
+    "internal_methodology_path": "strategies/multi-asset-strategies/diversified-asset-income/methodology_internal.md"
+  },
+  "optimization": {
+    "enabled": false,
+    "engine_path": "strategies/multi-asset-strategies/diversified-asset-income/experiments/fixed_allocation.py"
+  },
+  "package": {
+    "version": "1.0.0",
+    "output_dir": "data/output/packages/diversified-asset-income/strategy-package"
+  }
+}

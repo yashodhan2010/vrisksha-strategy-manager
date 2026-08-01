@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-from app.automation.schedule import rebalance_dates_for_month
+from app.automation.schedule import rebalance_dates_for_schedule
 from app.automation.telegram import TelegramSendResult, send_telegram_message
 from app.data.trading_calendar import TradingCalendar, WeekdayTradingCalendar
 from app.strategy_profile import load_strategy_profile
@@ -19,6 +19,7 @@ class StrategySchedule:
     slug: str
     name: str
     target_days: list[int]
+    schedule: dict[str, Any]
     timezone: str
 
 
@@ -39,7 +40,7 @@ def load_strategy_schedules(registry_path: str | Path = DEFAULT_REGISTRY_PATH) -
     for profile_path in load_strategy_registry(registry_path):
         profile = load_strategy_profile(profile_path)
         schedule = profile.get("rebalance_schedule") or {}
-        target_days = _target_days_from_schedule(schedule, profile_path)
+        target_days = _target_days_from_schedule(schedule, profile_path) if schedule.get("type") == "monthly_target_days" else []
         schedules.append(
             StrategySchedule(
                 profile_path=profile_path,
@@ -47,6 +48,7 @@ def load_strategy_schedules(registry_path: str | Path = DEFAULT_REGISTRY_PATH) -
                 slug=str(profile["slug"]),
                 name=str(profile["name"]),
                 target_days=target_days,
+                schedule=schedule,
                 timezone=str(schedule.get("timezone") or "Asia/Kolkata"),
             )
         )
@@ -73,7 +75,7 @@ def due_rebalance_reminders(
     calendar = trading_calendar or WeekdayTradingCalendar()
     reminders: list[StrategyReminder] = []
     for schedule in load_strategy_schedules(registry_path):
-        due_dates = _nearby_rebalance_dates(today, schedule.target_days, calendar)
+        due_dates = _nearby_rebalance_dates(today, schedule.schedule, calendar)
         for due_date in due_dates:
             if due_date == today:
                 reminders.append(StrategyReminder(schedule, "due_today", due_date, today))
@@ -84,7 +86,7 @@ def due_rebalance_reminders(
 
 def _nearby_rebalance_dates(
     today: date,
-    target_days: list[int],
+    schedule: dict[str, Any],
     trading_calendar: TradingCalendar,
 ) -> list[date]:
     months = [(today.year, today.month)]
@@ -92,7 +94,7 @@ def _nearby_rebalance_dates(
     months.append((next_month.year, next_month.month))
     dates: list[date] = []
     for year, month in months:
-        dates.extend(rebalance_dates_for_month(year, month, target_days, trading_calendar))
+        dates.extend(rebalance_dates_for_schedule(year, month, schedule, trading_calendar))
     return sorted(set(dates))
 
 
@@ -100,9 +102,17 @@ def format_rebalance_reminder(reminder: StrategyReminder) -> str:
     when = "today" if reminder.reminder_type == "due_today" else "tomorrow"
     return (
         f"Rebalance reminder: {reminder.schedule.name} is scheduled for {when} "
-        f"({reminder.due_date.isoformat()}). Target days: "
-        f"{', '.join(str(day) for day in reminder.schedule.target_days)}."
+        f"({reminder.due_date.isoformat()}). Schedule: "
+        f"{_schedule_label(reminder.schedule)}."
     )
+
+
+def _schedule_label(schedule: StrategySchedule) -> str:
+    if schedule.target_days:
+        return f"target days {', '.join(str(day) for day in schedule.target_days)}"
+    if schedule.schedule.get("type") == "quarterly_first_trading_day":
+        return "first trading day of each quarter"
+    return str(schedule.schedule.get("type") or "unknown")
 
 
 def send_due_rebalance_reminders(

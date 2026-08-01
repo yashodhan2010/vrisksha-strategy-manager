@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from app.automation.schedule import is_rebalance_day, parse_target_days, rebalance_dates_for_month
+from app.automation.schedule import is_rebalance_day, parse_target_days, rebalance_dates_for_month, rebalance_dates_for_schedule
 from app.cli import _target_days_for_strategy_profile
 
 
@@ -20,6 +20,13 @@ def test_rebalance_dates_roll_weekend_targets_forward() -> None:
 def test_is_rebalance_day_uses_configured_targets() -> None:
     assert is_rebalance_day(date(2024, 6, 17), [1, 15])
     assert not is_rebalance_day(date(2024, 6, 18), [1, 15])
+
+
+def test_rebalance_dates_for_schedule_supports_quarterly_first_trading_day() -> None:
+    schedule = {"type": "quarterly_first_trading_day", "quarter_start_months": [1, 4, 7, 10]}
+
+    assert rebalance_dates_for_schedule(2026, 10, schedule) == [date(2026, 10, 1)]
+    assert rebalance_dates_for_schedule(2026, 11, schedule) == []
 
 
 def test_parse_target_days_rejects_invalid_values() -> None:
