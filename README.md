@@ -183,18 +183,27 @@ KITE_MAX_RETRIES=5
 KITE_RETRY_BACKOFF_SECONDS=2.0
 ```
 
-Daily laptop-start automation uses Selenium to open Kite login when today's access token is missing, refresh recent history, and run the scheduled rebalance workflow only on configured rebalance dates:
+Daily laptop-start automation uses Selenium to open Kite login when today's access token is missing, refresh recent history, and run the scheduled rebalance workflow only on dates configured in each strategy profile:
 
 ```text
 SELENIUM_LOGIN_TIMEOUT_SECONDS=180
-AUTO_REBALANCE_TARGET_DAYS=1,15
 AUTOMATION_HISTORY_LOOKBACK_DAYS=10
 TARGET_PORTFOLIO_VALUE=1000000
 AVAILABLE_PURCHASE_FUNDS=1000000
+TELEGRAM_ENABLED=true
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
 ```
 
-`AUTO_REBALANCE_TARGET_DAYS=1,15` means the rebalance workflow runs twice per month: on the first trading/pricing day on or after the 1st, and on the first trading/pricing day on or after the 15th. The current calendar is still the provisional weekday calendar, so NSE holiday support remains a future improvement.
+Each strategy profile owns its schedule through `rebalance_schedule.target_days`. The current dual momentum profiles use the optimized 11th and 21st day-of-month targets. The current calendar is still the provisional weekday calendar, so NSE holiday support remains a future improvement.
 On those dates, the scheduled workflow calculates the real target portfolio from stored prices, saves selected holdings/weights/quantities, and creates proposed buy/sell orders in SQLite. BUY proposals are scaled proportionally to `AVAILABLE_PURCHASE_FUNDS`, so if intended buys total 1,000,000 but available purchase funds are 500,000, every BUY is proposed at 50% of its target value. It does not submit live broker orders unattended.
+
+Telegram reminders can be sent one day before and on the rebalance date for every strategy listed in `strategies/registry.json`:
+
+```bash
+python -m app.main send-rebalance-reminders
+python -m app.main send-rebalance-reminders --dry-run
+```
 
 Get a Kite login URL:
 
@@ -332,7 +341,7 @@ To make the automation run when you log in to Windows, run:
 scripts\install_auto_daily_startup.bat
 ```
 
-After that, Windows launches `scripts\run_auto_daily.bat` at login. Output is appended to `logs\auto_daily.log`.
+After that, Windows launches `scripts\run_auto_daily.bat` at login. It sends any due Telegram rebalance reminders, then runs the daily automation workflow. Output is appended to `logs\auto_daily.log`.
 The batch file attempts to activate the `vrisksha-strategy-manager` Conda environment from common Miniconda/Anaconda install paths before running Python. Set `CONDA_ENV_NAME` before running the script if your environment has a different name.
 
 ## Full CLI Reference
@@ -353,6 +362,7 @@ python -m app.main kite-token-status
 python -m app.main kite-save-token --request-token YOUR_REQUEST_TOKEN
 python -m app.main kite-selenium-token
 python -m app.main auto-daily-run --selenium-token
+python -m app.main send-rebalance-reminders --dry-run
 ```
 
 `monthly-run` and the scheduled rebalance step inside `auto-daily-run` calculate a real target portfolio and proposed order list from stored `market_prices`. They still never submit live broker orders. `manual-run` remains a safe placeholder.

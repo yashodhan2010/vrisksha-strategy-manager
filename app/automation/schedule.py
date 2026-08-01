@@ -3,11 +3,10 @@ from __future__ import annotations
 import calendar
 from datetime import date, timedelta
 
-from app import config
 from app.data.trading_calendar import TradingCalendar, WeekdayTradingCalendar
 
 
-def parse_target_days(value: str = config.AUTO_REBALANCE_TARGET_DAYS) -> list[int]:
+def parse_target_days(value: str) -> list[int]:
     days: list[int] = []
     for item in value.split(","):
         item = item.strip()
@@ -15,10 +14,10 @@ def parse_target_days(value: str = config.AUTO_REBALANCE_TARGET_DAYS) -> list[in
             continue
         day = int(item)
         if day < 1 or day > 31:
-            raise ValueError("AUTO_REBALANCE_TARGET_DAYS must contain day numbers from 1 to 31.")
+            raise ValueError("Target days must contain day numbers from 1 to 31.")
         days.append(day)
     if not days:
-        raise ValueError("AUTO_REBALANCE_TARGET_DAYS must contain at least one day.")
+        raise ValueError("Target days must contain at least one day.")
     return sorted(set(days))
 
 
@@ -28,7 +27,8 @@ def rebalance_dates_for_month(
     target_days: list[int] | None = None,
     trading_calendar: TradingCalendar | None = None,
 ) -> list[date]:
-    target_days = target_days or parse_target_days()
+    if not target_days:
+        raise ValueError("target_days is required.")
     trading_calendar = trading_calendar or WeekdayTradingCalendar()
     _, days_in_month = calendar.monthrange(year, month)
     result: list[date] = []

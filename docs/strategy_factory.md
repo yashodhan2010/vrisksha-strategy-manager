@@ -129,10 +129,16 @@ The update package is written to:
 data/output/packages/dual-momentum/model-portfolio-update/
 ```
 
-Daily automation refreshes market data and runs `monthly-run` only on configured rebalance dates:
+Daily automation refreshes market data and runs `monthly-run` only on dates configured in the selected strategy profile:
 
 ```bash
 python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
+```
+
+Telegram rebalance reminders are registry-wide and fire one day before and on each strategy's configured rebalance date:
+
+```bash
+python -m app.main send-rebalance-reminders
 ```
 
 If `data/output/finalized/dual_momentum_best_config.json` does not exist, run `finalize-strategy-config` first. This prevents scheduled rebalances from silently using `.env` strategy knobs.

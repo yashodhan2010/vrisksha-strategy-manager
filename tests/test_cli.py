@@ -146,6 +146,45 @@ def test_export_admin_dashboard_cli_works(tmp_path: Path) -> None:
     assert payload["strategies"]
 
 
+def test_send_rebalance_reminders_cli_dry_run(tmp_path: Path) -> None:
+    profile_dir = tmp_path / "strategies" / "dual-momentum"
+    profile_dir.mkdir(parents=True)
+    profile = profile_dir / "strategy_profile.json"
+    profile.write_text(
+        json.dumps(
+            {
+                "strategy_id": "dual_momentum_test_v1",
+                "slug": "dual-momentum",
+                "name": "Dual Momentum",
+                "rebalance_schedule": {
+                    "type": "monthly_target_days",
+                    "target_days": [11, 21],
+                    "timezone": "Asia/Kolkata",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    registry = tmp_path / "strategies" / "registry.json"
+    registry.write_text(json.dumps({"strategies": [str(profile)]}), encoding="utf-8")
+
+    result = _run(
+        [
+            "send-rebalance-reminders",
+            "--registry",
+            str(registry),
+            "--as-of-date",
+            "2026-08-10",
+            "--dry-run",
+        ],
+        tmp_path,
+    )
+
+    assert result.returncode == 0
+    assert "Dual Momentum" in result.stdout
+    assert "tomorrow" in result.stdout
+
+
 def test_build_finalized_package_can_skip_history_fetch(tmp_path: Path) -> None:
     trials = tmp_path / "trials.csv"
     pd.DataFrame(

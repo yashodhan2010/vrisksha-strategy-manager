@@ -125,7 +125,7 @@ Weights are normalized internally, so `RANKING_*_WEIGHT` values don't need to su
 ## 6. Rebalance Cadence
 
 - **Backtest**: `BACKTEST_REBALANCES_PER_MONTH` (default 1) controls how many rebalance dates are generated per month, spaced evenly across each month's available trading/pricing days (`1` = start of month only, `2` = start + mid-month, `4` ≈ weekly).
-- **Live/paper**: `AUTO_REBALANCE_TARGET_DAYS` (default `1,15`) drives the daily-automation schedule — the workflow runs on the first trading/pricing day on or after each configured day-of-month.
+- **Live/paper**: `rebalance_schedule.target_days` in this strategy profile is set to `[11, 21]` and drives the daily-automation schedule for this strategy — the workflow runs on the first trading/pricing day on or after each configured day-of-month.
 
 At each rebalance date, ranking + allocation are recomputed from scratch (no explicit rank persistence between periods); "holding_action" (`HELD` vs `ENTERED`) and consecutive/total months-held counters are derived by comparing the new selected set to the previous snapshot's symbols.
 
@@ -173,7 +173,7 @@ Every BUY's estimated value is multiplied by `buy_scaling_ratio` (SELLs are neve
 | `SAFE_ASSET_SYMBOL` | `LIQUIDBEES` | Residual/cash-proxy asset |
 | `MAX_PRICE_FORWARD_FILL_DAYS` | 5 | Maximum rows to forward-fill missing prices before treating the symbol as unavailable |
 | `BACKTEST_REBALANCES_PER_MONTH` | 1 | Rebalance frequency in backtests |
-| `AUTO_REBALANCE_TARGET_DAYS` | `1,15` | Day-of-month triggers for scheduled live rebalances |
+| `rebalance_schedule.target_days` | `[11, 21]` | Day-of-month triggers for scheduled live rebalances |
 | `TARGET_PORTFOLIO_VALUE` | 1,000,000 | Notional portfolio size for live weight → quantity conversion |
 | `AVAILABLE_PURCHASE_FUNDS` | = `TARGET_PORTFOLIO_VALUE` | Real cash available to scale BUY proposals |
 

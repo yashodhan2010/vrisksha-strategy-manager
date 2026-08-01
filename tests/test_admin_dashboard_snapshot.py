@@ -55,7 +55,7 @@ def _write_profile(root: Path) -> Path:
                 "benchmark": "NIFTY 500 TRI",
                 "rebalance_schedule": {
                     "type": "monthly_target_days",
-                    "target_days": [1, 15],
+                    "target_days": [11, 21],
                     "timezone": "Asia/Kolkata",
                 },
                 "documents": {

@@ -8,7 +8,12 @@ from pathlib import Path
 
 from app import config
 from app.automation.kite_selenium import capture_request_token
-from app.automation.schedule import is_rebalance_day, parse_target_days, rebalance_dates_for_month
+from app.automation.schedule import is_rebalance_day, rebalance_dates_for_month
+from app.automation.strategy_scheduler import (
+    format_rebalance_reminder,
+    send_due_rebalance_reminders,
+    _target_days_from_schedule,
+)
 from app.backtest.engine import BacktestEngine
 from app.data.trading_calendar import WeekdayTradingCalendar
 from app.data.price_ingestion import fetch_and_store_history
@@ -33,7 +38,7 @@ from app.storage.repositories import (
     find_completed_backtest_run_by_scenario,
 )
 from app.storage.market_data_repository import get_symbol_price_ranges
-from app.strategy_profile import apply_strategy_profile
+from app.strategy_profile import apply_strategy_profile, load_strategy_profile
 from app.strategy_registry import validate_strategy_registry
 from app.strategy.rebalance import RebalanceEngine
 from app.strategy.models import RunMode, RunStatus, RunType
@@ -111,6 +116,12 @@ def _apply_profile_and_finalized_config(
         "finalized_config": finalized,
         "finalized_config_path": config_path,
     }
+
+
+def _target_days_for_strategy_profile(strategy_profile: str | None = None) -> list[int]:
+    profile = load_strategy_profile(strategy_profile or config.STRATEGY_PROFILE_PATH)
+    schedule = profile.get("rebalance_schedule") or {}
+    return _target_days_from_schedule(schedule, Path(strategy_profile or config.STRATEGY_PROFILE_PATH))
 
 
 def _refresh_kite_token_if_needed(use_selenium: bool, timeout_seconds: int) -> None:
@@ -228,6 +239,29 @@ def cmd_export_admin_dashboard(args: argparse.Namespace) -> int:
         print(f"Admin dashboard export failed: {exc}")
         return 1
     print(f"Admin dashboard snapshot written to {output_path}")
+    return 0
+
+
+def cmd_send_rebalance_reminders(args: argparse.Namespace) -> int:
+    try:
+        as_of_date = _parse_date(args.as_of_date) if args.as_of_date else None
+        reminders, results = send_due_rebalance_reminders(
+            registry_path=args.registry,
+            as_of_date=as_of_date,
+            dry_run=args.dry_run,
+        )
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Rebalance reminder check failed: {exc}")
+        return 1
+    if not reminders:
+        print("No rebalance reminders due.")
+        return 0
+    for reminder in reminders:
+        print(format_rebalance_reminder(reminder))
+    for result in results:
+        print(result.message)
+        if result.enabled and not result.sent:
+            return 1
     return 0
 
 
@@ -858,7 +892,11 @@ def cmd_auto_daily_run(args: argparse.Namespace) -> int:
         return 2
     today = date.today()
     calendar = WeekdayTradingCalendar()
-    target_days = parse_target_days(config.AUTO_REBALANCE_TARGET_DAYS)
+    try:
+        target_days = _target_days_for_strategy_profile(args.strategy_profile)
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Daily automation failed: {exc}")
+        return 1
     rebalance_dates = rebalance_dates_for_month(today.year, today.month, target_days, calendar)
     print(f"Automation date: {today.isoformat()}")
     print(f"This month's rebalance dates: {', '.join(item.isoformat() for item in rebalance_dates)}")
@@ -925,6 +963,11 @@ def build_parser() -> argparse.ArgumentParser:
     admin_dashboard.add_argument("--output", default="data/admin/strategy_dashboard.json")
     admin_dashboard.add_argument("--as-of-date")
     admin_dashboard.set_defaults(func=cmd_export_admin_dashboard)
+    reminders = subparsers.add_parser("send-rebalance-reminders")
+    reminders.add_argument("--registry", default="strategies/registry.json")
+    reminders.add_argument("--as-of-date")
+    reminders.add_argument("--dry-run", action="store_true")
+    reminders.set_defaults(func=cmd_send_rebalance_reminders)
     subparsers.add_parser("sync-universe").set_defaults(func=cmd_sync_universe)
     subparsers.add_parser("manual-run").set_defaults(func=cmd_manual_run)
     monthly_run = subparsers.add_parser("monthly-run")
