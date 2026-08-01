@@ -32,7 +32,7 @@ python -m app.main build-finalized-package --start-date 2016-01-01 --end-date 20
 Or pass it explicitly:
 
 ```bash
-python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000
 ```
 
 For Dual Momentum, that command selects the best CAGR-ranked experiment row, writes a finalized config, applies those parameters, syncs/fetches missing Kite history, runs the backtest, and exports the full public Vriksha package. Other strategy profiles use their own `optimization.objective` and `optimization.rank_column`. For routine model-portfolio updates after parameters are finalized, use `build-model-portfolio-update`; it refreshes only recent Kite history by default and does not run the long historical backtest.
@@ -43,18 +43,18 @@ Run these from the repository root.
 
 | Strategy | Purpose | Command |
 |---|---|---|
-| Dual Momentum | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum/strategy_profile.json` |
-| Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
-| Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum/strategy_profile.json --selenium-token` |
-| Dual Momentum | Generate latest live/paper model portfolio only | `python -m app.main monthly-run --strategy-profile strategies/dual-momentum/strategy_profile.json` |
-| Dual Momentum | Refresh data daily and rebalance only on configured dates | `python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum/strategy_profile.json` |
-| Conservative Dual Momentum | Rerun net-Calmar optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json` |
-| Conservative Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
-| Conservative Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --selenium-token` |
-| Low Drawdown Dual Momentum | Rerun low-drawdown-with-CAGR-hurdle optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json` |
-| Low Drawdown Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
-| Low Drawdown Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --selenium-token` |
-| Future strategy | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/<strategy-slug>/strategy_profile.json` |
+| Dual Momentum | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json` |
+| Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
+| Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --selenium-token` |
+| Dual Momentum | Generate latest live/paper model portfolio only | `python -m app.main monthly-run --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json` |
+| Dual Momentum | Refresh data daily and rebalance only on configured dates | `python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json` |
+| Conservative Dual Momentum | Rerun net-Calmar optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json` |
+| Conservative Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
+| Conservative Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --selenium-token` |
+| Low Drawdown Dual Momentum | Rerun low-drawdown-with-CAGR-hurdle optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json` |
+| Low Drawdown Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
+| Low Drawdown Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --selenium-token` |
+| Future strategy | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/<strategy-family>/<strategy-slug>/strategy_profile.json` |
 | Future strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
 | Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-slug>/strategy_profile.json --selenium-token` |
 | All strategies | Export safe Streamlit admin snapshot | `python -m app.main export-admin-dashboard` |
@@ -90,8 +90,8 @@ For Streamlit Community Cloud, deploy `dashboards/admin_app.py` from this GitHub
 For each strategy, optimization knobs live in that strategy's profile under `optimization.search_space`, and the production optimizer is pointed to by `optimization.engine_path`. For Dual Momentum, those are:
 
 ```text
-strategies/dual-momentum/strategy_profile.json
-strategies/dual-momentum/experiments/optimizer.py
+strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
+strategies/dual-momentum-strategies/dual-momentum/experiments/optimizer.py
 ```
 
 ## Windows Conda Setup
@@ -270,19 +270,19 @@ data/output/finalized/dual_momentum_best_config.json
 Optimization knobs are also not meant to live in `.env`. Tweak the parameter grid here:
 
 ```text
-strategies/dual-momentum/strategy_profile.json
+strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
 ```
 
 Specifically, edit `optimization.search_space`. The strategy-local optimizer that consumes that grid is:
 
 ```text
-strategies/dual-momentum/experiments/optimizer.py
+strategies/dual-momentum-strategies/dual-momentum/experiments/optimizer.py
 ```
 
 Every quarter or half-year, rerun the parameter search and promote the best corrected CAGR row with:
 
 ```bash
-python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum/strategy_profile.json
+python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
 ```
 
 Use `--n-trials 50` for a quick partial smoke run; omit `--n-trials` for the full configured grid.
@@ -290,7 +290,7 @@ Use `--n-trials 50` for a quick partial smoke run; omit `--n-trials` for the ful
 Strategy identity, public metadata, optimization input path, finalized config path, and package output path live in:
 
 ```text
-strategies/dual-momentum/strategy_profile.json
+strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
 ```
 
 Use `STRATEGY_RANKING_METHOD=AVERAGE_RANK` to rank stocks independently by 3M/6M/12M momentum, low beta, and low volatility, then sort by the average of those three ranks. Momentum uses `MOMENTUM_SKIP_RECENT_DAYS=21` by default, so the newest trading month is skipped before calculating the 3M/6M/12M returns. The allocator uses the finalized profile's `STRATEGY_TOP_N` average-rank candidates. Other supported ranking methods are `MOMENTUM`, `BETA_ADJUSTED`, `VOLATILITY_ADJUSTED`, and `COMBINED_RANK`; `COMBINED_RANK` uses a weighted percentile blend and normalizes the three `RANKING_*_WEIGHT` values internally.

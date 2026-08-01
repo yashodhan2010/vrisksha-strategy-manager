@@ -10,7 +10,7 @@ Each finalized strategy gets one folder here. The folder should contain:
 
 `strategies/registry.json` is the authoritative list of active strategy profiles. Add every new finalized strategy profile there.
 
-To add another strategy, copy `strategies/_template/` into `strategies/<strategy-slug>/` and update the metadata, document text, `optimization.engine_path`, `optimization.search_space`, finalized config path, and package output path.
+To add another strategy, copy `strategies/_template/` into `strategies/<strategy-family>/<strategy-slug>/` and update the metadata, document text, `optimization.engine_path`, `optimization.search_space`, finalized config path, and package output path. For dual momentum variants, use `strategies/dual-momentum-strategies/<strategy-slug>/`.
 
 Before committing, run:
 

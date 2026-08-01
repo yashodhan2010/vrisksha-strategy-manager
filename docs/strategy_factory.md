@@ -2,7 +2,7 @@
 
 This repository is organized as a research and packaging factory for model-portfolio strategies. It does not own Vriksha website accounts, payments, subscriptions, or access control.
 
-The repository/folder should use the generic name `vrisksha-strategy-manager`. Strategy-specific folders, such as `strategies/dual-momentum`, are intentionally named by strategy slug.
+The repository/folder should use the generic name `vrisksha-strategy-manager`. Strategy-specific folders live under a family folder, such as `strategies/dual-momentum-strategies/dual-momentum`, with the final folder named by strategy slug.
 
 Use [strategy_harness.md](strategy_harness.md) as the strict operating contract before adding or changing strategy profiles.
 
@@ -70,33 +70,33 @@ python -m app.main validate-strategies
 ## Dual Momentum Pipeline
 
 ```bash
-python -m app.main finalize-strategy-config --strategy-profile strategies/dual-momentum/strategy_profile.json
+python -m app.main finalize-strategy-config --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
 ```
 
 Or rerun the average-rank/buffer optimization and promote the new top-CAGR row in one command:
 
 ```bash
-python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum/strategy_profile.json
+python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
 ```
 
 ```bash
-python -m app.main run-finalized-backtest --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --force
+python -m app.main run-finalized-backtest --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --force
 ```
 
 ```bash
-python -m app.main export-strategy-package --strategy-profile strategies/dual-momentum/strategy_profile.json
+python -m app.main export-strategy-package --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
 ```
 
 Or run the complete chain:
 
 ```bash
-python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000
 ```
 
 `build-finalized-package` syncs the universe and checks local price coverage before the backtest. If required history is missing or stale, it fetches Kite history from the earliest missing date through the requested end date. Use `--selenium-token` to let the command refresh today's Kite token through the configured Selenium auto-login flow:
 
 ```bash
-python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --selenium-token
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --selenium-token
 ```
 
 Use `--no-fetch-history` only when intentionally running against already stored local data.
@@ -114,13 +114,13 @@ It includes public-safe `methodology.md` plus internal-only `methodology_interna
 The scheduled model-portfolio workflow also applies the strategy profile and finalized config before generating holdings:
 
 ```bash
-python -m app.main monthly-run --strategy-profile strategies/dual-momentum/strategy_profile.json
+python -m app.main monthly-run --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
 ```
 
 For Vriksha subscriber-page updates, use the command that refreshes only recent history, runs the model portfolio, and exports the update files:
 
 ```bash
-python -m app.main build-model-portfolio-update --selenium-token --strategy-profile strategies/dual-momentum/strategy_profile.json
+python -m app.main build-model-portfolio-update --selenium-token --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
 ```
 
 The update package is written to:
@@ -132,7 +132,7 @@ data/output/packages/dual-momentum/model-portfolio-update/
 Daily automation refreshes market data and runs `monthly-run` only on configured rebalance dates:
 
 ```bash
-python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum/strategy_profile.json
+python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json
 ```
 
 If `data/output/finalized/dual_momentum_best_config.json` does not exist, run `finalize-strategy-config` first. This prevents scheduled rebalances from silently using `.env` strategy knobs.
@@ -142,21 +142,21 @@ If `data/output/finalized/dual_momentum_best_config.json` does not exist, run `f
 Conservative Dual Momentum uses the same strategy family but optimizes for net return-to-drawdown / net Calmar rather than pure CAGR. Its optimizer estimates delivery transaction charges and capital-gains tax drag per trial, then ranks on the net risk-adjusted result. Its profile owns the objective, search grid, optimizer path, and output paths:
 
 ```bash
-python -m app.main refresh-finalized-parameters --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json
+python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json
 ```
 
 ```bash
-python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history
 ```
 
 Low Drawdown Dual Momentum uses the same strategy family but applies a constrained finalization rule: eligible rows must clear 20% 10-year CAGR, and the winner is the lowest absolute max drawdown among those rows.
 
 ```bash
-python -m app.main refresh-finalized-parameters --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json
+python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json
 ```
 
 ```bash
-python -m app.main build-finalized-package --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history
 ```
 
 ## Adding Another Strategy

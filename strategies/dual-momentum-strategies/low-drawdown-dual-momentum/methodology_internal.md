@@ -42,4 +42,4 @@ net Calmar: 1.2219
 estimated implementation drag on Rs 10L backtest: Rs 69,826
 ```
 
-See `strategies/conservative-dual-momentum/methodology_internal.md` for the shared signal construction, ranking, allocation, and cost/tax estimation details.
+See `strategies/dual-momentum-strategies/conservative-dual-momentum/methodology_internal.md` for the shared signal construction, ranking, allocation, and cost/tax estimation details.

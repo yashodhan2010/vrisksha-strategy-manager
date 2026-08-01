@@ -19,12 +19,12 @@
         "Model Portfolio"
       ],
       "commands": {
-        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
-        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum/strategy_profile.json --selenium-token",
+        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
+        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --selenium-token",
         "export_admin_dashboard": "python -m app.main export-admin-dashboard",
-        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum/strategy_profile.json --no-fetch-history",
+        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --no-fetch-history",
         "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
-        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum/strategy_profile.json",
+        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json",
         "validate_strategies": "python -m app.main validate-strategies"
       },
       "file_status": {
@@ -48,7 +48,7 @@
       "name": "Dual Momentum",
       "next_due_date": "2026-08-03",
       "package_output_dir": "data/output/packages/dual-momentum/strategy-package",
-      "profile_path": "strategies/dual-momentum/strategy_profile.json",
+      "profile_path": "strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json",
       "rebalance_schedule": {
         "target_days": [
           1,
@@ -71,12 +71,12 @@
         "Model Portfolio"
       ],
       "commands": {
-        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
-        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --selenium-token",
+        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
+        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --selenium-token",
         "export_admin_dashboard": "python -m app.main export-admin-dashboard",
-        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json --no-fetch-history",
+        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --no-fetch-history",
         "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
-        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/conservative-dual-momentum/strategy_profile.json",
+        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json",
         "validate_strategies": "python -m app.main validate-strategies"
       },
       "file_status": {
@@ -100,7 +100,7 @@
       "name": "Conservative Dual Momentum",
       "next_due_date": "2026-08-03",
       "package_output_dir": "data/output/packages/conservative-dual-momentum/strategy-package",
-      "profile_path": "strategies/conservative-dual-momentum/strategy_profile.json",
+      "profile_path": "strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json",
       "rebalance_schedule": {
         "target_days": [
           1,
@@ -123,12 +123,12 @@
         "Model Portfolio"
       ],
       "commands": {
-        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
-        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --selenium-token",
+        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
+        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --selenium-token",
         "export_admin_dashboard": "python -m app.main export-admin-dashboard",
-        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json --no-fetch-history",
+        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --no-fetch-history",
         "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
-        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/low-drawdown-dual-momentum/strategy_profile.json",
+        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json",
         "validate_strategies": "python -m app.main validate-strategies"
       },
       "file_status": {
@@ -152,7 +152,7 @@
       "name": "Low Drawdown Dual Momentum",
       "next_due_date": "2026-08-03",
       "package_output_dir": "data/output/packages/low-drawdown-dual-momentum/strategy-package",
-      "profile_path": "strategies/low-drawdown-dual-momentum/strategy_profile.json",
+      "profile_path": "strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json",
       "rebalance_schedule": {
         "target_days": [
           1,

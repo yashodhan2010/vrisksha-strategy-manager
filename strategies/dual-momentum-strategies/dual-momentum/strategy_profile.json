@@ -23,11 +23,11 @@
     "timezone": "Asia/Kolkata"
   },
   "documents": {
-    "public_methodology_path": "strategies/dual-momentum/methodology.md",
-    "internal_methodology_path": "strategies/dual-momentum/methodology_internal.md"
+    "public_methodology_path": "strategies/dual-momentum-strategies/dual-momentum/methodology.md",
+    "internal_methodology_path": "strategies/dual-momentum-strategies/dual-momentum/methodology_internal.md"
   },
   "optimization": {
-    "engine_path": "strategies/dual-momentum/experiments/optimizer.py",
+    "engine_path": "strategies/dual-momentum-strategies/dual-momentum/experiments/optimizer.py",
     "results_path": "data/output/dual-momentum/average_rank_buffer_10y_trials_parameters_cagr.csv",
     "finalized_config_path": "data/output/finalized/dual_momentum_best_config.json",
     "objective": "cagr",

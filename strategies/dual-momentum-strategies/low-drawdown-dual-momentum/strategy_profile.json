@@ -24,11 +24,11 @@
     "timezone": "Asia/Kolkata"
   },
   "documents": {
-    "public_methodology_path": "strategies/low-drawdown-dual-momentum/methodology.md",
-    "internal_methodology_path": "strategies/low-drawdown-dual-momentum/methodology_internal.md"
+    "public_methodology_path": "strategies/dual-momentum-strategies/low-drawdown-dual-momentum/methodology.md",
+    "internal_methodology_path": "strategies/dual-momentum-strategies/low-drawdown-dual-momentum/methodology_internal.md"
   },
   "optimization": {
-    "engine_path": "strategies/low-drawdown-dual-momentum/experiments/optimizer.py",
+    "engine_path": "strategies/dual-momentum-strategies/low-drawdown-dual-momentum/experiments/optimizer.py",
     "results_path": "data/output/low-drawdown-dual-momentum/low_drawdown_trials_cagr_gt_20.csv",
     "finalized_config_path": "data/output/finalized/low_drawdown_dual_momentum_best_config.json",
     "objective": "lowest_drawdown_cagr_gt_20_score",

@@ -9,7 +9,7 @@ load_dotenv()
 
 APP_NAME = os.getenv("APP_NAME", "Strategy Research Factory")
 APP_ENV = os.getenv("APP_ENV", "development")
-STRATEGY_PROFILE_PATH = os.getenv("STRATEGY_PROFILE_PATH", "strategies/dual-momentum/strategy_profile.json")
+STRATEGY_PROFILE_PATH = os.getenv("STRATEGY_PROFILE_PATH", "strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json")
 
 DATABASE_PATH = os.getenv("DATABASE_PATH", "data/research_factory.db")
 
@@ -102,11 +102,11 @@ STRATEGY_PACKAGE_BASE_CURRENCY = os.getenv("STRATEGY_PACKAGE_BASE_CURRENCY", "IN
 STRATEGY_PACKAGE_MIN_CAPITAL_GUIDANCE = int(os.getenv("STRATEGY_PACKAGE_MIN_CAPITAL_GUIDANCE", "0"))
 STRATEGY_PUBLIC_METHODOLOGY_PATH = os.getenv(
     "STRATEGY_PUBLIC_METHODOLOGY_PATH",
-    "strategies/dual-momentum/methodology.md",
+    "strategies/dual-momentum-strategies/dual-momentum/methodology.md",
 )
 STRATEGY_INTERNAL_METHODOLOGY_PATH = os.getenv(
     "STRATEGY_INTERNAL_METHODOLOGY_PATH",
-    "strategies/dual-momentum/methodology_internal.md",
+    "strategies/dual-momentum-strategies/dual-momentum/methodology_internal.md",
 )
 OPTIMIZATION_RESULTS_PATH = os.getenv(
     "OPTIMIZATION_RESULTS_PATH",
@@ -118,7 +118,7 @@ FINALIZED_STRATEGY_CONFIG_PATH = os.getenv(
 )
 OPTIMIZATION_ENGINE_PATH = os.getenv(
     "OPTIMIZATION_ENGINE_PATH",
-    "strategies/dual-momentum/experiments/optimizer.py",
+    "strategies/dual-momentum-strategies/dual-momentum/experiments/optimizer.py",
 )
 OPTIMIZATION_ENGINE_MODULE = os.getenv(
     "OPTIMIZATION_ENGINE_MODULE",
