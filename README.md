@@ -35,7 +35,7 @@ Or pass it explicitly:
 python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000
 ```
 
-For Dual Momentum, that command selects the best CAGR-ranked experiment row, writes a finalized config, applies those parameters, syncs/fetches missing Kite history, runs the backtest, and exports the full public Vriksha package. Other strategy profiles use their own `optimization.objective` and `optimization.rank_column`. For routine model-portfolio updates after parameters are finalized, use `build-model-portfolio-update`; it refreshes only recent Kite history by default and does not run the long historical backtest.
+For Dual Momentum, that command selects the best CAGR-ranked experiment row, writes a finalized config, applies those parameters, syncs/fetches missing Kite history, runs the backtest, and exports the full public Vriksha package. Other optimized momentum profiles use their own `optimization.objective` and `optimization.rank_column`. Fixed-allocation multi-asset strategies do not use finalized parameter configs and must not be run through `build-finalized-package`. For routine model-portfolio updates after parameters are finalized, use `build-model-portfolio-update`; it refreshes only recent Kite history by default and does not run the long historical backtest.
 
 ## Strategy Command Grid
 
@@ -54,9 +54,9 @@ Run these from the repository root.
 | Low Drawdown Dual Momentum | Rerun low-drawdown-with-CAGR-hurdle optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json` |
 | Low Drawdown Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
 | Low Drawdown Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --selenium-token` |
-| Diversified Asset Income | Run fixed-allocation historical performance | `python -m app.main run-fixed-allocation-backtest --strategy-profile strategies/multi-asset-strategies/diversified-asset-income/strategy_profile.json --start-date 2021-01-01 --end-date 2026-07-20 --initial-capital 1000000` |
+| Diversified Asset Income | Run fixed-allocation historical performance with dividends/distributions | `python -m app.main run-fixed-allocation-backtest --strategy-profile strategies/multi-asset-strategies/diversified-asset-income/strategy_profile.json --start-date 2017-01-01 --end-date 2026-07-20 --initial-capital 1000000` |
 | Future strategy | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/<strategy-family>/<strategy-slug>/strategy_profile.json` |
-| Future strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
+| Future optimized strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-family>/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
 | Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-slug>/strategy_profile.json --selenium-token` |
 | All strategies | Export safe Streamlit admin snapshot | `python -m app.main export-admin-dashboard` |
 | All strategies | Publish updated Streamlit admin snapshot | `python -m app.main export-admin-dashboard; git add data/admin/strategy_dashboard.json; git commit -m "Update admin dashboard snapshot"; git push origin main` |
@@ -262,7 +262,19 @@ For Diversified Asset Income, fetch the configured listed instruments explicitly
 python -m app.main fetch-history --start-date 2021-01-01 --end-date 2026-07-20 --symbols PGINVIT EMBASSY GOLDBEES LIQUIDBEES NIFTYBEES --no-benchmark --no-safe-asset
 ```
 
-Its fixed-allocation backtest writes experiment-style outputs to:
+Diversified Asset Income is a fixed-allocation multi-asset strategy, so use `run-fixed-allocation-backtest`, not `build-finalized-package`:
+
+```bash
+python -m app.main run-fixed-allocation-backtest --strategy-profile strategies/multi-asset-strategies/diversified-asset-income/strategy_profile.json --start-date 2017-01-01 --end-date 2026-07-20 --initial-capital 1000000
+```
+
+Its fixed-allocation backtest includes dividend/distribution events from:
+
+```text
+data/reference/diversified_asset_income_distributions.csv
+```
+
+and writes experiment-style outputs to:
 
 ```text
 data/output/diversified-asset-income/fixed_allocation_summary.csv

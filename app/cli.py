@@ -621,6 +621,17 @@ def cmd_fixed_allocation_backtest(args: argparse.Namespace) -> int:
 def cmd_finalized_package(args: argparse.Namespace) -> int:
     try:
         profile = apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        if str(profile.get("strategy_type") or "").strip().lower() == "fixed_allocation":
+            print(
+                "Finalized package pipeline is for optimized momentum strategies. "
+                "Fixed-allocation multi-asset strategies do not use finalized parameter configs."
+            )
+            print(
+                "Use: python -m app.main run-fixed-allocation-backtest "
+                f"--strategy-profile {config.STRATEGY_PROFILE_PATH} "
+                "--start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000"
+            )
+            return 2
         optimization = profile.get("optimization", {})
         start_date = _parse_date(args.start_date)
         end_date = _parse_date(args.end_date)

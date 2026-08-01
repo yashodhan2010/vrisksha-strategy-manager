@@ -6,7 +6,7 @@
     "performance_metrics_included": false,
     "subscriber_logic_included": false
   },
-  "generated_at": "2026-08-01T22:43:07+05:30",
+  "generated_at": "2026-08-01T22:58:54+05:30",
   "schema_version": "1.0.0",
   "source_registry": "strategies/registry.json",
   "strategies": [

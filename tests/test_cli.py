@@ -241,6 +241,42 @@ def test_build_finalized_package_can_skip_history_fetch(tmp_path: Path) -> None:
     assert "No market prices found" in result.stdout
 
 
+def test_build_finalized_package_rejects_fixed_allocation_profile(tmp_path: Path) -> None:
+    profile = tmp_path / "strategy_profile.json"
+    profile.write_text(
+        json.dumps(
+            {
+                "strategy_id": "fixed_income_v1",
+                "slug": "fixed-income",
+                "name": "Fixed Income",
+                "strategy_type": "fixed_allocation",
+                "package": {
+                    "output_dir": str(tmp_path / "package"),
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run(
+        [
+            "build-finalized-package",
+            "--strategy-profile",
+            str(profile),
+            "--start-date",
+            "2024-01-01",
+            "--end-date",
+            "2024-12-31",
+            "--no-fetch-history",
+        ],
+        tmp_path,
+    )
+
+    assert result.returncode == 2
+    assert "Fixed-allocation multi-asset strategies do not use finalized parameter configs" in result.stdout
+    assert "run-fixed-allocation-backtest" in result.stdout
+
+
 def test_build_finalized_package_uses_profile_objective(tmp_path: Path) -> None:
     trials = tmp_path / "trials.csv"
     finalized = tmp_path / "finalized.json"
