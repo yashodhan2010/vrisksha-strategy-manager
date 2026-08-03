@@ -59,6 +59,8 @@ def _backtest_scenario_payload(
 ) -> dict[str, object]:
     scenario = {
         "years": years,
+        "strategy_id": config.STRATEGY_PACKAGE_ID,
+        "strategy_slug": config.STRATEGY_PACKAGE_SLUG,
         "initial_capital": initial_capital,
         "requested_start_date": start_date.isoformat(),
         "requested_end_date": end_date.isoformat(),
@@ -603,6 +605,10 @@ def cmd_fixed_allocation_backtest(args: argparse.Namespace) -> int:
             end_date,
             args.initial_capital,
         ).run()
+        output_path = build_strategy_package(
+            backtest_run_id=result.backtest_run_id,
+            output_dir=config.STRATEGY_PACKAGE_OUTPUT_DIR,
+        )
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         print(f"Fixed-allocation backtest failed: {exc}")
         return 1
@@ -611,6 +617,7 @@ def cmd_fixed_allocation_backtest(args: argparse.Namespace) -> int:
         f"final value {result.final_value:,.2f}, total return {result.total_return:.2%}, "
         f"rebalances {result.rebalance_count}."
     )
+    print(f"Strategy package exported to {output_path}")
     if result.warnings:
         print("Warnings:")
         for warning in result.warnings[:10]:

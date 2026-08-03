@@ -38,7 +38,7 @@ def build_strategy_package(
     warnings = json.loads(run.get("warnings_json") or "[]")
     universe = {stock.symbol: stock for stock in load_universe()}
     prices = _load_price_frame(database_path)
-    daily = _reconstruct_daily_returns(run, snapshots, holdings, prices)
+    daily = _reconstruct_daily_returns(run, snapshots, holdings, prices, summary)
     benchmark = _benchmark_returns(run, prices)
     monthly = _monthly_returns(snapshots)
     yearly = _yearly_returns(daily)
@@ -103,16 +103,30 @@ def _prepare_output_path(output_path: Path) -> None:
 def _load_backtest_run(backtest_run_id: int | None, database_path: str | Path) -> dict[str, Any]:
     where = "WHERE id = ?" if backtest_run_id is not None else "WHERE status = ?"
     params: tuple[Any, ...] = (backtest_run_id,) if backtest_run_id is not None else (RunStatus.COMPLETED.value,)
-    query = f"SELECT * FROM backtest_runs {where} ORDER BY id DESC LIMIT 1"
+    query = f"SELECT * FROM backtest_runs {where} ORDER BY id DESC"
     with get_connection(database_path) as connection:
-        row = connection.execute(query, params).fetchone()
-    if row is None:
-        target = f"id {backtest_run_id}" if backtest_run_id is not None else "latest completed run"
+        rows = connection.execute(query, params).fetchall()
+    if not rows:
+        target = f"id {backtest_run_id}" if backtest_run_id is not None else f"latest completed {config.STRATEGY_PACKAGE_ID} run"
         raise ValueError(f"No completed backtest found for {target}.")
-    item = dict(row)
+    item = dict(rows[0]) if backtest_run_id is not None else _matching_strategy_run(rows)
+    if item is None:
+        raise ValueError(f"No completed backtest found for strategy {config.STRATEGY_PACKAGE_ID}.")
     if item["status"] != RunStatus.COMPLETED.value:
         raise ValueError(f"Backtest run {item['id']} is not completed.")
     return item
+
+
+def _matching_strategy_run(rows: list[Any]) -> dict[str, Any] | None:
+    for row in rows:
+        item = dict(row)
+        try:
+            payload = json.loads(item.get("config_json") or "{}")
+        except json.JSONDecodeError:
+            continue
+        if payload.get("strategy_id") == config.STRATEGY_PACKAGE_ID:
+            return item
+    return None
 
 
 def _load_portfolio_snapshots(run_id: int, database_path: str | Path) -> list[dict[str, Any]]:
@@ -200,7 +214,10 @@ def _reconstruct_daily_returns(
     snapshots: list[dict[str, Any]],
     holdings: list[dict[str, Any]],
     prices: pd.DataFrame,
+    summary: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
+    if _is_fixed_allocation_run(run, summary):
+        return _fixed_allocation_returns(run, snapshots, holdings, prices)
     strategy_id = config.STRATEGY_PACKAGE_ID
     if prices.empty:
         return [{"strategy_id": strategy_id, "date": run["actual_start_date"], "return": 0.0, "equity_curve": 1.0}]
@@ -236,6 +253,103 @@ def _reconstruct_daily_returns(
                 }
             )
             previous_date = current_date
+        previous_date = end_date
+    return rows
+
+
+def _is_fixed_allocation_run(run: dict[str, Any], summary: dict[str, Any] | None) -> bool:
+    if (summary or {}).get("strategy_type") == "fixed_allocation":
+        return True
+    try:
+        payload = json.loads(run.get("config_json") or "{}")
+    except json.JSONDecodeError:
+        return False
+    return payload.get("strategy_type") == "fixed_allocation"
+
+
+def _snapshot_nav_returns(run: dict[str, Any], snapshots: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    strategy_id = config.STRATEGY_PACKAGE_ID
+    initial_capital = float(run["initial_capital"])
+    rows = [{"strategy_id": strategy_id, "date": run["actual_start_date"], "return": 0.0, "equity_curve": 1.0}]
+    previous_nav = initial_capital
+    for snapshot in snapshots:
+        nav = float(snapshot["portfolio_nav"])
+        period_return = (nav / previous_nav) - 1.0 if previous_nav > 0 else 0.0
+        rows.append(
+            {
+                "strategy_id": strategy_id,
+                "date": snapshot["snapshot_date"],
+                "return": _clean_float(period_return),
+                "equity_curve": _clean_float(nav / initial_capital),
+            }
+        )
+        previous_nav = nav
+    return rows
+
+
+def _fixed_allocation_returns(
+    run: dict[str, Any],
+    snapshots: list[dict[str, Any]],
+    holdings: list[dict[str, Any]],
+    prices: pd.DataFrame,
+) -> list[dict[str, Any]]:
+    if prices.empty:
+        return _snapshot_nav_returns(run, snapshots)
+    strategy_id = config.STRATEGY_PACKAGE_ID
+    initial_capital = float(run["initial_capital"])
+    pivot = prices.pivot_table(index="price_date", columns="symbol", values="price", aggfunc="last").sort_index().ffill()
+    rows = [{"strategy_id": strategy_id, "date": run["actual_start_date"], "return": 0.0, "equity_curve": 1.0}]
+    nav = initial_capital
+    previous_nav_anchor = initial_capital
+    previous_date = pd.to_datetime(run["actual_start_date"]).date()
+    by_date = _rows_by_date(holdings)
+    for snapshot in snapshots:
+        end_date = pd.to_datetime(snapshot["snapshot_date"]).date()
+        period_holdings = by_date.get(snapshot["snapshot_date"], [])
+        weights = {row["symbol"]: float(row.get("weight") or 0.0) for row in period_holdings}
+        dates = [item for item in pivot.index if previous_date < item <= end_date]
+        for current_date in dates:
+            previous_prices = pivot.loc[previous_date] if previous_date in pivot.index else None
+            current_prices = pivot.loc[current_date]
+            day_return = 0.0
+            if previous_prices is not None:
+                for symbol, weight in weights.items():
+                    if symbol not in pivot.columns:
+                        continue
+                    start_price = previous_prices[symbol]
+                    end_price = current_prices[symbol]
+                    if pd.notna(start_price) and pd.notna(end_price) and float(start_price) > 0:
+                        day_return += weight * ((float(end_price) / float(start_price)) - 1.0)
+            nav *= 1.0 + day_return
+            rows.append(
+                {
+                    "strategy_id": strategy_id,
+                    "date": current_date.isoformat(),
+                    "return": _clean_float(day_return),
+                    "equity_curve": _clean_float(nav / initial_capital),
+                }
+            )
+            previous_date = current_date
+
+        snapshot_nav = float(snapshot["portfolio_nav"])
+        snapshot_equity = snapshot_nav / initial_capital
+        snapshot_date = end_date.isoformat()
+        if rows[-1]["date"] == snapshot_date and len(rows) > 1:
+            prior_equity = float(rows[-2]["equity_curve"])
+            prior_nav = prior_equity * initial_capital
+            rows[-1]["return"] = _clean_float((snapshot_nav / prior_nav) - 1.0 if prior_nav > 0 else 0.0)
+            rows[-1]["equity_curve"] = _clean_float(snapshot_equity)
+        else:
+            rows.append(
+                {
+                    "strategy_id": strategy_id,
+                    "date": snapshot_date,
+                    "return": _clean_float((snapshot_nav / previous_nav_anchor) - 1.0 if previous_nav_anchor > 0 else 0.0),
+                    "equity_curve": _clean_float(snapshot_equity),
+                }
+            )
+        nav = snapshot_nav
+        previous_nav_anchor = snapshot_nav
         previous_date = end_date
     return rows
 

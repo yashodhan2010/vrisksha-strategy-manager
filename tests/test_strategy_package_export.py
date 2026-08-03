@@ -189,6 +189,79 @@ def test_build_strategy_package_overwrites_known_files_without_deleting_output_d
     assert json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))["strategy_id"] == "dual_momentum_nifty500_v1"
 
 
+def test_build_strategy_package_without_run_id_filters_to_active_strategy(monkeypatch, tmp_path: Path) -> None:
+    db = tmp_path / "package.db"
+    output_dir = tmp_path / "strategy-package"
+    initialize_database(db)
+    monkeypatch.setattr(
+        package_builder,
+        "load_universe",
+        lambda: [
+            UniverseStock("AAA", "Alpha Ltd", "Software", "Technology", isin="INE000A01001"),
+            UniverseStock("BBB", "Beta Ltd", "Banks", "Financial Services", isin="INE000B01001"),
+        ],
+    )
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_ID", "target_strategy_v1")
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_SLUG", "target-strategy")
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_NAME", "Target Strategy")
+
+    target_run_id = create_backtest_run(
+        date(2024, 1, 1),
+        date(2024, 3, 1),
+        "NIFTY500",
+        {"strategy_id": "target_strategy_v1", "strategy_top_n": 2},
+        RunStatus.STARTED,
+        db,
+    )
+    _insert_prices(db)
+    insert_portfolio_snapshot(target_run_id, date(2024, 3, 1), "ACTIVE", 110_000, 0.10, 0.10, 0.0, 2, 1, db)
+    insert_holding_snapshots(
+        [
+            _holding(target_run_id, date(2024, 3, 1), "AAA", "Technology", 0.60, 120.0, "ENTERED", 1),
+            _holding(target_run_id, date(2024, 3, 1), "BBB", "Financial Services", 0.40, 100.0, "ENTERED", 2),
+        ],
+        db,
+    )
+    update_backtest_run_result(
+        target_run_id,
+        RunStatus.COMPLETED,
+        date(2024, 1, 1),
+        date(2024, 3, 1),
+        100_000,
+        110_000,
+        {"strategy_type": "fixed_allocation", "cagr": 0.10, "max_drawdown": -0.02},
+        [],
+        db,
+    )
+    other_run_id = create_backtest_run(
+        date(2024, 1, 1),
+        date(2024, 3, 1),
+        "NIFTY500",
+        {"strategy_id": "other_strategy_v1"},
+        RunStatus.STARTED,
+        db,
+    )
+    update_backtest_run_result(
+        other_run_id,
+        RunStatus.COMPLETED,
+        date(2024, 1, 1),
+        date(2024, 3, 1),
+        100_000,
+        500_000,
+        {"cagr": 9.99, "max_drawdown": -0.01},
+        [],
+        db,
+    )
+
+    path = build_strategy_package(None, output_dir, db)
+
+    metrics = json.loads((path / "backtest_metrics.json").read_text(encoding="utf-8"))
+    showcases = json.loads((path / "performance_showcases.json").read_text(encoding="utf-8"))
+    assert metrics["absolute_return"] == 0.1
+    assert showcases["ranges"][-1]["kpis"]["total_return"] == 0.1
+    assert json.loads((path / "manifest.json").read_text(encoding="utf-8"))["name"] == "Target Strategy"
+
+
 def _insert_prices(db: Path) -> None:
     bars: list[PriceBar] = []
     current = date(2024, 1, 1)
