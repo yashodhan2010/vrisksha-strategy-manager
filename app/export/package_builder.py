@@ -191,7 +191,7 @@ def _manifest(run: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
         "backtest_end_date": run["actual_end_date"],
         "lookback_period": "Multi-window trend and risk lookbacks; exact finalized parameters are proprietary.",
         "rebalance_frequency": _rebalance_frequency(summary),
-        "target_holdings": int(config_payload.get("strategy_top_n") or summary.get("strategy_top_n") or config.STRATEGY_TOP_N),
+        "target_holdings": _target_holdings(config_payload, summary),
         "min_capital_guidance": config.STRATEGY_PACKAGE_MIN_CAPITAL_GUIDANCE,
         "portfolio_as_of_date": run["actual_end_date"],
         "data_frequency": "daily",
@@ -203,12 +203,20 @@ def _manifest(run: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
 
 
 def _rebalance_frequency(summary: dict[str, Any]) -> str:
+    if config.STRATEGY_PACKAGE_REBALANCE_FREQUENCY:
+        return config.STRATEGY_PACKAGE_REBALANCE_FREQUENCY
     per_month = int(summary.get("rebalances_per_month") or config.BACKTEST_REBALANCES_PER_MONTH)
     if per_month == 1:
         return "monthly"
     if per_month == 2:
         return "twice_monthly"
     return f"{per_month}_times_monthly"
+
+
+def _target_holdings(config_payload: dict[str, Any], summary: dict[str, Any]) -> int:
+    if config.STRATEGY_PACKAGE_TARGET_HOLDINGS:
+        return config.STRATEGY_PACKAGE_TARGET_HOLDINGS
+    return int(config_payload.get("strategy_top_n") or summary.get("strategy_top_n") or config.STRATEGY_TOP_N)
 
 
 def _reconstruct_daily_returns(

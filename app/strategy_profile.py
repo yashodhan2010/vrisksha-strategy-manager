@@ -23,6 +23,8 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     optimization = profile.get("optimization", {})
     backtest = profile.get("backtest", {})
     documents = profile.get("documents", {})
+    allocation = profile.get("allocation", {})
+    schedule = profile.get("rebalance_schedule", {})
 
     config.STRATEGY_PROFILE_PATH = str(profile_path)
     config.STRATEGY_PACKAGE_ID = str(profile["strategy_id"])
@@ -30,6 +32,8 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     config.STRATEGY_PACKAGE_INTERNAL_NAME = str(profile["name"])
     config.STRATEGY_PACKAGE_PUBLIC_NAME = str(profile.get("public_name") or profile["name"])
     config.STRATEGY_PACKAGE_NAME = config.STRATEGY_PACKAGE_PUBLIC_NAME
+    config.STRATEGY_PACKAGE_REBALANCE_FREQUENCY = _rebalance_frequency_from_schedule(schedule)
+    config.STRATEGY_PACKAGE_TARGET_HOLDINGS = len(allocation.get("assets") or [])
     config.STRATEGY_PACKAGE_SHORT_DESCRIPTION = str(profile.get("short_description") or "")
     config.STRATEGY_PACKAGE_CATEGORY_LABELS = ",".join(profile.get("category_labels") or [])
     config.STRATEGY_PACKAGE_UNIVERSE = str(profile.get("universe") or config.STRATEGY_PACKAGE_UNIVERSE)
@@ -66,3 +70,10 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     if backtest.get("benchmark_symbol"):
         config.DEFAULT_BENCHMARK_SYMBOL = str(backtest["benchmark_symbol"])
     return profile
+
+
+def _rebalance_frequency_from_schedule(schedule: dict[str, Any]) -> str:
+    schedule_type = str(schedule.get("type") or "").strip().lower()
+    if schedule_type == "quarterly_first_trading_day":
+        return "quarterly"
+    return ""

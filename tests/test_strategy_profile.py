@@ -24,6 +24,8 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
         "STRATEGY_PACKAGE_NAME",
         "STRATEGY_PACKAGE_PUBLIC_NAME",
         "STRATEGY_PACKAGE_INTERNAL_NAME",
+        "STRATEGY_PACKAGE_REBALANCE_FREQUENCY",
+        "STRATEGY_PACKAGE_TARGET_HOLDINGS",
         "STRATEGY_PACKAGE_SHORT_DESCRIPTION",
         "STRATEGY_PACKAGE_CATEGORY_LABELS",
         "STRATEGY_PACKAGE_VERSION",
@@ -49,6 +51,16 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
                 "ra_entity": "Prathamesh Gupta",
                 "universe": "NIFTY 500",
                 "benchmark": "NIFTY 500 TRI",
+                "rebalance_schedule": {
+                    "type": "quarterly_first_trading_day",
+                    "quarter_start_months": [1, 4, 7, 10],
+                },
+                "allocation": {
+                    "assets": [
+                        {"symbol": "AAA", "weight": 0.5},
+                        {"symbol": "BBB", "weight": 0.5},
+                    ]
+                },
                 "optimization": {
                     "engine_path": "strategies/sample-strategy/experiments/optimizer.py",
                     "engine_module": "sample.optimizer",
@@ -75,6 +87,8 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
     assert config.STRATEGY_PACKAGE_NAME == "Sample Public Strategy"
     assert config.STRATEGY_PACKAGE_PUBLIC_NAME == "Sample Public Strategy"
     assert config.STRATEGY_PACKAGE_INTERNAL_NAME == "Sample Strategy"
+    assert config.STRATEGY_PACKAGE_REBALANCE_FREQUENCY == "quarterly"
+    assert config.STRATEGY_PACKAGE_TARGET_HOLDINGS == 2
     assert config.STRATEGY_PACKAGE_VERSION == "1.2.3"
     assert config.STRATEGY_PUBLIC_METHODOLOGY_PATH == "strategies/sample-strategy/methodology.md"
     assert config.STRATEGY_INTERNAL_METHODOLOGY_PATH == "strategies/sample-strategy/methodology_internal.md"

@@ -212,6 +212,8 @@ def test_build_strategy_package_without_run_id_filters_to_active_strategy(monkey
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_NAME", "Target Strategy")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_PUBLIC_NAME", "Target Strategy")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_INTERNAL_NAME", "Internal Target Strategy")
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_REBALANCE_FREQUENCY", "quarterly")
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_TARGET_HOLDINGS", 5)
 
     target_run_id = create_backtest_run(
         date(2024, 1, 1),
@@ -267,8 +269,11 @@ def test_build_strategy_package_without_run_id_filters_to_active_strategy(monkey
     showcases = json.loads((path / "performance_showcases.json").read_text(encoding="utf-8"))
     assert metrics["absolute_return"] == 0.1
     assert showcases["ranges"][-1]["kpis"]["total_return"] == 0.1
-    assert json.loads((path / "manifest.json").read_text(encoding="utf-8"))["name"] == "Target Strategy"
-    assert json.loads((path / "manifest.json").read_text(encoding="utf-8"))["internal_name"] == "Internal Target Strategy"
+    manifest = json.loads((path / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["name"] == "Target Strategy"
+    assert manifest["internal_name"] == "Internal Target Strategy"
+    assert manifest["rebalance_frequency"] == "quarterly"
+    assert manifest["target_holdings"] == 5
 
 
 def _insert_prices(db: Path) -> None:
