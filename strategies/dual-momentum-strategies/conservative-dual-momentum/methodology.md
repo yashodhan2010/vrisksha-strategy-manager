@@ -1,4 +1,4 @@
-# Conservative Dual Momentum Methodology
+# Bamboo Trunk Methodology
 
 ## Summary
 
