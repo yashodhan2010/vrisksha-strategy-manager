@@ -171,6 +171,8 @@ def _manifest(run: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
         "strategy_id": config.STRATEGY_PACKAGE_ID,
         "slug": config.STRATEGY_PACKAGE_SLUG,
         "name": config.STRATEGY_PACKAGE_NAME,
+        "public_name": config.STRATEGY_PACKAGE_PUBLIC_NAME,
+        "internal_name": config.STRATEGY_PACKAGE_INTERNAL_NAME,
         "short_description": config.STRATEGY_PACKAGE_SHORT_DESCRIPTION,
         "category_labels": [
             item.strip()

@@ -2,6 +2,7 @@
   "strategy_id": "conservative_dual_momentum_nifty500_v1",
   "slug": "conservative-dual-momentum",
   "name": "Conservative Dual Momentum",
+  "public_name": "Momentum - Bamboo Trunk Edition",
   "short_description": "A lower-drawdown Nifty 500 momentum model portfolio with broader diversification and tighter risk controls.",
   "category_labels": [
     "Momentum",

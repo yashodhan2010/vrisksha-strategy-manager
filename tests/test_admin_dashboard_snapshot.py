@@ -49,6 +49,7 @@ def _write_profile(root: Path) -> Path:
                 "strategy_id": "sample_strategy_v1",
                 "slug": slug,
                 "name": "Sample Strategy",
+                "public_name": "Sample Public Strategy",
                 "short_description": "Safe admin snapshot test.",
                 "category_labels": ["Momentum"],
                 "universe": "NIFTY 500",
@@ -96,6 +97,8 @@ def test_build_admin_dashboard_snapshot_contains_safe_operational_metadata(tmp_p
     strategy = snapshot["strategies"][0]
     assert snapshot["content_policy"]["performance_metrics_included"] is False
     assert snapshot["content_policy"]["holdings_rows_included"] is False
+    assert strategy["name"] == "Sample Strategy"
+    assert strategy["public_name"] == "Sample Public Strategy"
     assert strategy["latest_model_portfolio_as_of"] == "2026-07-20"
     assert strategy["last_successful_run"]["type"] == "model_portfolio_update"
     assert strategy["distribution"]["events_path"].endswith("sample_distributions.csv")

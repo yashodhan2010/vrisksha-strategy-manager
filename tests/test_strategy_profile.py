@@ -22,6 +22,8 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
         "STRATEGY_PACKAGE_ID",
         "STRATEGY_PACKAGE_SLUG",
         "STRATEGY_PACKAGE_NAME",
+        "STRATEGY_PACKAGE_PUBLIC_NAME",
+        "STRATEGY_PACKAGE_INTERNAL_NAME",
         "STRATEGY_PACKAGE_SHORT_DESCRIPTION",
         "STRATEGY_PACKAGE_CATEGORY_LABELS",
         "STRATEGY_PACKAGE_VERSION",
@@ -41,6 +43,7 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
                 "strategy_id": "sample_strategy_v1",
                 "slug": "sample-strategy",
                 "name": "Sample Strategy",
+                "public_name": "Sample Public Strategy",
                 "short_description": "Sample profile.",
                 "category_labels": ["Momentum"],
                 "ra_entity": "Prathamesh Gupta",
@@ -69,6 +72,9 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
 
     assert config.STRATEGY_PACKAGE_ID == "sample_strategy_v1"
     assert config.STRATEGY_PACKAGE_SLUG == "sample-strategy"
+    assert config.STRATEGY_PACKAGE_NAME == "Sample Public Strategy"
+    assert config.STRATEGY_PACKAGE_PUBLIC_NAME == "Sample Public Strategy"
+    assert config.STRATEGY_PACKAGE_INTERNAL_NAME == "Sample Strategy"
     assert config.STRATEGY_PACKAGE_VERSION == "1.2.3"
     assert config.STRATEGY_PUBLIC_METHODOLOGY_PATH == "strategies/sample-strategy/methodology.md"
     assert config.STRATEGY_INTERNAL_METHODOLOGY_PATH == "strategies/sample-strategy/methodology_internal.md"

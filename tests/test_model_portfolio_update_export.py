@@ -26,6 +26,9 @@ def test_export_latest_model_portfolio_update_uses_monthly_holdings(monkeypatch,
     )
     monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_ID", "dual_momentum_nifty500_v1")
     monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_SLUG", "dual-momentum")
+    monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_NAME", "Momentum - Bamboo Canopy Edition")
+    monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_PUBLIC_NAME", "Momentum - Bamboo Canopy Edition")
+    monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_INTERNAL_NAME", "Dual Momentum")
 
     first_run = create_strategy_run(RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, database_path=db)
     stale_second_run = create_strategy_run(RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, database_path=db)
@@ -50,6 +53,9 @@ def test_export_latest_model_portfolio_update_uses_monthly_holdings(monkeypatch,
     assert sorted(item.name for item in path.iterdir()) == sorted(UPDATE_FILES)
     manifest = json.loads((path / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["update_type"] == "latest_model_portfolio"
+    assert manifest["name"] == "Momentum - Bamboo Canopy Edition"
+    assert manifest["public_name"] == "Momentum - Bamboo Canopy Edition"
+    assert manifest["internal_name"] == "Dual Momentum"
     assert manifest["latest_run_id"] == second_run
     assert manifest["as_of_date"] == "2024-03-01"
     latest_rows = _read_csv(path / "latest_model_portfolio.csv")

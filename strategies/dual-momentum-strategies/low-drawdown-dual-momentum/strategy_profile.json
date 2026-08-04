@@ -2,6 +2,7 @@
   "strategy_id": "low_drawdown_dual_momentum_nifty500_v1",
   "slug": "low-drawdown-dual-momentum",
   "name": "Low Drawdown Dual Momentum",
+  "public_name": "Momentum - Bamboo Root Edition",
   "short_description": "A Nifty 500 dual-momentum model portfolio selected for the lowest historical drawdown among parameter sets with 10-year CAGR above 20%.",
   "category_labels": [
     "Momentum",

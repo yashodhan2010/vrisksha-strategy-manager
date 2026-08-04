@@ -2,6 +2,7 @@
   "strategy_id": "diversified_asset_income_v1",
   "slug": "diversified-asset-income",
   "name": "Diversified Asset Income",
+  "public_name": "Asset Allocation - Mahogany Root ETF Edition",
   "short_description": "A fixed-weight multi-asset portfolio across InvIT, REIT, gold, debt, and Nifty 50 sleeves with quarterly rebalancing.",
   "strategy_type": "fixed_allocation",
   "category_labels": [

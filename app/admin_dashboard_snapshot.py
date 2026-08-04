@@ -80,6 +80,7 @@ def _strategy_status(profile_path: Path, today: date) -> dict[str, Any]:
         "strategy_id": profile.get("strategy_id"),
         "slug": slug,
         "name": profile.get("name"),
+        "public_name": profile.get("public_name") or profile.get("name"),
         "category_labels": profile.get("category_labels", []),
         "universe": profile.get("universe"),
         "benchmark": profile.get("benchmark"),

@@ -2,6 +2,7 @@
   "strategy_id": "strategy_slug_v1",
   "slug": "strategy-slug",
   "name": "Strategy Name",
+  "public_name": "Public Strategy Name",
   "short_description": "Public-safe one-line description of the strategy.",
   "category_labels": [
     "Equity",

@@ -34,6 +34,9 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     )
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_RA_ENTITY", "Prathamesh Gupta")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_MIN_CAPITAL_GUIDANCE", 0)
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_NAME", "Momentum - Bamboo Canopy Edition")
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_PUBLIC_NAME", "Momentum - Bamboo Canopy Edition")
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_INTERNAL_NAME", "Dual Momentum")
 
     run_id = create_backtest_run(
         date(2024, 1, 1),
@@ -93,6 +96,9 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     manifest = json.loads((path / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["ra_entity"] == "Prathamesh Gupta"
     assert manifest["slug"] == "dual-momentum"
+    assert manifest["name"] == "Momentum - Bamboo Canopy Edition"
+    assert manifest["public_name"] == "Momentum - Bamboo Canopy Edition"
+    assert manifest["internal_name"] == "Dual Momentum"
     assert manifest["target_holdings"] == 2
     assert manifest["public_methodology_file"] == "methodology.md"
     assert manifest["internal_methodology_file"] == "methodology_internal.md"
@@ -204,6 +210,8 @@ def test_build_strategy_package_without_run_id_filters_to_active_strategy(monkey
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_ID", "target_strategy_v1")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_SLUG", "target-strategy")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_NAME", "Target Strategy")
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_PUBLIC_NAME", "Target Strategy")
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_INTERNAL_NAME", "Internal Target Strategy")
 
     target_run_id = create_backtest_run(
         date(2024, 1, 1),
@@ -260,6 +268,7 @@ def test_build_strategy_package_without_run_id_filters_to_active_strategy(monkey
     assert metrics["absolute_return"] == 0.1
     assert showcases["ranges"][-1]["kpis"]["total_return"] == 0.1
     assert json.loads((path / "manifest.json").read_text(encoding="utf-8"))["name"] == "Target Strategy"
+    assert json.loads((path / "manifest.json").read_text(encoding="utf-8"))["internal_name"] == "Internal Target Strategy"
 
 
 def _insert_prices(db: Path) -> None:
