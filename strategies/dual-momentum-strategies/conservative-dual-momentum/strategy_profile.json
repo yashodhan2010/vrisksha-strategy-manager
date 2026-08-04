@@ -15,7 +15,7 @@
   "sebi_registration_number": "INH000027788",
   "universe": "NIFTY 500",
   "benchmark": "NIFTY 500 TRI",
-  "min_capital_guidance": 0,
+  "min_capital_guidance": 100000,
   "backtest": {
     "benchmark_symbol": "NIFTY500"
   },
