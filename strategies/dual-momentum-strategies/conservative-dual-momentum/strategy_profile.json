@@ -2,8 +2,8 @@
   "strategy_id": "conservative_dual_momentum_nifty500_v1",
   "slug": "conservative-dual-momentum",
   "name": "Conservative Dual Momentum",
-  "public_name": "Momentum - Bamboo Trunk Edition",
-  "short_description": "A lower-drawdown Nifty 500 momentum model portfolio with broader diversification and tighter risk controls.",
+  "public_name": "Bamboo Trunk",
+  "short_description": "Rules-based momentum model portfolio with higher diversification and risk controls focusing on reducing crash risk while harvesting momentum",
   "category_labels": [
     "Momentum",
     "Conservative",
@@ -12,7 +12,7 @@
     "Model Portfolio"
   ],
   "ra_entity": "Prathamesh Gupta",
-  "sebi_registration_number": "",
+  "sebi_registration_number": "INH000027788",
   "universe": "NIFTY 500",
   "benchmark": "NIFTY 500 TRI",
   "min_capital_guidance": 0,
