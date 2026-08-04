@@ -2,8 +2,8 @@
   "strategy_id": "dual_momentum_nifty500_v1",
   "slug": "dual-momentum",
   "name": "Dual Momentum",
-  "public_name": "Momentum - Bamboo Canopy Edition",
-  "short_description": "A Nifty 500 rules-based momentum model portfolio with built-in diversification and risk controls.",
+  "public_name": "Bamboo Canopy",
+  "short_description": "Flagship rules-based momentum model portfolio with built-in diversification and risk controls",
   "category_labels": [
     "Momentum",
     "Factor Strategy",
@@ -11,10 +11,10 @@
     "Model Portfolio"
   ],
   "ra_entity": "Prathamesh Gupta",
-  "sebi_registration_number": "",
+  "sebi_registration_number": "INH000027788",
   "universe": "NIFTY 500",
   "benchmark": "NIFTY 500 TRI",
-  "min_capital_guidance": 0,
+  "min_capital_guidance": 100000,
   "backtest": {
     "benchmark_symbol": "NIFTY500"
   },
