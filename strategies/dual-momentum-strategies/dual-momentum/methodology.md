@@ -1,4 +1,4 @@
-# Bomboo Canopy Methodology
+# Bamboo Canopy Methodology
 
 ## Summary
 
@@ -14,7 +14,7 @@ Top 35 equal weight stocks ranked using a proprietary model combining price tren
 
 ## Portfolio Construction
 
-The model portfolio includes a diversified basket of 35 equal weight holdings, subject to model constraints such as position sizing, sector exposure, and cash allocation rules. It rebalances bi-weekly to optimally harvest price momentum whie balancing turnover. If no stocks qualify for ranking, the portfolio sits in cash. Irregular rebalances may be triggered during extreme events.
+The model portfolio includes a diversified basket of 35 equal weight holdings, subject to model constraints such as position sizing, sector exposure, and cash allocation rules. It rebalances bi-weekly to optimally harvest price momentum while balancing turnover. If no stocks qualify for ranking, the portfolio sits in cash. Irregular rebalances may be triggered during extreme events.
 
 ## Rebalance
 
