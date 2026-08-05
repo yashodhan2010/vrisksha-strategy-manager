@@ -1,4 +1,4 @@
-# Bombay Canopy Methodology
+# Bomboo Canopy Methodology
 
 ## Summary
 
