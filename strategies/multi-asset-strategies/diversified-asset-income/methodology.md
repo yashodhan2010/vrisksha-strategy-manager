@@ -1,4 +1,4 @@
-# Diversified Asset Income
+# Mahogany Root ETF Edition
 
 ## Summary
 
