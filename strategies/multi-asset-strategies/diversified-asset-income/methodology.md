@@ -1,15 +1,25 @@
 # Diversified Asset Income
 
-Diversified Asset Income is a fixed-weight multi-asset model portfolio. It allocates equally across five sleeves:
+## Summary
 
-- 20% InvIT
-- 20% REIT
-- 20% Gold
-- 20% Debt
-- 20% Nifty 50
+Mahogany Root ETF Edition offers a timeless foundational core, through its multi-asset construction combining financial and real assets, that does not need to time the market.
 
-The portfolio is rebalanced on the first trading day of each calendar quarter. There is no parameter optimization, ranking model, or tactical asset rotation. Historical performance is calculated from stored market prices for the configured instruments.
+## Universe
 
-Quarterly distribution is a strategy-level operating policy. The historical backtest includes dividend, interest, REIT, and InvIT distributions when events are recorded in `data/reference/diversified_asset_income_distributions.csv`. Each event is treated as cash earned during the rebalance period and included in total return before the next quarterly rebalance.
+Diversified Listed ETF Universe across Nifty 50, debt, gold, INVITs, and REITs.
 
-Historical runs generate a summary CSV and a detailed quarterly net-returns CSV. The detailed file includes gross returns, dividend/distribution cash, distribution return, estimated rebalance costs, net returns, and sleeve-level contribution fields.
+## Strategy Design
+
+5 equal weight classes across financial (Nifty 50 and debt) and real assets (gold, INVITs, and REITS) for inflation protection and income, thereby diversifying risks and lowering portfolio correlations
+
+## Portfolio Construction
+
+The model portfolio is distributed equally to each asset class between equity (Nifty 50), debt (divided equally between 1 day, medium, and long duration), gold, INVITs (divided equally), and REITs (divided equally). It is rebalanced quarterly and is 100% deployed at all times.
+
+## Rebalance
+
+Quarterly
+
+## Cash Allocation Rules
+
+This strategy is 100% deployed at all times.
