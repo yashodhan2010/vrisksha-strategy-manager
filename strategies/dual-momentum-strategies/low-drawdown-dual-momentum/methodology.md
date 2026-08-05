@@ -1,9 +1,19 @@
-# Low Drawdown Dual Momentum Methodology
+# Bamboo Root Methodology
 
-This strategy uses the same dual-momentum research family as the other Nifty 500 momentum profiles, but the finalized parameter set is chosen with a stricter risk-first rule.
+## Summary
+Bamboo Root is a low volatility tilted rules-based momentum model portfolio that seeks to extract more persistent and systematic price momentum and low volatility signals while applying greater portfolio-level risk and diversification controls to mitigate crash risk. 
 
-The optimizer first requires a 10-year gross CAGR above 20%. Among only those eligible parameter sets, it selects the configuration with the lowest maximum drawdown. The public methodology intentionally describes the broad selection discipline without exposing the full parameter grid.
+## Universe
+Nifty 500
 
-The model evaluates stocks using price trend, consistency of movement, drawdown control, diversification limits, and implementation-cost awareness. It is designed for investors who prefer a lower-drawdown profile while still requiring a meaningful long-term CAGR hurdle.
+## Strategy Design
+Top 35 equal weight stocks ranked using a proprietary model combining price trend, price momentum, low volatility, and risk controls. The low volatility tilt helps smooth out higher volatility driven momentum signals. It rebalances bi-weekly to optimally harvest price momentum.
 
-Historical results are based on backtested data and do not guarantee future returns. Actual investor returns may differ because of execution price, liquidity, taxes, transaction costs, slippage, and timing.
+## Portfolio Construction
+The model portfolio includes a diversified basket of 35 equal weight holdings, subject to model constraints such as position sizing, sector exposure, and cash allocation rules. If no stocks are filtered, the portfolio sits in cash. Irregular rebalances may be triggered during extreme events.
+
+## Rebalance
+Bi-weekly
+
+## Cash Allocation Rules
+When the model has fewer qualifying opportunities or portfolio constraints prevent full equity deployment, the residual allocation may remain in cash or a cash-equivalent proxy.
