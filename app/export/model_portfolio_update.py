@@ -67,6 +67,7 @@ def _manifest(latest_run: dict[str, Any] | None, as_of_date: str) -> dict[str, A
         "name": config.STRATEGY_PACKAGE_NAME,
         "public_name": config.STRATEGY_PACKAGE_PUBLIC_NAME,
         "internal_name": config.STRATEGY_PACKAGE_INTERNAL_NAME,
+        "portfolio_objective": config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE,
         "version": config.STRATEGY_PACKAGE_VERSION,
         "as_of_date": as_of_date,
         "latest_run_id": latest_run.get("id") if latest_run else None,

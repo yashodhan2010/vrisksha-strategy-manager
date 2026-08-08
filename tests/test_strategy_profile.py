@@ -28,6 +28,7 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
         "STRATEGY_PACKAGE_TARGET_HOLDINGS",
         "STRATEGY_PACKAGE_SHORT_DESCRIPTION",
         "STRATEGY_PACKAGE_CATEGORY_LABELS",
+        "STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE",
         "STRATEGY_PACKAGE_VERSION",
         "STRATEGY_PACKAGE_OUTPUT_DIR",
         "STRATEGY_PUBLIC_METHODOLOGY_PATH",
@@ -48,6 +49,7 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
                 "public_name": "Sample Public Strategy",
                 "short_description": "Sample profile.",
                 "category_labels": ["Momentum"],
+                "portfolio_objective": "Fill a Gap",
                 "ra_entity": "Prathamesh Gupta",
                 "universe": "NIFTY 500",
                 "benchmark": "NIFTY 500 TRI",
@@ -87,6 +89,7 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
     assert config.STRATEGY_PACKAGE_NAME == "Sample Public Strategy"
     assert config.STRATEGY_PACKAGE_PUBLIC_NAME == "Sample Public Strategy"
     assert config.STRATEGY_PACKAGE_INTERNAL_NAME == "Sample Strategy"
+    assert config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE == "Fill a Gap"
     assert config.STRATEGY_PACKAGE_REBALANCE_FREQUENCY == "quarterly"
     assert config.STRATEGY_PACKAGE_TARGET_HOLDINGS == 2
     assert config.STRATEGY_PACKAGE_VERSION == "1.2.3"

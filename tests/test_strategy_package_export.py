@@ -37,6 +37,7 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_NAME", "Momentum - Bamboo Canopy Edition")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_PUBLIC_NAME", "Momentum - Bamboo Canopy Edition")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_INTERNAL_NAME", "Dual Momentum")
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE", "Grow my Wealth")
 
     run_id = create_backtest_run(
         date(2024, 1, 1),
@@ -99,6 +100,7 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     assert manifest["name"] == "Momentum - Bamboo Canopy Edition"
     assert manifest["public_name"] == "Momentum - Bamboo Canopy Edition"
     assert manifest["internal_name"] == "Dual Momentum"
+    assert manifest["portfolio_objective"] == "Grow my Wealth"
     assert manifest["target_holdings"] == 2
     assert manifest["public_methodology_file"] == "methodology.md"
     assert manifest["internal_methodology_file"] == "methodology_internal.md"
@@ -212,6 +214,7 @@ def test_build_strategy_package_without_run_id_filters_to_active_strategy(monkey
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_NAME", "Target Strategy")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_PUBLIC_NAME", "Target Strategy")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_INTERNAL_NAME", "Internal Target Strategy")
+    monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE", "Build my Core")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_REBALANCE_FREQUENCY", "quarterly")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_TARGET_HOLDINGS", 5)
 
@@ -272,6 +275,7 @@ def test_build_strategy_package_without_run_id_filters_to_active_strategy(monkey
     manifest = json.loads((path / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["name"] == "Target Strategy"
     assert manifest["internal_name"] == "Internal Target Strategy"
+    assert manifest["portfolio_objective"] == "Build my Core"
     assert manifest["rebalance_frequency"] == "quarterly"
     assert manifest["target_holdings"] == 5
 

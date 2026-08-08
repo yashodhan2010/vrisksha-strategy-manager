@@ -27,6 +27,7 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         "rebalance_frequency",
         "target_holdings",
         "min_capital_guidance",
+        "portfolio_objective",
         "public_visibility",
     ]
     missing = [key for key in required if key not in manifest]

@@ -29,6 +29,7 @@ def test_export_latest_model_portfolio_update_uses_monthly_holdings(monkeypatch,
     monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_NAME", "Momentum - Bamboo Canopy Edition")
     monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_PUBLIC_NAME", "Momentum - Bamboo Canopy Edition")
     monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_INTERNAL_NAME", "Dual Momentum")
+    monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE", "Grow my Wealth")
 
     first_run = create_strategy_run(RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, database_path=db)
     stale_second_run = create_strategy_run(RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, database_path=db)
@@ -56,6 +57,7 @@ def test_export_latest_model_portfolio_update_uses_monthly_holdings(monkeypatch,
     assert manifest["name"] == "Momentum - Bamboo Canopy Edition"
     assert manifest["public_name"] == "Momentum - Bamboo Canopy Edition"
     assert manifest["internal_name"] == "Dual Momentum"
+    assert manifest["portfolio_objective"] == "Grow my Wealth"
     assert manifest["latest_run_id"] == second_run
     assert manifest["as_of_date"] == "2024-03-01"
     latest_rows = _read_csv(path / "latest_model_portfolio.csv")

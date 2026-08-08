@@ -12,6 +12,7 @@ import pandas as pd
 DEFAULT_REGISTRY_PATH = Path("strategies/registry.json")
 _KEBAB_CASE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _FORBIDDEN_PROFILE_TERMS = ("payment", "subscription", "login", "access_control", "access-control")
+_PORTFOLIO_OBJECTIVES = {"Build my Core", "Grow my Wealth", "Fill a Gap"}
 
 
 @dataclass(frozen=True)
@@ -79,7 +80,7 @@ def _validate_profile(
         error(f"Profile JSON is invalid: {exc}")
         return issues
 
-    required = ["strategy_id", "slug", "name", "documents", "optimization", "package"]
+    required = ["strategy_id", "slug", "name", "portfolio_objective", "documents", "optimization", "package"]
     for key in required:
         if key not in profile:
             error(f"Missing required field: {key}")
@@ -98,6 +99,12 @@ def _validate_profile(
     if slug in seen_slugs:
         error(f"Duplicate slug also used by {seen_slugs[slug]}.")
     seen_slugs[slug] = profile_path
+    portfolio_objective = str(profile.get("portfolio_objective") or "")
+    if portfolio_objective not in _PORTFOLIO_OBJECTIVES:
+        error(
+            "portfolio_objective must be one of: "
+            f"{', '.join(sorted(_PORTFOLIO_OBJECTIVES))}."
+        )
 
     serialized = json.dumps(profile, sort_keys=True).lower()
     for term in _FORBIDDEN_PROFILE_TERMS:

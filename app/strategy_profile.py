@@ -36,6 +36,9 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     config.STRATEGY_PACKAGE_TARGET_HOLDINGS = len(allocation.get("assets") or [])
     config.STRATEGY_PACKAGE_SHORT_DESCRIPTION = str(profile.get("short_description") or "")
     config.STRATEGY_PACKAGE_CATEGORY_LABELS = ",".join(profile.get("category_labels") or [])
+    config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE = str(
+        profile.get("portfolio_objective") or config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE
+    )
     config.STRATEGY_PACKAGE_UNIVERSE = str(profile.get("universe") or config.STRATEGY_PACKAGE_UNIVERSE)
     config.STRATEGY_PACKAGE_BENCHMARK = str(profile.get("benchmark") or config.STRATEGY_PACKAGE_BENCHMARK)
     config.STRATEGY_PACKAGE_RA_ENTITY = str(profile.get("ra_entity") or config.STRATEGY_PACKAGE_RA_ENTITY)

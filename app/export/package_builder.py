@@ -179,6 +179,7 @@ def _manifest(run: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
             for item in config.STRATEGY_PACKAGE_CATEGORY_LABELS.split(",")
             if item.strip()
         ],
+        "portfolio_objective": config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE,
         "version": config.STRATEGY_PACKAGE_VERSION,
         "generated_at": datetime.now(IST).replace(microsecond=0).isoformat(),
         "generated_by": f"{config.STRATEGY_PACKAGE_SLUG}-research-project",

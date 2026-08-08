@@ -37,6 +37,7 @@ def _write_profile(root: Path, slug: str, strategy_id: str = "sample_strategy_v1
                 "strategy_id": strategy_id,
                 "slug": slug,
                 "name": "Sample Strategy",
+                "portfolio_objective": "Grow my Wealth",
                 "documents": {
                     "public_methodology_path": str(folder / "methodology.md"),
                     "internal_methodology_path": str(folder / "methodology_internal.md"),
@@ -102,6 +103,7 @@ def test_validate_strategy_registry_accepts_fixed_allocation_without_optimizatio
                 "strategy_id": "fixed_income_v1",
                 "slug": "fixed-income",
                 "name": "Fixed Income",
+                "portfolio_objective": "Build my Core",
                 "documents": {
                     "public_methodology_path": str(folder / "methodology.md"),
                     "internal_methodology_path": str(folder / "methodology_internal.md"),
