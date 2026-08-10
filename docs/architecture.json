@@ -1,0 +1,952 @@
+{
+  "meta": {
+    "title": "Vriksha Strategy Manager Architecture",
+    "subtitle": "Local Python research factory for strategy profiles, market data, backtests, rebalances, exports, and admin dashboards.",
+    "repo": "vrisksha-strategy-manager",
+    "generated_from": "commit 5425ec5, workspace scan on 2026-08-10",
+    "canvas": {
+      "width": 1400,
+      "height": 820
+    },
+    "status_legend": {
+      "built": "implemented + tested",
+      "partial": "interface exists; later",
+      "planned": "designed, not built"
+    },
+    "groups": {
+      "entry": {
+        "label": "Entrypoints",
+        "color": "#2563eb"
+      },
+      "config": {
+        "label": "Profiles and Config",
+        "color": "#7c3aed"
+      },
+      "data": {
+        "label": "Data Pipeline",
+        "color": "#0891b2"
+      },
+      "storage": {
+        "label": "SQLite and Files",
+        "color": "#475569"
+      },
+      "strategy": {
+        "label": "Strategy Engines",
+        "color": "#16a34a"
+      },
+      "automation": {
+        "label": "Automation and Broker",
+        "color": "#f59e0b"
+      },
+      "export": {
+        "label": "Export Packages",
+        "color": "#db2777"
+      },
+      "ui": {
+        "label": "Dashboards",
+        "color": "#0d9488"
+      },
+      "external": {
+        "label": "External Dependencies",
+        "color": "#64748b"
+      },
+      "future": {
+        "label": "Planned Interfaces",
+        "color": "#9333ea"
+      }
+    }
+  },
+  "nodes": [
+    {
+      "id": "cli",
+      "label": "CLI command router",
+      "group": "entry",
+      "status": "built",
+      "x": 60,
+      "y": 160,
+      "tech": "argparse; python -m app.main",
+      "file": "app/cli.py",
+      "tooltip": "Central command surface for database setup, universe sync, Kite token flows, history fetches, backtests, finalized packages, model-portfolio updates, daily automation, reminders, and admin snapshot export.",
+      "noncanonical": false
+    },
+    {
+      "id": "scripts",
+      "label": "Windows run scripts",
+      "group": "entry",
+      "status": "built",
+      "x": 60,
+      "y": 285,
+      "tech": ".bat wrappers",
+      "file": "scripts/",
+      "tooltip": "Convenience batch files invoke the CLI and Streamlit dashboards for manual, monthly, auto-daily, backtest, live, and reminder workflows.",
+      "noncanonical": false
+    },
+    {
+      "id": "streamlit",
+      "label": "Streamlit dashboards",
+      "group": "ui",
+      "status": "built",
+      "x": 1140,
+      "y": 250,
+      "tech": "streamlit + pandas",
+      "file": "dashboards/",
+      "tooltip": "Backtest and live dashboards read SQLite; admin dashboard reads a safe JSON snapshot without secrets, holdings rows, broker data, or performance metrics.",
+      "noncanonical": false
+    },
+    {
+      "id": "config",
+      "label": ".env and runtime config",
+      "group": "config",
+      "status": "built",
+      "x": 260,
+      "y": 70,
+      "tech": "python-dotenv",
+      "file": "app/config.py",
+      "tooltip": "Loads provider settings, paths, strategy defaults, Kite credentials, Telegram flags, package metadata, and optimization paths from environment variables.",
+      "noncanonical": false
+    },
+    {
+      "id": "registry",
+      "label": "Strategy registry and profiles",
+      "group": "config",
+      "status": "built",
+      "x": 260,
+      "y": 190,
+      "tech": "JSON profiles",
+      "file": "strategies/registry.json",
+      "tooltip": "Authoritative list of four active profiles. Profiles carry identity, schedule, package paths, methodology paths, optimization settings, and fixed-allocation assets where applicable.",
+      "noncanonical": false
+    },
+    {
+      "id": "profile_apply",
+      "label": "Profile applicator",
+      "group": "config",
+      "status": "built",
+      "x": 470,
+      "y": 190,
+      "tech": "module-level config mutation",
+      "file": "app/strategy_profile.py",
+      "tooltip": "Loads a selected profile and applies package, benchmark, documentation, optimization, and schedule-derived fields into app.config before a run.",
+      "noncanonical": false
+    },
+    {
+      "id": "registry_validation",
+      "label": "Registry validation",
+      "group": "config",
+      "status": "built",
+      "x": 470,
+      "y": 70,
+      "tech": "JSON + path checks",
+      "file": "app/strategy_registry.py",
+      "tooltip": "Validates profile shape, slug uniqueness, objective values, doc paths, optimization paths/results, finalized config alignment, allocation weights, and package folder naming.",
+      "noncanonical": false
+    },
+    {
+      "id": "universe_excel",
+      "label": "Universe workbook",
+      "group": "storage",
+      "status": "partial",
+      "x": 260,
+      "y": 405,
+      "tech": "Excel source of truth",
+      "file": "data/reference/nifty500_universe.xlsx",
+      "tooltip": "The real workbook is expected locally and is not committed; the repo includes an example workbook. Runtime sync fails honestly if the real source is absent.",
+      "noncanonical": true
+    },
+    {
+      "id": "universe_sync",
+      "label": "Universe sync and loader",
+      "group": "data",
+      "status": "built",
+      "x": 470,
+      "y": 405,
+      "tech": "pandas + openpyxl",
+      "file": "app/data/universe_sync.py",
+      "tooltip": "Validates required symbol metadata, writes runtime Nifty 500 JSON plus validation report, and reloads stale JSON from Excel when needed.",
+      "noncanonical": false
+    },
+    {
+      "id": "market_provider",
+      "label": "Market data providers",
+      "group": "external",
+      "status": "built",
+      "x": 260,
+      "y": 560,
+      "tech": "Kite Connect or yfinance",
+      "file": "app/data/historical_data.py",
+      "tooltip": "Kite is the default provider with instrument-token resolution, chunking, throttling, and retry handling. Yahoo Finance remains a configurable fallback.",
+      "noncanonical": false
+    },
+    {
+      "id": "kite_auth",
+      "label": "Kite token workflow",
+      "group": "automation",
+      "status": "built",
+      "x": 60,
+      "y": 560,
+      "tech": "kiteconnect + Selenium + pyotp",
+      "file": "app/execution/kite_session.py",
+      "tooltip": "Manual and Selenium-assisted login exchange a request_token for a daily access token, save it to .env, and validate it with Kite profile().",
+      "noncanonical": false
+    },
+    {
+      "id": "price_ingestion",
+      "label": "Price ingestion",
+      "group": "data",
+      "status": "built",
+      "x": 470,
+      "y": 560,
+      "tech": "provider -> PriceBar",
+      "file": "app/data/price_ingestion.py",
+      "tooltip": "Fetches daily prices for requested symbols, the benchmark, and safe assets; converts provider frames to PriceBar records; persists rows and ingestion audit metadata.",
+      "noncanonical": false
+    },
+    {
+      "id": "sqlite",
+      "label": "SQLite research store",
+      "group": "storage",
+      "status": "built",
+      "x": 690,
+      "y": 405,
+      "tech": "sqlite3",
+      "file": "app/storage/database.py",
+      "tooltip": "Local database holds runs, audit events, portfolio snapshots, holding snapshots, stock history table, order proposals, backtest runs, artifacts, market prices, and ingestion runs.",
+      "noncanonical": false
+    },
+    {
+      "id": "repositories",
+      "label": "Repository functions",
+      "group": "storage",
+      "status": "built",
+      "x": 690,
+      "y": 560,
+      "tech": "sqlite row mappers",
+      "file": "app/storage/repositories.py",
+      "tooltip": "Read/write API for strategy runs, backtest runs, snapshots, holdings, order proposals, audit events, and contribution summaries.",
+      "noncanonical": false
+    },
+    {
+      "id": "ranking",
+      "label": "Ranking and allocation",
+      "group": "strategy",
+      "status": "built",
+      "x": 690,
+      "y": 190,
+      "tech": "pandas signals",
+      "file": "app/backtest/engine.py",
+      "tooltip": "Backtest helper computes 3M/6M/12M momentum, 52-week-high qualification, beta, volatility, average-rank or weighted-score rankings; selection applies top-N, buffers, stock caps, sector caps, and safe-asset residual.",
+      "noncanonical": false
+    },
+    {
+      "id": "backtest_engine",
+      "label": "Dual-momentum backtest",
+      "group": "strategy",
+      "status": "built",
+      "x": 910,
+      "y": 120,
+      "tech": "BacktestEngine",
+      "file": "app/backtest/engine.py",
+      "tooltip": "Runs finalized configurable-period dual-momentum simulations from stored prices and universe data, persists monthly portfolio and holding snapshots, and records run metrics/warnings.",
+      "noncanonical": false
+    },
+    {
+      "id": "fixed_backtest",
+      "label": "Fixed-allocation backtest",
+      "group": "strategy",
+      "status": "built",
+      "x": 910,
+      "y": 250,
+      "tech": "FixedAllocationBacktestEngine",
+      "file": "app/backtest/fixed_allocation.py",
+      "tooltip": "Runs quarterly fixed-weight multi-asset simulations using profile assets, price data, optional distribution events, and transaction-cost estimates.",
+      "noncanonical": false
+    },
+    {
+      "id": "rebalance_engine",
+      "label": "Monthly rebalance engine",
+      "group": "strategy",
+      "status": "built",
+      "x": 910,
+      "y": 405,
+      "tech": "RebalanceEngine",
+      "file": "app/strategy/rebalance.py",
+      "tooltip": "Builds the current target portfolio from latest stored prices and profile parameters, persists snapshots, and creates proposed buy/sell orders scaled by available purchase funds.",
+      "noncanonical": false
+    },
+    {
+      "id": "optimizer",
+      "label": "Optimization adapter",
+      "group": "strategy",
+      "status": "built",
+      "x": 690,
+      "y": 70,
+      "tech": "Optuna experiment loader",
+      "file": "app/optimization/average_rank_buffer.py",
+      "tooltip": "Loads profile-specific optimizer modules, binds active database/universe paths and search space, runs the Optuna grid, ranks results, and writes trial CSV output.",
+      "noncanonical": false
+    },
+    {
+      "id": "finalized_config",
+      "label": "Finalized parameters",
+      "group": "storage",
+      "status": "built",
+      "x": 910,
+      "y": 20,
+      "tech": "JSON promoted config",
+      "file": "app/optimization/finalized_config.py",
+      "tooltip": "Selects the best optimization row, writes a finalized parameter JSON, and applies those values into app.config before finalized backtests and rebalance runs.",
+      "noncanonical": false
+    },
+    {
+      "id": "scheduler",
+      "label": "Daily automation scheduler",
+      "group": "automation",
+      "status": "built",
+      "x": 690,
+      "y": 700,
+      "tech": "weekday calendar",
+      "file": "app/automation/schedule.py",
+      "tooltip": "Computes monthly target days or quarterly first-trading-day dates with a provisional Monday-Friday calendar; NSE holiday support is explicitly deferred.",
+      "noncanonical": true
+    },
+    {
+      "id": "telegram",
+      "label": "Telegram reminders",
+      "group": "automation",
+      "status": "built",
+      "x": 910,
+      "y": 700,
+      "tech": "Telegram Bot API",
+      "file": "app/automation/strategy_scheduler.py",
+      "tooltip": "Loads every profile schedule from the registry, emits due-today/due-tomorrow reminders, and sends them when Telegram is enabled and configured.",
+      "noncanonical": false
+    },
+    {
+      "id": "package_export",
+      "label": "Strategy package builder",
+      "group": "export",
+      "status": "built",
+      "x": 1140,
+      "y": 70,
+      "tech": "JSON, CSV, Markdown",
+      "file": "app/export/package_builder.py",
+      "tooltip": "Builds portable Vriksha package files from completed backtests: manifest, returns, drawdowns, benchmark, latest portfolio, histories, exposures, methodology, disclosures, and import notes.",
+      "noncanonical": false
+    },
+    {
+      "id": "model_update_export",
+      "label": "Model portfolio update",
+      "group": "export",
+      "status": "built",
+      "x": 1140,
+      "y": 405,
+      "tech": "subscriber update subset",
+      "file": "app/export/model_portfolio_update.py",
+      "tooltip": "Exports the latest monthly holdings subset for subscriber model-portfolio updates after a successful rebalance.",
+      "noncanonical": false
+    },
+    {
+      "id": "admin_snapshot",
+      "label": "Safe admin snapshot",
+      "group": "export",
+      "status": "built",
+      "x": 1140,
+      "y": 560,
+      "tech": "JSON snapshot",
+      "file": "app/admin_dashboard_snapshot.py",
+      "tooltip": "Generates data/admin/strategy_dashboard.json with catalogue, schedules, file existence, commands, and validation; deliberately excludes sensitive and performance data.",
+      "noncanonical": false
+    },
+    {
+      "id": "package_files",
+      "label": "Package/output files",
+      "group": "storage",
+      "status": "built",
+      "x": 1320,
+      "y": 120,
+      "tech": "data/output/",
+      "file": "data/output/",
+      "tooltip": "Generated package, finalized config, optimization CSV, fixed-allocation summaries, model-update files, and admin snapshot live under data/output and data/admin.",
+      "noncanonical": false
+    },
+    {
+      "id": "strategy_engine_placeholder",
+      "label": "Generic StrategyEngine",
+      "group": "future",
+      "status": "planned",
+      "x": 1140,
+      "y": 700,
+      "tech": "NotImplementedError",
+      "file": "app/strategy/engine.py",
+      "tooltip": "Future canonical ranking/target-portfolio engine is documented but not implemented; current production logic lives in BacktestEngine and RebalanceEngine.",
+      "noncanonical": true
+    },
+    {
+      "id": "broker_live",
+      "label": "Live broker execution",
+      "group": "future",
+      "status": "planned",
+      "x": 1320,
+      "y": 650,
+      "tech": "Broker protocol",
+      "file": "app/execution/broker.py",
+      "tooltip": "Broker protocol exists, but Zerodha holdings, order reads, live placement, and reconciliation raise NotImplementedError. The app creates order proposals only.",
+      "noncanonical": true
+    },
+    {
+      "id": "portfolio_history",
+      "label": "Portfolio history services",
+      "group": "future",
+      "status": "planned",
+      "x": 1320,
+      "y": 760,
+      "tech": "service stubs",
+      "file": "app/portfolio/",
+      "tooltip": "PortfolioTracker and PortfolioHistoryService are placeholders; dashboards currently read snapshots and summaries directly from repository functions.",
+      "noncanonical": true
+    }
+  ],
+  "edges": [
+    {
+      "from": "scripts",
+      "to": "cli",
+      "kind": "request"
+    },
+    {
+      "from": "cli",
+      "to": "config",
+      "kind": "read"
+    },
+    {
+      "from": "cli",
+      "to": "registry",
+      "kind": "read"
+    },
+    {
+      "from": "registry",
+      "to": "registry_validation",
+      "kind": "check"
+    },
+    {
+      "from": "registry",
+      "to": "profile_apply",
+      "kind": "provide"
+    },
+    {
+      "from": "profile_apply",
+      "to": "config",
+      "kind": "provide"
+    },
+    {
+      "from": "universe_excel",
+      "to": "universe_sync",
+      "kind": "data"
+    },
+    {
+      "from": "universe_sync",
+      "to": "sqlite",
+      "kind": "persist"
+    },
+    {
+      "from": "universe_sync",
+      "to": "repositories",
+      "kind": "persist"
+    },
+    {
+      "from": "kite_auth",
+      "to": "market_provider",
+      "kind": "provide"
+    },
+    {
+      "from": "market_provider",
+      "to": "price_ingestion",
+      "kind": "data"
+    },
+    {
+      "from": "price_ingestion",
+      "to": "sqlite",
+      "kind": "persist"
+    },
+    {
+      "from": "sqlite",
+      "to": "repositories",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "ranking",
+      "kind": "read"
+    },
+    {
+      "from": "universe_sync",
+      "to": "ranking",
+      "kind": "provide"
+    },
+    {
+      "from": "ranking",
+      "to": "backtest_engine",
+      "kind": "flow"
+    },
+    {
+      "from": "ranking",
+      "to": "rebalance_engine",
+      "kind": "flow"
+    },
+    {
+      "from": "profile_apply",
+      "to": "optimizer",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "optimizer",
+      "kind": "read"
+    },
+    {
+      "from": "optimizer",
+      "to": "finalized_config",
+      "kind": "persist"
+    },
+    {
+      "from": "finalized_config",
+      "to": "profile_apply",
+      "kind": "provide"
+    },
+    {
+      "from": "backtest_engine",
+      "to": "repositories",
+      "kind": "persist"
+    },
+    {
+      "from": "fixed_backtest",
+      "to": "repositories",
+      "kind": "persist"
+    },
+    {
+      "from": "repositories",
+      "to": "package_export",
+      "kind": "read"
+    },
+    {
+      "from": "package_export",
+      "to": "package_files",
+      "kind": "persist"
+    },
+    {
+      "from": "rebalance_engine",
+      "to": "repositories",
+      "kind": "persist"
+    },
+    {
+      "from": "repositories",
+      "to": "model_update_export",
+      "kind": "read"
+    },
+    {
+      "from": "model_update_export",
+      "to": "package_files",
+      "kind": "persist"
+    },
+    {
+      "from": "registry_validation",
+      "to": "admin_snapshot",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "admin_snapshot",
+      "kind": "read"
+    },
+    {
+      "from": "admin_snapshot",
+      "to": "streamlit",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "streamlit",
+      "kind": "read"
+    },
+    {
+      "from": "scheduler",
+      "to": "rebalance_engine",
+      "kind": "check"
+    },
+    {
+      "from": "scheduler",
+      "to": "telegram",
+      "kind": "probe"
+    },
+    {
+      "from": "telegram",
+      "to": "package_files",
+      "kind": "probe"
+    },
+    {
+      "from": "rebalance_engine",
+      "to": "broker_live",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "portfolio_history",
+      "kind": "provide"
+    },
+    {
+      "from": "strategy_engine_placeholder",
+      "to": "ranking",
+      "kind": "provide"
+    },
+    {
+      "from": "profile_apply",
+      "to": "fixed_backtest",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "fixed_backtest",
+      "kind": "read"
+    }
+  ],
+  "flows": [
+    {
+      "id": "finalized_package",
+      "name": "Finalized Vriksha Package",
+      "status": "built",
+      "summary": "Promote optimized parameters, ensure history, backtest, and export a full strategy package.",
+      "description": "The CLI applies a strategy profile, selects/writes finalized parameters from optimizer results, syncs universe and Kite/Yahoo price history when requested, runs the dual-momentum backtest, persists snapshots, and builds the portable Vriksha package files.",
+      "nodes": [
+        "cli",
+        "registry",
+        "profile_apply",
+        "optimizer",
+        "finalized_config",
+        "universe_sync",
+        "market_provider",
+        "price_ingestion",
+        "sqlite",
+        "repositories",
+        "ranking",
+        "backtest_engine",
+        "package_export",
+        "package_files"
+      ],
+      "edges": [
+        [
+          "cli",
+          "registry"
+        ],
+        [
+          "registry",
+          "profile_apply"
+        ],
+        [
+          "profile_apply",
+          "optimizer"
+        ],
+        [
+          "optimizer",
+          "finalized_config"
+        ],
+        [
+          "finalized_config",
+          "profile_apply"
+        ],
+        [
+          "universe_sync",
+          "sqlite"
+        ],
+        [
+          "market_provider",
+          "price_ingestion"
+        ],
+        [
+          "price_ingestion",
+          "sqlite"
+        ],
+        [
+          "sqlite",
+          "repositories"
+        ],
+        [
+          "repositories",
+          "ranking"
+        ],
+        [
+          "ranking",
+          "backtest_engine"
+        ],
+        [
+          "backtest_engine",
+          "repositories"
+        ],
+        [
+          "repositories",
+          "package_export"
+        ],
+        [
+          "package_export",
+          "package_files"
+        ]
+      ]
+    },
+    {
+      "id": "daily_rebalance",
+      "name": "Auto Daily Rebalance Check",
+      "status": "built",
+      "summary": "Refresh token/data daily and rebalance only on profile schedule dates.",
+      "description": "The daily CLI workflow validates or refreshes the Kite token, syncs universe, fetches recent history, checks the profile schedule using the provisional weekday calendar, and runs RebalanceEngine on configured rebalance days.",
+      "nodes": [
+        "cli",
+        "kite_auth",
+        "market_provider",
+        "price_ingestion",
+        "sqlite",
+        "repositories",
+        "scheduler",
+        "ranking",
+        "rebalance_engine"
+      ],
+      "edges": [
+        [
+          "kite_auth",
+          "market_provider"
+        ],
+        [
+          "market_provider",
+          "price_ingestion"
+        ],
+        [
+          "price_ingestion",
+          "sqlite"
+        ],
+        [
+          "sqlite",
+          "repositories"
+        ],
+        [
+          "scheduler",
+          "rebalance_engine"
+        ],
+        [
+          "repositories",
+          "ranking"
+        ],
+        [
+          "ranking",
+          "rebalance_engine"
+        ],
+        [
+          "rebalance_engine",
+          "repositories"
+        ]
+      ]
+    },
+    {
+      "id": "model_update",
+      "name": "Latest Model Portfolio Update",
+      "status": "built",
+      "summary": "Run the current rebalance path and export only subscriber update files.",
+      "description": "The CLI applies finalized profile config, refreshes recent history unless skipped, delegates target-portfolio generation to the monthly rebalance workflow, then exports latest portfolio, histories, and exposure CSVs.",
+      "nodes": [
+        "cli",
+        "profile_apply",
+        "finalized_config",
+        "market_provider",
+        "price_ingestion",
+        "sqlite",
+        "repositories",
+        "ranking",
+        "rebalance_engine",
+        "model_update_export",
+        "package_files"
+      ],
+      "edges": [
+        [
+          "finalized_config",
+          "profile_apply"
+        ],
+        [
+          "market_provider",
+          "price_ingestion"
+        ],
+        [
+          "price_ingestion",
+          "sqlite"
+        ],
+        [
+          "sqlite",
+          "repositories"
+        ],
+        [
+          "repositories",
+          "ranking"
+        ],
+        [
+          "ranking",
+          "rebalance_engine"
+        ],
+        [
+          "rebalance_engine",
+          "repositories"
+        ],
+        [
+          "repositories",
+          "model_update_export"
+        ],
+        [
+          "model_update_export",
+          "package_files"
+        ]
+      ]
+    },
+    {
+      "id": "fixed_allocation",
+      "name": "Fixed-Allocation Strategy",
+      "status": "built",
+      "summary": "Use profile-defined assets, distributions, and quarterly rebalancing for the income strategy.",
+      "description": "The fixed-allocation command loads a strategy profile, reads stored prices and distribution events, simulates quarterly rebalances with transaction costs, persists snapshots, and can feed the normal package exporter.",
+      "nodes": [
+        "cli",
+        "registry",
+        "profile_apply",
+        "repositories",
+        "fixed_backtest",
+        "package_export",
+        "package_files"
+      ],
+      "edges": [
+        [
+          "cli",
+          "registry"
+        ],
+        [
+          "registry",
+          "profile_apply"
+        ],
+        [
+          "profile_apply",
+          "fixed_backtest"
+        ],
+        [
+          "repositories",
+          "fixed_backtest"
+        ],
+        [
+          "fixed_backtest",
+          "repositories"
+        ],
+        [
+          "repositories",
+          "package_export"
+        ],
+        [
+          "package_export",
+          "package_files"
+        ]
+      ]
+    },
+    {
+      "id": "admin_visibility",
+      "name": "Admin Visibility",
+      "status": "built",
+      "summary": "Generate a safe snapshot and view it in Streamlit without exposing sensitive data.",
+      "description": "The admin export validates the strategy registry, reads limited run/file status from storage, writes data/admin/strategy_dashboard.json, and the admin dashboard renders that snapshot only.",
+      "nodes": [
+        "cli",
+        "registry",
+        "registry_validation",
+        "repositories",
+        "admin_snapshot",
+        "streamlit"
+      ],
+      "edges": [
+        [
+          "cli",
+          "registry"
+        ],
+        [
+          "registry",
+          "registry_validation"
+        ],
+        [
+          "registry_validation",
+          "admin_snapshot"
+        ],
+        [
+          "repositories",
+          "admin_snapshot"
+        ],
+        [
+          "admin_snapshot",
+          "streamlit"
+        ]
+      ]
+    },
+    {
+      "id": "data_foundation",
+      "name": "Market Data Foundation",
+      "status": "built",
+      "summary": "Turn the local universe and external provider data into normalized SQLite price rows.",
+      "description": "Universe sync validates Excel and writes runtime JSON; the selected provider fetches daily bars for active symbols, benchmark, and safe assets; ingestion normalizes rows and records both prices and ingestion-run metadata.",
+      "nodes": [
+        "universe_excel",
+        "universe_sync",
+        "kite_auth",
+        "market_provider",
+        "price_ingestion",
+        "sqlite",
+        "repositories"
+      ],
+      "edges": [
+        [
+          "universe_excel",
+          "universe_sync"
+        ],
+        [
+          "universe_sync",
+          "sqlite"
+        ],
+        [
+          "kite_auth",
+          "market_provider"
+        ],
+        [
+          "market_provider",
+          "price_ingestion"
+        ],
+        [
+          "price_ingestion",
+          "sqlite"
+        ],
+        [
+          "sqlite",
+          "repositories"
+        ]
+      ]
+    },
+    {
+      "id": "planned_execution",
+      "name": "Planned Live Execution",
+      "status": "planned",
+      "summary": "Order proposals exist; unattended live broker placement and reconciliation are intentionally not built.",
+      "description": "RebalanceEngine writes proposed orders, but broker placement, holdings retrieval, order reconciliation, and stock-history service layers are stubs. This is a future integration path, not a current production execution path.",
+      "nodes": [
+        "rebalance_engine",
+        "repositories",
+        "broker_live",
+        "portfolio_history"
+      ],
+      "edges": [
+        [
+          "rebalance_engine",
+          "broker_live"
+        ],
+        [
+          "repositories",
+          "portfolio_history"
+        ]
+      ]
+    }
+  ]
+}

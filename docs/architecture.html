@@ -1,0 +1,974 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vriksha Strategy Manager Architecture</title>
+<style>
+:root { color-scheme: light dark; --bg:#f7fafc; --surface:#ffffff; --surface-2:#eef2f7; --text:#172033; --muted:#64748b; --line:#cbd5e1; --line-strong:#475569; --accent:#f97316; --shadow:0 18px 45px rgba(15,23,42,.13); --node-fill:color-mix(in srgb,var(--node-color) 13%,var(--surface)); --node-stroke:color-mix(in srgb,var(--node-color) 70%,var(--line)); --dim:.16; }
+:root[data-theme="dark"] { color-scheme:dark; --bg:#0b1020; --surface:#121a2c; --surface-2:#18233a; --text:#e5edf8; --muted:#9aabc1; --line:#334155; --line-strong:#94a3b8; --accent:#fb923c; --shadow:0 18px 45px rgba(0,0,0,.35); --node-fill:color-mix(in srgb,var(--node-color) 22%,var(--surface)); --node-stroke:color-mix(in srgb,var(--node-color) 75%,#e2e8f0); }
+*{box-sizing:border-box} html,body{margin:0;min-height:100%;overflow-x:hidden} body{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)} button{font:inherit}.shell{width:min(1780px,100%);margin:0 auto;padding:22px}.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:16px}h1{margin:0;font-size:clamp(1.4rem,2.4vw,2.2rem);line-height:1.1;letter-spacing:0}.subtitle{margin:8px 0 0;max-width:900px;color:var(--muted);line-height:1.45}.meta{margin-top:8px;color:var(--muted);font-size:.88rem}.theme-toggle{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:9px 12px;cursor:pointer;box-shadow:var(--shadow);white-space:nowrap}.content{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}.diagram-wrap,.panel,.detail,.legend{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}.diagram-wrap{min-width:0;padding:10px;overflow:hidden}svg{display:block;width:100%;height:auto;max-height:calc(100vh - 155px);min-height:560px}.panel,.detail,.legend{padding:14px}.detail,.legend{margin-top:16px}.panel h2,.detail h2,.legend h2{margin:0 0 10px;font-size:1rem;letter-spacing:0}.flow-list{display:grid;gap:8px}.flow-btn{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface-2);color:var(--text);border-radius:8px;padding:10px;cursor:pointer}.flow-btn:hover,.flow-btn.active{border-color:var(--accent)}.flow-name{display:flex;justify-content:space-between;gap:8px;font-weight:700}.flow-summary{margin-top:5px;color:var(--muted);font-size:.86rem;line-height:1.35}.badge{border-radius:999px;padding:2px 7px;font-size:.72rem;font-weight:700;text-transform:uppercase;background:var(--surface);border:1px solid var(--line);color:var(--muted)}.detail-body{color:var(--muted);line-height:1.45;font-size:.92rem}.detail-body strong{color:var(--text)}.detail-body ul{margin:8px 0 0;padding-left:18px}.legend-grid{display:grid;gap:8px}.legend-row{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.88rem}.swatch{width:14px;height:14px;border-radius:4px;border:1px solid var(--line);background:var(--swatch)}.status-dot{width:10px;height:10px;border-radius:999px;display:inline-block}.tooltip{position:fixed;z-index:20;max-width:340px;pointer-events:none;opacity:0;transform:translate(8px,8px);background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px 12px;box-shadow:var(--shadow);transition:opacity 120ms ease;font-size:.88rem;line-height:1.35}.tooltip.visible{opacity:1}.tooltip .tip-title{font-weight:800;margin-bottom:4px}.tooltip .tip-meta{color:var(--muted);margin-top:6px}.edge path{fill:none;stroke:var(--line-strong);stroke-width:2.2;opacity:.62}.edge.probe path,.edge.provide path,.edge.persist path,.edge.read path,.edge.check path{stroke-dasharray:8 7}.edge.highlight path{stroke:var(--accent);stroke-width:4;opacity:1;stroke-dasharray:10 6;animation:march 900ms linear infinite}.edge.dim path,.node.dim{opacity:var(--dim)}.node{cursor:pointer;transition:opacity 140ms ease,filter 140ms ease}.node rect.box{fill:var(--node-fill);stroke:var(--node-stroke);stroke-width:2}.node:hover,.node.selected,.node.highlight{filter:drop-shadow(0 8px 12px rgba(15,23,42,.18))}.node.highlight rect.box,.node.selected rect.box{stroke:var(--accent);stroke-width:4}.node text{fill:var(--text);pointer-events:none;letter-spacing:0}.node .label{font-size:15px;font-weight:800}.node .tech{font-size:11px;fill:var(--muted)}.node .file{font-size:10px;fill:var(--muted)}@keyframes march{to{stroke-dashoffset:-16}}@media(max-width:1100px){.content{grid-template-columns:1fr}svg{max-height:none;min-height:420px}.side{display:grid;grid-template-columns:1fr 1fr;gap:16px}.detail,.legend{margin-top:0}}@media(max-width:760px){.shell{padding:14px}.topbar{flex-direction:column}.side{display:block}.detail,.legend{margin-top:14px}svg{min-height:360px}}
+</style>
+</head>
+<body>
+<script type="application/json" id="model">
+{
+  "meta": {
+    "title": "Vriksha Strategy Manager Architecture",
+    "subtitle": "Local Python research factory for strategy profiles, market data, backtests, rebalances, exports, and admin dashboards.",
+    "repo": "vrisksha-strategy-manager",
+    "generated_from": "commit 5425ec5, workspace scan on 2026-08-10",
+    "canvas": {
+      "width": 1400,
+      "height": 820
+    },
+    "status_legend": {
+      "built": "implemented + tested",
+      "partial": "interface exists; later",
+      "planned": "designed, not built"
+    },
+    "groups": {
+      "entry": {
+        "label": "Entrypoints",
+        "color": "#2563eb"
+      },
+      "config": {
+        "label": "Profiles and Config",
+        "color": "#7c3aed"
+      },
+      "data": {
+        "label": "Data Pipeline",
+        "color": "#0891b2"
+      },
+      "storage": {
+        "label": "SQLite and Files",
+        "color": "#475569"
+      },
+      "strategy": {
+        "label": "Strategy Engines",
+        "color": "#16a34a"
+      },
+      "automation": {
+        "label": "Automation and Broker",
+        "color": "#f59e0b"
+      },
+      "export": {
+        "label": "Export Packages",
+        "color": "#db2777"
+      },
+      "ui": {
+        "label": "Dashboards",
+        "color": "#0d9488"
+      },
+      "external": {
+        "label": "External Dependencies",
+        "color": "#64748b"
+      },
+      "future": {
+        "label": "Planned Interfaces",
+        "color": "#9333ea"
+      }
+    }
+  },
+  "nodes": [
+    {
+      "id": "cli",
+      "label": "CLI command router",
+      "group": "entry",
+      "status": "built",
+      "x": 60,
+      "y": 160,
+      "tech": "argparse; python -m app.main",
+      "file": "app/cli.py",
+      "tooltip": "Central command surface for database setup, universe sync, Kite token flows, history fetches, backtests, finalized packages, model-portfolio updates, daily automation, reminders, and admin snapshot export.",
+      "noncanonical": false
+    },
+    {
+      "id": "scripts",
+      "label": "Windows run scripts",
+      "group": "entry",
+      "status": "built",
+      "x": 60,
+      "y": 285,
+      "tech": ".bat wrappers",
+      "file": "scripts/",
+      "tooltip": "Convenience batch files invoke the CLI and Streamlit dashboards for manual, monthly, auto-daily, backtest, live, and reminder workflows.",
+      "noncanonical": false
+    },
+    {
+      "id": "streamlit",
+      "label": "Streamlit dashboards",
+      "group": "ui",
+      "status": "built",
+      "x": 1140,
+      "y": 250,
+      "tech": "streamlit + pandas",
+      "file": "dashboards/",
+      "tooltip": "Backtest and live dashboards read SQLite; admin dashboard reads a safe JSON snapshot without secrets, holdings rows, broker data, or performance metrics.",
+      "noncanonical": false
+    },
+    {
+      "id": "config",
+      "label": ".env and runtime config",
+      "group": "config",
+      "status": "built",
+      "x": 260,
+      "y": 70,
+      "tech": "python-dotenv",
+      "file": "app/config.py",
+      "tooltip": "Loads provider settings, paths, strategy defaults, Kite credentials, Telegram flags, package metadata, and optimization paths from environment variables.",
+      "noncanonical": false
+    },
+    {
+      "id": "registry",
+      "label": "Strategy registry and profiles",
+      "group": "config",
+      "status": "built",
+      "x": 260,
+      "y": 190,
+      "tech": "JSON profiles",
+      "file": "strategies/registry.json",
+      "tooltip": "Authoritative list of four active profiles. Profiles carry identity, schedule, package paths, methodology paths, optimization settings, and fixed-allocation assets where applicable.",
+      "noncanonical": false
+    },
+    {
+      "id": "profile_apply",
+      "label": "Profile applicator",
+      "group": "config",
+      "status": "built",
+      "x": 470,
+      "y": 190,
+      "tech": "module-level config mutation",
+      "file": "app/strategy_profile.py",
+      "tooltip": "Loads a selected profile and applies package, benchmark, documentation, optimization, and schedule-derived fields into app.config before a run.",
+      "noncanonical": false
+    },
+    {
+      "id": "registry_validation",
+      "label": "Registry validation",
+      "group": "config",
+      "status": "built",
+      "x": 470,
+      "y": 70,
+      "tech": "JSON + path checks",
+      "file": "app/strategy_registry.py",
+      "tooltip": "Validates profile shape, slug uniqueness, objective values, doc paths, optimization paths/results, finalized config alignment, allocation weights, and package folder naming.",
+      "noncanonical": false
+    },
+    {
+      "id": "universe_excel",
+      "label": "Universe workbook",
+      "group": "storage",
+      "status": "partial",
+      "x": 260,
+      "y": 405,
+      "tech": "Excel source of truth",
+      "file": "data/reference/nifty500_universe.xlsx",
+      "tooltip": "The real workbook is expected locally and is not committed; the repo includes an example workbook. Runtime sync fails honestly if the real source is absent.",
+      "noncanonical": true
+    },
+    {
+      "id": "universe_sync",
+      "label": "Universe sync and loader",
+      "group": "data",
+      "status": "built",
+      "x": 470,
+      "y": 405,
+      "tech": "pandas + openpyxl",
+      "file": "app/data/universe_sync.py",
+      "tooltip": "Validates required symbol metadata, writes runtime Nifty 500 JSON plus validation report, and reloads stale JSON from Excel when needed.",
+      "noncanonical": false
+    },
+    {
+      "id": "market_provider",
+      "label": "Market data providers",
+      "group": "external",
+      "status": "built",
+      "x": 260,
+      "y": 560,
+      "tech": "Kite Connect or yfinance",
+      "file": "app/data/historical_data.py",
+      "tooltip": "Kite is the default provider with instrument-token resolution, chunking, throttling, and retry handling. Yahoo Finance remains a configurable fallback.",
+      "noncanonical": false
+    },
+    {
+      "id": "kite_auth",
+      "label": "Kite token workflow",
+      "group": "automation",
+      "status": "built",
+      "x": 60,
+      "y": 560,
+      "tech": "kiteconnect + Selenium + pyotp",
+      "file": "app/execution/kite_session.py",
+      "tooltip": "Manual and Selenium-assisted login exchange a request_token for a daily access token, save it to .env, and validate it with Kite profile().",
+      "noncanonical": false
+    },
+    {
+      "id": "price_ingestion",
+      "label": "Price ingestion",
+      "group": "data",
+      "status": "built",
+      "x": 470,
+      "y": 560,
+      "tech": "provider -> PriceBar",
+      "file": "app/data/price_ingestion.py",
+      "tooltip": "Fetches daily prices for requested symbols, the benchmark, and safe assets; converts provider frames to PriceBar records; persists rows and ingestion audit metadata.",
+      "noncanonical": false
+    },
+    {
+      "id": "sqlite",
+      "label": "SQLite research store",
+      "group": "storage",
+      "status": "built",
+      "x": 690,
+      "y": 405,
+      "tech": "sqlite3",
+      "file": "app/storage/database.py",
+      "tooltip": "Local database holds runs, audit events, portfolio snapshots, holding snapshots, stock history table, order proposals, backtest runs, artifacts, market prices, and ingestion runs.",
+      "noncanonical": false
+    },
+    {
+      "id": "repositories",
+      "label": "Repository functions",
+      "group": "storage",
+      "status": "built",
+      "x": 690,
+      "y": 560,
+      "tech": "sqlite row mappers",
+      "file": "app/storage/repositories.py",
+      "tooltip": "Read/write API for strategy runs, backtest runs, snapshots, holdings, order proposals, audit events, and contribution summaries.",
+      "noncanonical": false
+    },
+    {
+      "id": "ranking",
+      "label": "Ranking and allocation",
+      "group": "strategy",
+      "status": "built",
+      "x": 690,
+      "y": 190,
+      "tech": "pandas signals",
+      "file": "app/backtest/engine.py",
+      "tooltip": "Backtest helper computes 3M/6M/12M momentum, 52-week-high qualification, beta, volatility, average-rank or weighted-score rankings; selection applies top-N, buffers, stock caps, sector caps, and safe-asset residual.",
+      "noncanonical": false
+    },
+    {
+      "id": "backtest_engine",
+      "label": "Dual-momentum backtest",
+      "group": "strategy",
+      "status": "built",
+      "x": 910,
+      "y": 120,
+      "tech": "BacktestEngine",
+      "file": "app/backtest/engine.py",
+      "tooltip": "Runs finalized configurable-period dual-momentum simulations from stored prices and universe data, persists monthly portfolio and holding snapshots, and records run metrics/warnings.",
+      "noncanonical": false
+    },
+    {
+      "id": "fixed_backtest",
+      "label": "Fixed-allocation backtest",
+      "group": "strategy",
+      "status": "built",
+      "x": 910,
+      "y": 250,
+      "tech": "FixedAllocationBacktestEngine",
+      "file": "app/backtest/fixed_allocation.py",
+      "tooltip": "Runs quarterly fixed-weight multi-asset simulations using profile assets, price data, optional distribution events, and transaction-cost estimates.",
+      "noncanonical": false
+    },
+    {
+      "id": "rebalance_engine",
+      "label": "Monthly rebalance engine",
+      "group": "strategy",
+      "status": "built",
+      "x": 910,
+      "y": 405,
+      "tech": "RebalanceEngine",
+      "file": "app/strategy/rebalance.py",
+      "tooltip": "Builds the current target portfolio from latest stored prices and profile parameters, persists snapshots, and creates proposed buy/sell orders scaled by available purchase funds.",
+      "noncanonical": false
+    },
+    {
+      "id": "optimizer",
+      "label": "Optimization adapter",
+      "group": "strategy",
+      "status": "built",
+      "x": 690,
+      "y": 70,
+      "tech": "Optuna experiment loader",
+      "file": "app/optimization/average_rank_buffer.py",
+      "tooltip": "Loads profile-specific optimizer modules, binds active database/universe paths and search space, runs the Optuna grid, ranks results, and writes trial CSV output.",
+      "noncanonical": false
+    },
+    {
+      "id": "finalized_config",
+      "label": "Finalized parameters",
+      "group": "storage",
+      "status": "built",
+      "x": 910,
+      "y": 20,
+      "tech": "JSON promoted config",
+      "file": "app/optimization/finalized_config.py",
+      "tooltip": "Selects the best optimization row, writes a finalized parameter JSON, and applies those values into app.config before finalized backtests and rebalance runs.",
+      "noncanonical": false
+    },
+    {
+      "id": "scheduler",
+      "label": "Daily automation scheduler",
+      "group": "automation",
+      "status": "built",
+      "x": 690,
+      "y": 700,
+      "tech": "weekday calendar",
+      "file": "app/automation/schedule.py",
+      "tooltip": "Computes monthly target days or quarterly first-trading-day dates with a provisional Monday-Friday calendar; NSE holiday support is explicitly deferred.",
+      "noncanonical": true
+    },
+    {
+      "id": "telegram",
+      "label": "Telegram reminders",
+      "group": "automation",
+      "status": "built",
+      "x": 910,
+      "y": 700,
+      "tech": "Telegram Bot API",
+      "file": "app/automation/strategy_scheduler.py",
+      "tooltip": "Loads every profile schedule from the registry, emits due-today/due-tomorrow reminders, and sends them when Telegram is enabled and configured.",
+      "noncanonical": false
+    },
+    {
+      "id": "package_export",
+      "label": "Strategy package builder",
+      "group": "export",
+      "status": "built",
+      "x": 1140,
+      "y": 70,
+      "tech": "JSON, CSV, Markdown",
+      "file": "app/export/package_builder.py",
+      "tooltip": "Builds portable Vriksha package files from completed backtests: manifest, returns, drawdowns, benchmark, latest portfolio, histories, exposures, methodology, disclosures, and import notes.",
+      "noncanonical": false
+    },
+    {
+      "id": "model_update_export",
+      "label": "Model portfolio update",
+      "group": "export",
+      "status": "built",
+      "x": 1140,
+      "y": 405,
+      "tech": "subscriber update subset",
+      "file": "app/export/model_portfolio_update.py",
+      "tooltip": "Exports the latest monthly holdings subset for subscriber model-portfolio updates after a successful rebalance.",
+      "noncanonical": false
+    },
+    {
+      "id": "admin_snapshot",
+      "label": "Safe admin snapshot",
+      "group": "export",
+      "status": "built",
+      "x": 1140,
+      "y": 560,
+      "tech": "JSON snapshot",
+      "file": "app/admin_dashboard_snapshot.py",
+      "tooltip": "Generates data/admin/strategy_dashboard.json with catalogue, schedules, file existence, commands, and validation; deliberately excludes sensitive and performance data.",
+      "noncanonical": false
+    },
+    {
+      "id": "package_files",
+      "label": "Package/output files",
+      "group": "storage",
+      "status": "built",
+      "x": 1320,
+      "y": 120,
+      "tech": "data/output/",
+      "file": "data/output/",
+      "tooltip": "Generated package, finalized config, optimization CSV, fixed-allocation summaries, model-update files, and admin snapshot live under data/output and data/admin.",
+      "noncanonical": false
+    },
+    {
+      "id": "strategy_engine_placeholder",
+      "label": "Generic StrategyEngine",
+      "group": "future",
+      "status": "planned",
+      "x": 1140,
+      "y": 700,
+      "tech": "NotImplementedError",
+      "file": "app/strategy/engine.py",
+      "tooltip": "Future canonical ranking/target-portfolio engine is documented but not implemented; current production logic lives in BacktestEngine and RebalanceEngine.",
+      "noncanonical": true
+    },
+    {
+      "id": "broker_live",
+      "label": "Live broker execution",
+      "group": "future",
+      "status": "planned",
+      "x": 1320,
+      "y": 650,
+      "tech": "Broker protocol",
+      "file": "app/execution/broker.py",
+      "tooltip": "Broker protocol exists, but Zerodha holdings, order reads, live placement, and reconciliation raise NotImplementedError. The app creates order proposals only.",
+      "noncanonical": true
+    },
+    {
+      "id": "portfolio_history",
+      "label": "Portfolio history services",
+      "group": "future",
+      "status": "planned",
+      "x": 1320,
+      "y": 760,
+      "tech": "service stubs",
+      "file": "app/portfolio/",
+      "tooltip": "PortfolioTracker and PortfolioHistoryService are placeholders; dashboards currently read snapshots and summaries directly from repository functions.",
+      "noncanonical": true
+    }
+  ],
+  "edges": [
+    {
+      "from": "scripts",
+      "to": "cli",
+      "kind": "request"
+    },
+    {
+      "from": "cli",
+      "to": "config",
+      "kind": "read"
+    },
+    {
+      "from": "cli",
+      "to": "registry",
+      "kind": "read"
+    },
+    {
+      "from": "registry",
+      "to": "registry_validation",
+      "kind": "check"
+    },
+    {
+      "from": "registry",
+      "to": "profile_apply",
+      "kind": "provide"
+    },
+    {
+      "from": "profile_apply",
+      "to": "config",
+      "kind": "provide"
+    },
+    {
+      "from": "universe_excel",
+      "to": "universe_sync",
+      "kind": "data"
+    },
+    {
+      "from": "universe_sync",
+      "to": "sqlite",
+      "kind": "persist"
+    },
+    {
+      "from": "universe_sync",
+      "to": "repositories",
+      "kind": "persist"
+    },
+    {
+      "from": "kite_auth",
+      "to": "market_provider",
+      "kind": "provide"
+    },
+    {
+      "from": "market_provider",
+      "to": "price_ingestion",
+      "kind": "data"
+    },
+    {
+      "from": "price_ingestion",
+      "to": "sqlite",
+      "kind": "persist"
+    },
+    {
+      "from": "sqlite",
+      "to": "repositories",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "ranking",
+      "kind": "read"
+    },
+    {
+      "from": "universe_sync",
+      "to": "ranking",
+      "kind": "provide"
+    },
+    {
+      "from": "ranking",
+      "to": "backtest_engine",
+      "kind": "flow"
+    },
+    {
+      "from": "ranking",
+      "to": "rebalance_engine",
+      "kind": "flow"
+    },
+    {
+      "from": "profile_apply",
+      "to": "optimizer",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "optimizer",
+      "kind": "read"
+    },
+    {
+      "from": "optimizer",
+      "to": "finalized_config",
+      "kind": "persist"
+    },
+    {
+      "from": "finalized_config",
+      "to": "profile_apply",
+      "kind": "provide"
+    },
+    {
+      "from": "backtest_engine",
+      "to": "repositories",
+      "kind": "persist"
+    },
+    {
+      "from": "fixed_backtest",
+      "to": "repositories",
+      "kind": "persist"
+    },
+    {
+      "from": "repositories",
+      "to": "package_export",
+      "kind": "read"
+    },
+    {
+      "from": "package_export",
+      "to": "package_files",
+      "kind": "persist"
+    },
+    {
+      "from": "rebalance_engine",
+      "to": "repositories",
+      "kind": "persist"
+    },
+    {
+      "from": "repositories",
+      "to": "model_update_export",
+      "kind": "read"
+    },
+    {
+      "from": "model_update_export",
+      "to": "package_files",
+      "kind": "persist"
+    },
+    {
+      "from": "registry_validation",
+      "to": "admin_snapshot",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "admin_snapshot",
+      "kind": "read"
+    },
+    {
+      "from": "admin_snapshot",
+      "to": "streamlit",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "streamlit",
+      "kind": "read"
+    },
+    {
+      "from": "scheduler",
+      "to": "rebalance_engine",
+      "kind": "check"
+    },
+    {
+      "from": "scheduler",
+      "to": "telegram",
+      "kind": "probe"
+    },
+    {
+      "from": "telegram",
+      "to": "package_files",
+      "kind": "probe"
+    },
+    {
+      "from": "rebalance_engine",
+      "to": "broker_live",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "portfolio_history",
+      "kind": "provide"
+    },
+    {
+      "from": "strategy_engine_placeholder",
+      "to": "ranking",
+      "kind": "provide"
+    },
+    {
+      "from": "profile_apply",
+      "to": "fixed_backtest",
+      "kind": "provide"
+    },
+    {
+      "from": "repositories",
+      "to": "fixed_backtest",
+      "kind": "read"
+    }
+  ],
+  "flows": [
+    {
+      "id": "finalized_package",
+      "name": "Finalized Vriksha Package",
+      "status": "built",
+      "summary": "Promote optimized parameters, ensure history, backtest, and export a full strategy package.",
+      "description": "The CLI applies a strategy profile, selects/writes finalized parameters from optimizer results, syncs universe and Kite/Yahoo price history when requested, runs the dual-momentum backtest, persists snapshots, and builds the portable Vriksha package files.",
+      "nodes": [
+        "cli",
+        "registry",
+        "profile_apply",
+        "optimizer",
+        "finalized_config",
+        "universe_sync",
+        "market_provider",
+        "price_ingestion",
+        "sqlite",
+        "repositories",
+        "ranking",
+        "backtest_engine",
+        "package_export",
+        "package_files"
+      ],
+      "edges": [
+        [
+          "cli",
+          "registry"
+        ],
+        [
+          "registry",
+          "profile_apply"
+        ],
+        [
+          "profile_apply",
+          "optimizer"
+        ],
+        [
+          "optimizer",
+          "finalized_config"
+        ],
+        [
+          "finalized_config",
+          "profile_apply"
+        ],
+        [
+          "universe_sync",
+          "sqlite"
+        ],
+        [
+          "market_provider",
+          "price_ingestion"
+        ],
+        [
+          "price_ingestion",
+          "sqlite"
+        ],
+        [
+          "sqlite",
+          "repositories"
+        ],
+        [
+          "repositories",
+          "ranking"
+        ],
+        [
+          "ranking",
+          "backtest_engine"
+        ],
+        [
+          "backtest_engine",
+          "repositories"
+        ],
+        [
+          "repositories",
+          "package_export"
+        ],
+        [
+          "package_export",
+          "package_files"
+        ]
+      ]
+    },
+    {
+      "id": "daily_rebalance",
+      "name": "Auto Daily Rebalance Check",
+      "status": "built",
+      "summary": "Refresh token/data daily and rebalance only on profile schedule dates.",
+      "description": "The daily CLI workflow validates or refreshes the Kite token, syncs universe, fetches recent history, checks the profile schedule using the provisional weekday calendar, and runs RebalanceEngine on configured rebalance days.",
+      "nodes": [
+        "cli",
+        "kite_auth",
+        "market_provider",
+        "price_ingestion",
+        "sqlite",
+        "repositories",
+        "scheduler",
+        "ranking",
+        "rebalance_engine"
+      ],
+      "edges": [
+        [
+          "kite_auth",
+          "market_provider"
+        ],
+        [
+          "market_provider",
+          "price_ingestion"
+        ],
+        [
+          "price_ingestion",
+          "sqlite"
+        ],
+        [
+          "sqlite",
+          "repositories"
+        ],
+        [
+          "scheduler",
+          "rebalance_engine"
+        ],
+        [
+          "repositories",
+          "ranking"
+        ],
+        [
+          "ranking",
+          "rebalance_engine"
+        ],
+        [
+          "rebalance_engine",
+          "repositories"
+        ]
+      ]
+    },
+    {
+      "id": "model_update",
+      "name": "Latest Model Portfolio Update",
+      "status": "built",
+      "summary": "Run the current rebalance path and export only subscriber update files.",
+      "description": "The CLI applies finalized profile config, refreshes recent history unless skipped, delegates target-portfolio generation to the monthly rebalance workflow, then exports latest portfolio, histories, and exposure CSVs.",
+      "nodes": [
+        "cli",
+        "profile_apply",
+        "finalized_config",
+        "market_provider",
+        "price_ingestion",
+        "sqlite",
+        "repositories",
+        "ranking",
+        "rebalance_engine",
+        "model_update_export",
+        "package_files"
+      ],
+      "edges": [
+        [
+          "finalized_config",
+          "profile_apply"
+        ],
+        [
+          "market_provider",
+          "price_ingestion"
+        ],
+        [
+          "price_ingestion",
+          "sqlite"
+        ],
+        [
+          "sqlite",
+          "repositories"
+        ],
+        [
+          "repositories",
+          "ranking"
+        ],
+        [
+          "ranking",
+          "rebalance_engine"
+        ],
+        [
+          "rebalance_engine",
+          "repositories"
+        ],
+        [
+          "repositories",
+          "model_update_export"
+        ],
+        [
+          "model_update_export",
+          "package_files"
+        ]
+      ]
+    },
+    {
+      "id": "fixed_allocation",
+      "name": "Fixed-Allocation Strategy",
+      "status": "built",
+      "summary": "Use profile-defined assets, distributions, and quarterly rebalancing for the income strategy.",
+      "description": "The fixed-allocation command loads a strategy profile, reads stored prices and distribution events, simulates quarterly rebalances with transaction costs, persists snapshots, and can feed the normal package exporter.",
+      "nodes": [
+        "cli",
+        "registry",
+        "profile_apply",
+        "repositories",
+        "fixed_backtest",
+        "package_export",
+        "package_files"
+      ],
+      "edges": [
+        [
+          "cli",
+          "registry"
+        ],
+        [
+          "registry",
+          "profile_apply"
+        ],
+        [
+          "profile_apply",
+          "fixed_backtest"
+        ],
+        [
+          "repositories",
+          "fixed_backtest"
+        ],
+        [
+          "fixed_backtest",
+          "repositories"
+        ],
+        [
+          "repositories",
+          "package_export"
+        ],
+        [
+          "package_export",
+          "package_files"
+        ]
+      ]
+    },
+    {
+      "id": "admin_visibility",
+      "name": "Admin Visibility",
+      "status": "built",
+      "summary": "Generate a safe snapshot and view it in Streamlit without exposing sensitive data.",
+      "description": "The admin export validates the strategy registry, reads limited run/file status from storage, writes data/admin/strategy_dashboard.json, and the admin dashboard renders that snapshot only.",
+      "nodes": [
+        "cli",
+        "registry",
+        "registry_validation",
+        "repositories",
+        "admin_snapshot",
+        "streamlit"
+      ],
+      "edges": [
+        [
+          "cli",
+          "registry"
+        ],
+        [
+          "registry",
+          "registry_validation"
+        ],
+        [
+          "registry_validation",
+          "admin_snapshot"
+        ],
+        [
+          "repositories",
+          "admin_snapshot"
+        ],
+        [
+          "admin_snapshot",
+          "streamlit"
+        ]
+      ]
+    },
+    {
+      "id": "data_foundation",
+      "name": "Market Data Foundation",
+      "status": "built",
+      "summary": "Turn the local universe and external provider data into normalized SQLite price rows.",
+      "description": "Universe sync validates Excel and writes runtime JSON; the selected provider fetches daily bars for active symbols, benchmark, and safe assets; ingestion normalizes rows and records both prices and ingestion-run metadata.",
+      "nodes": [
+        "universe_excel",
+        "universe_sync",
+        "kite_auth",
+        "market_provider",
+        "price_ingestion",
+        "sqlite",
+        "repositories"
+      ],
+      "edges": [
+        [
+          "universe_excel",
+          "universe_sync"
+        ],
+        [
+          "universe_sync",
+          "sqlite"
+        ],
+        [
+          "kite_auth",
+          "market_provider"
+        ],
+        [
+          "market_provider",
+          "price_ingestion"
+        ],
+        [
+          "price_ingestion",
+          "sqlite"
+        ],
+        [
+          "sqlite",
+          "repositories"
+        ]
+      ]
+    },
+    {
+      "id": "planned_execution",
+      "name": "Planned Live Execution",
+      "status": "planned",
+      "summary": "Order proposals exist; unattended live broker placement and reconciliation are intentionally not built.",
+      "description": "RebalanceEngine writes proposed orders, but broker placement, holdings retrieval, order reconciliation, and stock-history service layers are stubs. This is a future integration path, not a current production execution path.",
+      "nodes": [
+        "rebalance_engine",
+        "repositories",
+        "broker_live",
+        "portfolio_history"
+      ],
+      "edges": [
+        [
+          "rebalance_engine",
+          "broker_live"
+        ],
+        [
+          "repositories",
+          "portfolio_history"
+        ]
+      ]
+    }
+  ]
+}
+</script>
+<div class="shell"><header class="topbar"><div><h1 id="title"></h1><p class="subtitle" id="subtitle"></p><div class="meta" id="meta"></div></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light and dark theme">Toggle theme</button></header><main class="content"><section class="diagram-wrap" aria-label="Interactive architecture diagram"><svg id="graph" role="img" aria-labelledby="title subtitle"></svg></section><aside class="side"><section class="panel"><h2>Flows</h2><div class="flow-list" id="flows"></div></section><section class="detail"><h2>Details</h2><div class="detail-body" id="detail">Click a flow to trace an end-to-end path, or click a node to inspect its role.</div></section><section class="legend"><h2>Legend</h2><div class="legend-grid" id="legend"></div></section></aside></main></div><div class="tooltip" id="tooltip"></div>
+<script>
+(()=>{'use strict';const model=JSON.parse(document.getElementById('model').textContent),svg=document.getElementById('graph'),flowsEl=document.getElementById('flows'),detailEl=document.getElementById('detail'),legendEl=document.getElementById('legend'),tooltip=document.getElementById('tooltip'),ns='http://www.w3.org/2000/svg',nodeW=160,nodeH=78,statusColors={built:'#22c55e',partial:'#f59e0b',planned:'#a855f7'},edgeMap=new Map,nodeMap=new Map;let activeFlowId=null,selectedNodeId=null;document.getElementById('title').textContent=model.meta.title;document.getElementById('subtitle').textContent=model.meta.subtitle;document.getElementById('meta').textContent=model.meta.repo+' | '+model.meta.generated_from;svg.setAttribute('viewBox','0 0 '+model.meta.canvas.width+' '+model.meta.canvas.height);initTheme();renderLegend();renderGraph();renderFlows();setDetailIntro();function initTheme(){const stored=localStorage.getItem('architecture-theme'),preferred=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=stored||preferred;document.getElementById('themeToggle').addEventListener('click',()=>{const next=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=next;localStorage.setItem('architecture-theme',next)})}function renderLegend(){const gt=document.createElement('div');gt.className='legend-row';gt.innerHTML='<strong>Groups</strong>';legendEl.appendChild(gt);Object.entries(model.meta.groups).forEach(([id,group])=>{const row=document.createElement('div');row.className='legend-row';row.innerHTML='<span class="swatch" style="--swatch:'+group.color+'"></span><span>'+escapeHtml(group.label)+'</span>';legendEl.appendChild(row)});const st=document.createElement('div');st.className='legend-row';st.style.marginTop='8px';st.innerHTML='<strong>Status</strong>';legendEl.appendChild(st);Object.entries(model.meta.status_legend).forEach(([id,label])=>{const row=document.createElement('div');row.className='legend-row';row.innerHTML='<span class="status-dot" style="background:'+(statusColors[id]||'#94a3b8')+'"></span><span><strong>'+id+'</strong>: '+escapeHtml(label)+'</span>';legendEl.appendChild(row)})}function renderGraph(){const defs=el('defs');defs.appendChild(marker('arrow','var(--line-strong)'));defs.appendChild(marker('arrowHighlight','var(--accent)'));svg.appendChild(defs);const edgeLayer=el('g',{id:'edgeLayer'}),nodeLayer=el('g',{id:'nodeLayer'});svg.append(edgeLayer,nodeLayer);model.edges.forEach(edge=>{const from=byId(edge.from),to=byId(edge.to),g=el('g',{class:'edge '+edge.kind,'data-edge':edgeKey(edge.from,edge.to)}),path=el('path',{d:edgePath(from,to),'marker-end':'url(#arrow)'});g.appendChild(path);edgeLayer.appendChild(g);edgeMap.set(edgeKey(edge.from,edge.to),g)});model.nodes.forEach(node=>{const color=(model.meta.groups[node.group]||{}).color||'#64748b',g=el('g',{class:'node',transform:'translate('+node.x+','+node.y+')','data-node':node.id,tabindex:'0',role:'button','aria-label':node.label,style:'--node-color:'+color});g.appendChild(el('rect',{class:'box',width:nodeW,height:nodeH,rx:8,ry:8}));g.appendChild(el('circle',{cx:14,cy:15,r:5.5,fill:statusColors[node.status]||'#94a3b8'}));wrapText(node.label,18,2).forEach((line,i)=>{const t=el('text',{class:'label',x:28,y:18+i*17});t.textContent=line;g.appendChild(t)});const tech=el('text',{class:'tech',x:14,y:55});tech.textContent=node.tech||'';g.appendChild(tech);const file=el('text',{class:'file',x:14,y:70});file.textContent=shorten(node.file||'');g.appendChild(file);g.addEventListener('mouseenter',event=>showTooltip(event,node));g.addEventListener('mousemove',moveTooltip);g.addEventListener('mouseleave',hideTooltip);g.addEventListener('click',()=>selectNode(node.id));g.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectNode(node.id)}});nodeLayer.appendChild(g);nodeMap.set(node.id,g)})}function renderFlows(){model.flows.forEach(flow=>{const button=document.createElement('button');button.type='button';button.className='flow-btn';button.dataset.flow=flow.id;button.innerHTML='<div class="flow-name"><span>'+escapeHtml(flow.name)+'</span><span class="badge">'+flow.status+'</span></div><div class="flow-summary">'+escapeHtml(flow.summary)+'</div>';button.addEventListener('click',()=>toggleFlow(flow.id));flowsEl.appendChild(button)})}function toggleFlow(flowId){activeFlowId=activeFlowId===flowId?null:flowId;selectedNodeId=null;applyHighlight();if(!activeFlowId){setDetailIntro();return}const flow=model.flows.find(item=>item.id===activeFlowId),nodeNames=flow.nodes.map(id=>byId(id).label).join(' -> ');detailEl.innerHTML='<strong>'+escapeHtml(flow.name)+'</strong><br>'+escapeHtml(flow.description)+'<br><br><strong>Path</strong><br>'+escapeHtml(nodeNames)}function selectNode(nodeId){selectedNodeId=nodeId;activeFlowId=null;applyHighlight();const node=byId(nodeId),flows=model.flows.filter(flow=>flow.nodes.includes(nodeId));detailEl.innerHTML='<strong>'+escapeHtml(node.label)+'</strong><br>'+escapeHtml(node.tooltip)+'<br><br><strong>Status</strong>: '+node.status+(node.noncanonical?' (noncanonical stand-in)':'')+'<br><strong>Group</strong>: '+escapeHtml((model.meta.groups[node.group]||{}).label||node.group)+'<br><strong>File</strong>: '+escapeHtml(node.file||'n/a')+'<br><strong>Tech</strong>: '+escapeHtml(node.tech||'n/a')+'<br><br><strong>Flows</strong><ul>'+(flows.map(flow=>'<li>'+escapeHtml(flow.name)+'</li>').join('')||'<li>None</li>')+'</ul>'}function applyHighlight(){document.querySelectorAll('.flow-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.flow===activeFlowId));nodeMap.forEach(el=>el.classList.remove('highlight','selected','dim'));edgeMap.forEach(el=>{el.classList.remove('highlight','dim');el.querySelector('path').setAttribute('marker-end','url(#arrow)')});if(activeFlowId){const flow=model.flows.find(item=>item.id===activeFlowId),nodes=new Set(flow.nodes),edges=new Set(flow.edges.map(pair=>edgeKey(pair[0],pair[1])));nodeMap.forEach((el,id)=>{el.classList.toggle('dim',!nodes.has(id));el.classList.toggle('highlight',nodes.has(id))});edgeMap.forEach((el,id)=>{const active=edges.has(id);el.classList.toggle('highlight',active);el.classList.toggle('dim',!active);if(active)el.querySelector('path').setAttribute('marker-end','url(#arrowHighlight)')})}else if(selectedNodeId){nodeMap.forEach((el,id)=>{el.classList.toggle('selected',id===selectedNodeId);el.classList.toggle('dim',id!==selectedNodeId)});edgeMap.forEach(el=>el.classList.add('dim'))}}function showTooltip(event,node){tooltip.innerHTML='<div class="tip-title">'+escapeHtml(node.label)+'</div><div>'+escapeHtml(node.tooltip)+'</div><div class="tip-meta">'+node.status+(node.noncanonical?' | noncanonical':'')+(node.file?' | '+escapeHtml(node.file):'')+'</div>';tooltip.classList.add('visible');moveTooltip(event)}function moveTooltip(event){const pad=18,rect=tooltip.getBoundingClientRect();let x=event.clientX+14,y=event.clientY+14;if(x+rect.width>window.innerWidth-pad)x=event.clientX-rect.width-14;if(y+rect.height>window.innerHeight-pad)y=event.clientY-rect.height-14;tooltip.style.left=Math.max(pad,x)+'px';tooltip.style.top=Math.max(pad,y)+'px'}function hideTooltip(){tooltip.classList.remove('visible')}function setDetailIntro(){detailEl.textContent='Click a flow to trace an end-to-end path, or click a node to inspect its role.'}function edgePath(from,to){const a=port(from,to),b=port(to,from),dx=Math.max(55,Math.abs(b.x-a.x)*.45),c1x=a.x+(b.x>=a.x?dx:-dx),c2x=b.x-(b.x>=a.x?dx:-dx);return'M '+a.x+' '+a.y+' C '+c1x+' '+a.y+', '+c2x+' '+b.y+', '+b.x+' '+b.y}function port(a,b){const ac={x:a.x+nodeW/2,y:a.y+nodeH/2},bc={x:b.x+nodeW/2,y:b.y+nodeH/2},dx=bc.x-ac.x,dy=bc.y-ac.y;if(Math.abs(dx)>Math.abs(dy))return{x:ac.x+(dx>0?nodeW/2:-nodeW/2),y:ac.y};return{x:ac.x,y:ac.y+(dy>0?nodeH/2:-nodeH/2)}}function marker(id,color){const m=el('marker',{id:id,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto-start-reverse'});m.appendChild(el('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:color}));return m}function byId(id){const item=model.nodes.find(node=>node.id===id);if(!item)throw new Error('Unknown node: '+id);return item}function edgeKey(from,to){return from+'->'+to}function el(name,attrs={}){const node=document.createElementNS(ns,name);Object.entries(attrs).forEach(([key,value])=>node.setAttribute(key,value));return node}function wrapText(text,maxChars,maxLines){const words=text.split(' '),lines=[''];words.forEach(word=>{const last=lines[lines.length-1];if((last+' '+word).trim().length<=maxChars||!last)lines[lines.length-1]=(last+' '+word).trim();else if(lines.length<maxLines)lines.push(word);else lines[lines.length-1]+=' '+word});return lines.slice(0,maxLines)}function shorten(path){return path.length>24?'...'+path.slice(-21):path}function escapeHtml(value){return String(value).replace(/[&<>"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[char]))}})();
+</script>
+</body>
+</html>
+
