@@ -2,8 +2,8 @@
   "strategy_id": "diversified_asset_income_v1",
   "slug": "diversified-asset-income",
   "name": "Diversified Asset Income",
-  "public_name": "Asset Allocation - Mahogany Root ETF Edition",
-  "short_description": "A fixed-weight multi-asset portfolio across InvIT, REIT, gold, debt, and Nifty 50 sleeves with quarterly rebalancing.",
+  "public_name": "Mahogany Root ETF Edition",
+  "short_description": "A timeless core multi-asset ETF portfolio with equal asset class weights providing inflation protection and income.",
   "strategy_type": "fixed_allocation",
   "category_labels": [
     "Multi Asset",
@@ -13,10 +13,10 @@
   ],
   "portfolio_objective": "Build my Core",
   "ra_entity": "Prathamesh Gupta",
-  "sebi_registration_number": "",
+  "sebi_registration_number": "INH000027788",
   "universe": "InvIT, REIT, Gold, Debt, Nifty 50",
   "benchmark": "NIFTY 50 TRI",
-  "min_capital_guidance": 0,
+  "min_capital_guidance": 5000,
   "backtest": {
     "benchmark_symbol": "NIFTY50"
   },
