@@ -1,12 +1,12 @@
 {
-  "as_of_date": "2026-08-08",
+  "as_of_date": "2026-08-11",
   "content_policy": {
     "broker_secrets_included": false,
     "holdings_rows_included": false,
     "performance_metrics_included": false,
     "subscriber_logic_included": false
   },
-  "generated_at": "2026-08-08T11:35:14+05:30",
+  "generated_at": "2026-08-11T16:00:24+05:30",
   "schema_version": "1.0.0",
   "source_registry": "strategies/registry.json",
   "strategies": [
@@ -42,12 +42,12 @@
       },
       "finalized_config_path": "data/output/finalized/dual_momentum_best_config.json",
       "last_successful_run": {
-        "date": "2026-07-20",
+        "date": "2026-08-11",
         "generated_at": null,
-        "run_id": 1,
+        "run_id": 2,
         "type": "model_portfolio_update"
       },
-      "latest_model_portfolio_as_of": "2026-07-20",
+      "latest_model_portfolio_as_of": "2026-08-11",
       "latest_model_portfolio_exists": true,
       "latest_model_portfolio_path": "data/output/packages/dual-momentum/model-portfolio-update/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/dual-momentum/model-portfolio-update",
@@ -95,21 +95,21 @@
       },
       "file_status": {
         "finalized_config_exists": true,
-        "model_update_exists": false,
+        "model_update_exists": true,
         "optimization_results_exists": true,
         "profile_exists": true,
         "strategy_package_exists": true
       },
       "finalized_config_path": "data/output/finalized/conservative_dual_momentum_best_net_config.json",
       "last_successful_run": {
-        "date": "2026-07-16",
-        "generated_at": "2026-08-04T22:13:19+05:30",
-        "run_id": null,
-        "type": "strategy_package"
+        "date": "2026-08-11",
+        "generated_at": null,
+        "run_id": 3,
+        "type": "model_portfolio_update"
       },
-      "latest_model_portfolio_as_of": "2026-07-16",
+      "latest_model_portfolio_as_of": "2026-08-11",
       "latest_model_portfolio_exists": true,
-      "latest_model_portfolio_path": "data/output/packages/conservative-dual-momentum/strategy-package/latest_model_portfolio.csv",
+      "latest_model_portfolio_path": "data/output/packages/conservative-dual-momentum/model-portfolio-update/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/conservative-dual-momentum/model-portfolio-update",
       "name": "Conservative Dual Momentum",
       "next_due_date": "2026-08-11",
@@ -155,21 +155,21 @@
       },
       "file_status": {
         "finalized_config_exists": true,
-        "model_update_exists": false,
+        "model_update_exists": true,
         "optimization_results_exists": true,
         "profile_exists": true,
         "strategy_package_exists": true
       },
       "finalized_config_path": "data/output/finalized/low_drawdown_dual_momentum_best_config.json",
       "last_successful_run": {
-        "date": "2026-07-16",
-        "generated_at": "2026-08-04T22:13:48+05:30",
-        "run_id": null,
-        "type": "strategy_package"
+        "date": "2026-08-11",
+        "generated_at": null,
+        "run_id": 4,
+        "type": "model_portfolio_update"
       },
-      "latest_model_portfolio_as_of": "2026-07-16",
+      "latest_model_portfolio_as_of": "2026-08-11",
       "latest_model_portfolio_exists": true,
-      "latest_model_portfolio_path": "data/output/packages/low-drawdown-dual-momentum/strategy-package/latest_model_portfolio.csv",
+      "latest_model_portfolio_path": "data/output/packages/low-drawdown-dual-momentum/model-portfolio-update/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/low-drawdown-dual-momentum/model-portfolio-update",
       "name": "Low Drawdown Dual Momentum",
       "next_due_date": "2026-08-11",
@@ -232,7 +232,7 @@
       "package_output_dir": "data/output/packages/diversified-asset-income/strategy-package",
       "portfolio_objective": "Build my Core",
       "profile_path": "strategies/multi-asset-strategies/diversified-asset-income/strategy_profile.json",
-      "public_name": "Asset Allocation - Mahogany Root ETF Edition",
+      "public_name": "Mahogany Root ETF Edition",
       "rebalance_schedule": {
         "quarter_start_months": [
           1,
