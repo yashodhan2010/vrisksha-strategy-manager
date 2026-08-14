@@ -1,8 +1,8 @@
 {
   "strategies": [
     "strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json",
-    "strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json",
     "strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json",
+    "strategies/dual-momentum-strategies/multi-asset-etf-dual-momentum/strategy_profile.json",
     "strategies/multi-asset-strategies/diversified-asset-income/strategy_profile.json"
   ]
 }

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from app import config
+from app.backtest.distributions import distribution_path_from_profile
 
 
 def load_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PATH) -> dict[str, Any]:
@@ -23,8 +24,11 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     optimization = profile.get("optimization", {})
     backtest = profile.get("backtest", {})
     documents = profile.get("documents", {})
+    data = profile.get("data", {})
     allocation = profile.get("allocation", {})
+    parameters = profile.get("parameters", {})
     schedule = profile.get("rebalance_schedule", {})
+    distribution_events_path = distribution_path_from_profile(profile)
 
     config.STRATEGY_PROFILE_PATH = str(profile_path)
     config.STRATEGY_PACKAGE_ID = str(profile["strategy_id"])
@@ -58,6 +62,12 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     )
     config.STRATEGY_PACKAGE_OUTPUT_DIR = str(package.get("output_dir") or config.STRATEGY_PACKAGE_OUTPUT_DIR)
     config.STRATEGY_PACKAGE_VERSION = str(package.get("version") or config.STRATEGY_PACKAGE_VERSION)
+    config.UNIVERSE_EXCEL_PATH = str(data.get("universe_excel_path") or config.UNIVERSE_EXCEL_PATH)
+    config.UNIVERSE_JSON_PATH = str(data.get("universe_json_path") or config.UNIVERSE_JSON_PATH)
+    config.UNIVERSE_VALIDATION_REPORT_PATH = str(
+        data.get("universe_validation_report_path") or config.UNIVERSE_VALIDATION_REPORT_PATH
+    )
+    config.DISTRIBUTION_EVENTS_PATH = distribution_events_path
     config.OPTIMIZATION_RESULTS_PATH = str(optimization.get("results_path") or config.OPTIMIZATION_RESULTS_PATH)
     config.FINALIZED_STRATEGY_CONFIG_PATH = str(
         optimization.get("finalized_config_path") or config.FINALIZED_STRATEGY_CONFIG_PATH
@@ -72,6 +82,28 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     )
     if backtest.get("benchmark_symbol"):
         config.DEFAULT_BENCHMARK_SYMBOL = str(backtest["benchmark_symbol"])
+    if backtest.get("kite_benchmark_tradingsymbol"):
+        config.KITE_BENCHMARK_TRADINGSYMBOL = str(backtest["kite_benchmark_tradingsymbol"])
+    if backtest.get("safe_asset_symbol"):
+        config.SAFE_ASSET_SYMBOL = str(backtest["safe_asset_symbol"]).strip().upper()
+    if backtest.get("safe_asset_fallback_symbol"):
+        config.SAFE_ASSET_FALLBACK_SYMBOL = str(backtest["safe_asset_fallback_symbol"]).strip().upper()
+    if backtest.get("safe_asset_symbol") or backtest.get("safe_asset_fallback_symbol"):
+        config.SAFE_ASSET_SYMBOLS = sorted(
+            {symbol for symbol in [config.SAFE_ASSET_SYMBOL, config.SAFE_ASSET_FALLBACK_SYMBOL] if symbol}
+        )
+    if "min_avg_momentum_return" in parameters:
+        config.MIN_AVG_MOMENTUM_RETURN = float(parameters["min_avg_momentum_return"])
+    if "min_12m_return" in parameters:
+        config.MIN_12M_RETURN = float(parameters["min_12m_return"])
+    if "require_price_above_ema" in parameters:
+        config.REQUIRE_PRICE_ABOVE_EMA = bool(parameters["require_price_above_ema"])
+    if "price_ema_days" in parameters:
+        config.PRICE_EMA_DAYS = int(parameters["price_ema_days"])
+    if "max_stock_weight" in parameters:
+        config.MAX_STOCK_WEIGHT = float(parameters["max_stock_weight"])
+    if "max_sector_weight" in parameters:
+        config.MAX_SECTOR_WEIGHT = float(parameters["max_sector_weight"])
     return profile
 
 

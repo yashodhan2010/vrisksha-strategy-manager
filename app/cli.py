@@ -76,9 +76,15 @@ def _backtest_scenario_payload(
         "max_stock_weight": config.MAX_STOCK_WEIGHT,
         "max_sector_weight": config.MAX_SECTOR_WEIGHT,
         "safe_asset_symbol": config.SAFE_ASSET_SYMBOL,
+        "safe_asset_fallback_symbol": config.SAFE_ASSET_FALLBACK_SYMBOL,
+        "distribution_events_path": config.DISTRIBUTION_EVENTS_PATH,
         "dynamic_min_weight": config.DYNAMIC_MIN_WEIGHT,
         "dynamic_max_weight": config.DYNAMIC_MAX_WEIGHT,
         "high_52w_threshold": config.HIGH_52W_THRESHOLD,
+        "min_avg_momentum_return": config.MIN_AVG_MOMENTUM_RETURN,
+        "min_12m_return": config.MIN_12M_RETURN,
+        "require_price_above_ema": config.REQUIRE_PRICE_ABOVE_EMA,
+        "price_ema_days": config.PRICE_EMA_DAYS,
         "beta_lookback_days": config.BETA_LOOKBACK_DAYS,
         "beta_floor": config.BETA_FLOOR,
     }
@@ -352,7 +358,12 @@ def cmd_monthly_run(args: argparse.Namespace) -> int:
             "max_stock_weight": config.MAX_STOCK_WEIGHT,
             "max_sector_weight": config.MAX_SECTOR_WEIGHT,
             "safe_asset_symbol": config.SAFE_ASSET_SYMBOL,
+            "safe_asset_fallback_symbol": config.SAFE_ASSET_FALLBACK_SYMBOL,
             "high_52w_threshold": config.HIGH_52W_THRESHOLD,
+            "min_avg_momentum_return": config.MIN_AVG_MOMENTUM_RETURN,
+            "min_12m_return": config.MIN_12M_RETURN,
+            "require_price_above_ema": config.REQUIRE_PRICE_ABOVE_EMA,
+            "price_ema_days": config.PRICE_EMA_DAYS,
             "beta_lookback_days": config.BETA_LOOKBACK_DAYS,
             "mode": mode.value,
         },
@@ -967,6 +978,7 @@ def cmd_auto_daily_run(args: argparse.Namespace) -> int:
     calendar = WeekdayTradingCalendar()
     try:
         schedule = _schedule_for_strategy_profile(args.strategy_profile)
+        apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         print(f"Daily automation failed: {exc}")
         return 1

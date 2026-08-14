@@ -51,13 +51,13 @@ def _clean_cell(value: Any) -> str | None:
 
 
 def sync_universe(
-    excel_path: str | Path = config.UNIVERSE_EXCEL_PATH,
-    json_path: str | Path = config.UNIVERSE_JSON_PATH,
-    report_path: str | Path = config.UNIVERSE_VALIDATION_REPORT_PATH,
+    excel_path: str | Path | None = None,
+    json_path: str | Path | None = None,
+    report_path: str | Path | None = None,
 ) -> dict[str, Any]:
-    source = Path(excel_path)
-    output = Path(json_path)
-    report_file = Path(report_path)
+    source = Path(excel_path or config.UNIVERSE_EXCEL_PATH)
+    output = Path(json_path or config.UNIVERSE_JSON_PATH)
+    report_file = Path(report_path or config.UNIVERSE_VALIDATION_REPORT_PATH)
     if not source.exists():
         raise FileNotFoundError(
             f"Universe workbook not found at {source}. Copy data/reference/nifty500_universe.example.xlsx "
@@ -129,4 +129,3 @@ def sync_universe(
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(active_records, indent=2), encoding="utf-8")
     return report
-

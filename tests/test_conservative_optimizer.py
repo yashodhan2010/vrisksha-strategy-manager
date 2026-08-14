@@ -8,7 +8,7 @@ import pandas as pd
 
 
 def _load_optimizer():
-    path = Path("strategies/dual-momentum-strategies/conservative-dual-momentum/experiments/optimizer.py")
+    path = Path("strategies/archive/dual-momentum-strategies/conservative-dual-momentum/experiments/optimizer.py")
     module_name = "conservative_optimizer_test"
     spec = importlib.util.spec_from_file_location(module_name, path)
     assert spec is not None and spec.loader is not None

@@ -48,6 +48,8 @@ Expected columns:
 
 Optional descriptive columns such as `distribution_type` and `notes` are allowed. Events are included when `period_start < ex_date <= period_end`. The engine adds `amount_per_unit / period_start_price` to that sleeve's period return and carries the resulting cash into ending NAV before the next rebalance.
 
+The current event file is sourced from Yahoo Finance chart dividend events for the configured sleeve symbols. Events are available for `PGINVIT`, `EMBASSY`, and `LIQUIDBEES`; Yahoo returned no dividend events for `GOLDBEES` or `NIFTYBEES` in the fetched timeline.
+
 ## Experiment Output
 
 Each fixed-allocation historical run writes:

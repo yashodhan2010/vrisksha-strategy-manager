@@ -1,6 +1,6 @@
 # Low Drawdown Dual Momentum Strategy Details
 
-This strategy reuses the dual-momentum signal, ranking, allocation, and implementation-cost model used by the Conservative Dual Momentum optimizer. Its profile owns a separate strategy id, slug, objective, results path, finalized config path, and package output path.
+This strategy reuses the dual-momentum signal, ranking, allocation, and implementation-cost model that was originally developed for the archived Conservative Dual Momentum optimizer. Its profile owns a separate strategy id, slug, objective, results path, finalized config path, and package output path.
 
 ## Finalization Rule
 
@@ -42,4 +42,4 @@ net Calmar: 1.2219
 estimated implementation drag on Rs 10L backtest: Rs 69,826
 ```
 
-See `strategies/dual-momentum-strategies/conservative-dual-momentum/methodology_internal.md` for the shared signal construction, ranking, allocation, and cost/tax estimation details.
+See `strategies/archive/dual-momentum-strategies/conservative-dual-momentum/methodology_internal.md` for the archived shared signal construction, ranking, allocation, and cost/tax estimation details.

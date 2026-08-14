@@ -9,11 +9,11 @@ from app.strategy.models import UniverseStock
 
 
 def load_universe(
-    excel_path: str | Path = config.UNIVERSE_EXCEL_PATH,
-    json_path: str | Path = config.UNIVERSE_JSON_PATH,
+    excel_path: str | Path | None = None,
+    json_path: str | Path | None = None,
 ) -> list[UniverseStock]:
-    excel = Path(excel_path)
-    runtime_json = Path(json_path)
+    excel = Path(excel_path or config.UNIVERSE_EXCEL_PATH)
+    runtime_json = Path(json_path or config.UNIVERSE_JSON_PATH)
 
     if excel.exists() and (not runtime_json.exists() or excel.stat().st_mtime > runtime_json.stat().st_mtime):
         sync_universe(excel, runtime_json)
@@ -26,4 +26,3 @@ def load_universe(
 
     payload = json.loads(runtime_json.read_text(encoding="utf-8"))
     return [UniverseStock(**item) for item in payload]
-

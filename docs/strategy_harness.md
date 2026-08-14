@@ -115,8 +115,8 @@ Current strategies:
 | Strategy | Objective | Meaning |
 |---|---|---|
 | Dual Momentum | `cagr` | Highest gross CAGR |
-| Conservative Dual Momentum | `net_return_to_drawdown` | Highest net Calmar after estimated implementation drag |
 | Low Drawdown Dual Momentum | `lowest_drawdown_cagr_gt_20_score` | Lowest drawdown among rows with 10-year CAGR >= 20% |
+| Multi Asset ETF Dual Momentum | `cagr` | Highest gross CAGR across the multi-asset ETF universe |
 
 ## Validation Gate
 

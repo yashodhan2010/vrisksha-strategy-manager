@@ -1,12 +1,12 @@
 {
-  "as_of_date": "2026-08-11",
+  "as_of_date": "2026-08-14",
   "content_policy": {
     "broker_secrets_included": false,
     "holdings_rows_included": false,
     "performance_metrics_included": false,
     "subscriber_logic_included": false
   },
-  "generated_at": "2026-08-11T16:00:24+05:30",
+  "generated_at": "2026-08-14T23:04:06+05:30",
   "schema_version": "1.0.0",
   "source_registry": "strategies/registry.json",
   "strategies": [
@@ -36,23 +36,18 @@
       "file_status": {
         "finalized_config_exists": true,
         "model_update_exists": true,
-        "optimization_results_exists": true,
+        "optimization_results_exists": false,
         "profile_exists": true,
         "strategy_package_exists": true
       },
       "finalized_config_path": "data/output/finalized/dual_momentum_best_config.json",
-      "last_successful_run": {
-        "date": "2026-08-11",
-        "generated_at": null,
-        "run_id": 2,
-        "type": "model_portfolio_update"
-      },
-      "latest_model_portfolio_as_of": "2026-08-11",
-      "latest_model_portfolio_exists": true,
-      "latest_model_portfolio_path": "data/output/packages/dual-momentum/model-portfolio-update/latest_model_portfolio.csv",
+      "last_successful_run": null,
+      "latest_model_portfolio_as_of": null,
+      "latest_model_portfolio_exists": false,
+      "latest_model_portfolio_path": "data/output/packages/dual-momentum/strategy-package/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/dual-momentum/model-portfolio-update",
       "name": "Dual Momentum",
-      "next_due_date": "2026-08-11",
+      "next_due_date": "2026-08-21",
       "package_output_dir": "data/output/packages/dual-momentum/strategy-package",
       "portfolio_objective": "Grow my Wealth",
       "profile_path": "strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json",
@@ -67,66 +62,6 @@
       },
       "slug": "dual-momentum",
       "strategy_id": "dual_momentum_nifty500_v1",
-      "universe": "NIFTY 500"
-    },
-    {
-      "benchmark": "NIFTY 500 TRI",
-      "category_labels": [
-        "Momentum",
-        "Conservative",
-        "Factor Strategy",
-        "Equity",
-        "Model Portfolio"
-      ],
-      "commands": {
-        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
-        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --selenium-token",
-        "export_admin_dashboard": "python -m app.main export-admin-dashboard",
-        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --no-fetch-history",
-        "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
-        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json",
-        "validate_strategies": "python -m app.main validate-strategies"
-      },
-      "distribution": {
-        "events_file_exists": false,
-        "events_path": "",
-        "frequency": null,
-        "mode": null
-      },
-      "file_status": {
-        "finalized_config_exists": true,
-        "model_update_exists": true,
-        "optimization_results_exists": true,
-        "profile_exists": true,
-        "strategy_package_exists": true
-      },
-      "finalized_config_path": "data/output/finalized/conservative_dual_momentum_best_net_config.json",
-      "last_successful_run": {
-        "date": "2026-08-11",
-        "generated_at": null,
-        "run_id": 3,
-        "type": "model_portfolio_update"
-      },
-      "latest_model_portfolio_as_of": "2026-08-11",
-      "latest_model_portfolio_exists": true,
-      "latest_model_portfolio_path": "data/output/packages/conservative-dual-momentum/model-portfolio-update/latest_model_portfolio.csv",
-      "model_portfolio_update_dir": "data/output/packages/conservative-dual-momentum/model-portfolio-update",
-      "name": "Conservative Dual Momentum",
-      "next_due_date": "2026-08-11",
-      "package_output_dir": "data/output/packages/conservative-dual-momentum/strategy-package",
-      "portfolio_objective": "Grow my Wealth",
-      "profile_path": "strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json",
-      "public_name": "Bamboo Trunk",
-      "rebalance_schedule": {
-        "target_days": [
-          11,
-          21
-        ],
-        "timezone": "Asia/Kolkata",
-        "type": "monthly_target_days"
-      },
-      "slug": "conservative-dual-momentum",
-      "strategy_id": "conservative_dual_momentum_nifty500_v1",
       "universe": "NIFTY 500"
     },
     {
@@ -156,23 +91,18 @@
       "file_status": {
         "finalized_config_exists": true,
         "model_update_exists": true,
-        "optimization_results_exists": true,
+        "optimization_results_exists": false,
         "profile_exists": true,
         "strategy_package_exists": true
       },
       "finalized_config_path": "data/output/finalized/low_drawdown_dual_momentum_best_config.json",
-      "last_successful_run": {
-        "date": "2026-08-11",
-        "generated_at": null,
-        "run_id": 4,
-        "type": "model_portfolio_update"
-      },
-      "latest_model_portfolio_as_of": "2026-08-11",
-      "latest_model_portfolio_exists": true,
-      "latest_model_portfolio_path": "data/output/packages/low-drawdown-dual-momentum/model-portfolio-update/latest_model_portfolio.csv",
+      "last_successful_run": null,
+      "latest_model_portfolio_as_of": null,
+      "latest_model_portfolio_exists": false,
+      "latest_model_portfolio_path": "data/output/packages/low-drawdown-dual-momentum/strategy-package/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/low-drawdown-dual-momentum/model-portfolio-update",
       "name": "Low Drawdown Dual Momentum",
-      "next_due_date": "2026-08-11",
+      "next_due_date": "2026-08-21",
       "package_output_dir": "data/output/packages/low-drawdown-dual-momentum/strategy-package",
       "portfolio_objective": "Grow my Wealth",
       "profile_path": "strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json",
@@ -188,6 +118,59 @@
       "slug": "low-drawdown-dual-momentum",
       "strategy_id": "low_drawdown_dual_momentum_nifty500_v1",
       "universe": "NIFTY 500"
+    },
+    {
+      "benchmark": "NIFTY 50 TRI",
+      "category_labels": [
+        "Momentum",
+        "Asset Allocation",
+        "ETF",
+        "Model Portfolio"
+      ],
+      "commands": {
+        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/multi-asset-etf-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
+        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/multi-asset-etf-dual-momentum/strategy_profile.json --selenium-token",
+        "export_admin_dashboard": "python -m app.main export-admin-dashboard",
+        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/multi-asset-etf-dual-momentum/strategy_profile.json --no-fetch-history",
+        "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
+        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/multi-asset-etf-dual-momentum/strategy_profile.json",
+        "validate_strategies": "python -m app.main validate-strategies"
+      },
+      "distribution": {
+        "events_file_exists": true,
+        "events_path": "data/reference/multi_asset_etf_dual_momentum_distributions.csv",
+        "frequency": "as_declared",
+        "mode": "income_distribution"
+      },
+      "file_status": {
+        "finalized_config_exists": true,
+        "model_update_exists": false,
+        "optimization_results_exists": true,
+        "profile_exists": true,
+        "strategy_package_exists": false
+      },
+      "finalized_config_path": "data/output/finalized/multi_asset_etf_dual_momentum_best_config.json",
+      "last_successful_run": null,
+      "latest_model_portfolio_as_of": null,
+      "latest_model_portfolio_exists": false,
+      "latest_model_portfolio_path": "data/output/packages/multi-asset-etf-dual-momentum/strategy-package/latest_model_portfolio.csv",
+      "model_portfolio_update_dir": "data/output/packages/multi-asset-etf-dual-momentum/model-portfolio-update",
+      "name": "Multi Asset ETF Dual Momentum",
+      "next_due_date": "2026-09-01",
+      "package_output_dir": "data/output/packages/multi-asset-etf-dual-momentum/strategy-package",
+      "portfolio_objective": "Build my Core",
+      "profile_path": "strategies/dual-momentum-strategies/multi-asset-etf-dual-momentum/strategy_profile.json",
+      "public_name": "Multi Asset ETF Dual Momentum",
+      "rebalance_schedule": {
+        "target_days": [
+          1
+        ],
+        "timezone": "Asia/Kolkata",
+        "type": "monthly_target_days"
+      },
+      "slug": "multi-asset-etf-dual-momentum",
+      "strategy_id": "multi_asset_etf_dual_momentum_v1",
+      "universe": "Multi Asset ETF universe"
     },
     {
       "benchmark": "NIFTY 50 TRI",
@@ -217,14 +200,9 @@
         "strategy_package_exists": true
       },
       "finalized_config_path": "",
-      "last_successful_run": {
-        "date": "2026-07-01",
-        "generated_at": "2026-08-04T22:11:43+05:30",
-        "run_id": null,
-        "type": "strategy_package"
-      },
-      "latest_model_portfolio_as_of": "2026-07-01",
-      "latest_model_portfolio_exists": true,
+      "last_successful_run": null,
+      "latest_model_portfolio_as_of": null,
+      "latest_model_portfolio_exists": false,
       "latest_model_portfolio_path": "data/output/packages/diversified-asset-income/strategy-package/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/diversified-asset-income/model-portfolio-update",
       "name": "Diversified Asset Income",
@@ -249,7 +227,18 @@
     }
   ],
   "validation": {
-    "issues": [],
+    "issues": [
+      {
+        "message": "optimization.results_path does not exist yet: data\\output\\dual-momentum\\average_rank_buffer_10y_trials_parameters_cagr.csv",
+        "profile_path": "strategies\\dual-momentum-strategies\\dual-momentum\\strategy_profile.json",
+        "severity": "WARN"
+      },
+      {
+        "message": "optimization.results_path does not exist yet: data\\output\\low-drawdown-dual-momentum\\low_drawdown_trials_cagr_gt_20.csv",
+        "profile_path": "strategies\\dual-momentum-strategies\\low-drawdown-dual-momentum\\strategy_profile.json",
+        "severity": "WARN"
+      }
+    ],
     "ok": true,
     "profile_count": 4
   }

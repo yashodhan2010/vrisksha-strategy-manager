@@ -30,13 +30,13 @@ strategies/
     methodology_internal.md
     experiments/
       optimizer.py
-  conservative-dual-momentum/
+  low-drawdown-dual-momentum/
     strategy_profile.json
     methodology.md
     methodology_internal.md
     experiments/
       optimizer.py
-  low-drawdown-dual-momentum/
+  multi-asset-etf-dual-momentum/
     strategy_profile.json
     methodology.md
     methodology_internal.md
@@ -143,18 +143,6 @@ python -m app.main send-rebalance-reminders
 
 If `data/output/finalized/dual_momentum_best_config.json` does not exist, run `finalize-strategy-config` first. This prevents scheduled rebalances from silently using `.env` strategy knobs.
 
-## Conservative Dual Momentum Pipeline
-
-Conservative Dual Momentum uses the same strategy family but optimizes for net return-to-drawdown / net Calmar rather than pure CAGR. Its optimizer estimates delivery transaction charges and capital-gains tax drag per trial, then ranks on the net risk-adjusted result. Its profile owns the objective, search grid, optimizer path, and output paths:
-
-```bash
-python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json
-```
-
-```bash
-python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history
-```
-
 Low Drawdown Dual Momentum uses the same strategy family but applies a constrained finalization rule: eligible rows must clear 20% 10-year CAGR, and the winner is the lowest absolute max drawdown among those rows.
 
 ```bash
@@ -163,6 +151,18 @@ python -m app.main refresh-finalized-parameters --strategy-profile strategies/du
 
 ```bash
 python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history
+```
+
+## Multi Asset ETF Dual Momentum Pipeline
+
+Multi Asset ETF Dual Momentum applies the optimized dual-momentum flow to the local ETF, REIT, and InvIT universe and includes configured distribution events in backtests.
+
+```bash
+python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/multi-asset-etf-dual-momentum/strategy_profile.json
+```
+
+```bash
+python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/multi-asset-etf-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history
 ```
 
 ## Diversified Asset Income Pipeline

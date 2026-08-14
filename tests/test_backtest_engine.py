@@ -329,6 +329,37 @@ def test_period_return_skips_extreme_optimizer_style_return(monkeypatch, tmp_pat
     assert "Skipped extreme backtest period return for AAA" in engine.warnings[0]
 
 
+def test_period_return_includes_distribution_events(tmp_path: Path) -> None:
+    engine = BacktestEngine(1, date(2024, 1, 1), date(2024, 2, 1), 100_000, tmp_path / "x.db")
+    prices = pd.DataFrame(
+        {
+            "AAA": [100.0, 105.0],
+            "LIQUIDBEES": [100.0, 101.0],
+        },
+        index=[date(2024, 1, 1), date(2024, 2, 1)],
+    )
+    distributions = pd.DataFrame(
+        [
+            {"symbol": "AAA", "ex_date": date(2024, 1, 15), "amount_per_unit": 2.0},
+            {"symbol": "AAA", "ex_date": date(2024, 1, 1), "amount_per_unit": 9.0},
+            {"symbol": "LIQUIDBEES", "ex_date": date(2024, 1, 20), "amount_per_unit": 1.0},
+        ]
+    )
+
+    period_return, distribution_return = engine._portfolio_period_return_breakdown(
+        prices,
+        distributions,
+        date(2024, 1, 1),
+        date(2024, 2, 1),
+        {"AAA": 0.5},
+        "LIQUIDBEES",
+        0.5,
+    )
+
+    assert period_return == pytest.approx(0.5 * 0.07 + 0.5 * 0.02)
+    assert distribution_return == pytest.approx(0.5 * 0.02 + 0.5 * 0.01)
+
+
 def test_top_n_allocation_uses_runtime_max_stock_weight(monkeypatch) -> None:
     from app.strategy.selection import allocate_from_ranking
 

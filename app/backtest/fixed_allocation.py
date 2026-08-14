@@ -10,6 +10,7 @@ import math
 import pandas as pd
 
 from app import config
+from app.backtest.distributions import distribution_path_from_profile, distribution_per_unit, load_distribution_events
 from app.storage.market_data_repository import load_market_prices
 from app.storage.repositories import insert_holding_snapshots, insert_portfolio_snapshot, update_backtest_run_result
 from app.strategy.models import RunStatus
@@ -229,40 +230,13 @@ class FixedAllocationBacktestEngine:
         return pivot.ffill(limit=config.MAX_PRICE_FORWARD_FILL_DAYS)
 
     def _load_distribution_events(self, symbols: list[str]) -> pd.DataFrame:
-        distribution_config = self.profile.get("distribution") or {}
-        events_path_value = (
-            distribution_config.get("events_path")
-            or distribution_config.get("dividend_events_path")
-            or distribution_config.get("distributions_path")
+        return load_distribution_events(
+            distribution_path_from_profile(self.profile),
+            symbols,
+            self.start_date,
+            self.end_date,
+            self.warnings,
         )
-        columns = ["symbol", "ex_date", "amount_per_unit"]
-        if not events_path_value:
-            return pd.DataFrame(columns=columns)
-
-        events_path = Path(str(events_path_value))
-        if not events_path.is_absolute():
-            events_path = Path.cwd() / events_path
-        if not events_path.exists():
-            self.warnings.append(f"Distribution events file not found: {events_path_value}. Dividend return treated as zero.")
-            return pd.DataFrame(columns=columns)
-
-        events = pd.read_csv(events_path)
-        required_columns = set(columns)
-        missing_columns = required_columns - set(events.columns)
-        if missing_columns:
-            self.warnings.append(
-                f"Distribution events file {events_path_value} is missing columns: {', '.join(sorted(missing_columns))}. Dividend return treated as zero."
-            )
-            return pd.DataFrame(columns=columns)
-
-        events = events.copy()
-        events["symbol"] = events["symbol"].astype(str).str.strip().str.upper()
-        events["ex_date"] = pd.to_datetime(events["ex_date"], errors="coerce").dt.date
-        events["amount_per_unit"] = pd.to_numeric(events["amount_per_unit"], errors="coerce")
-        events = events.dropna(subset=["symbol", "ex_date", "amount_per_unit"])
-        allowed_symbols = {symbol.upper() for symbol in symbols}
-        events = events[events["symbol"].isin(allowed_symbols)]
-        return events[(events["ex_date"] >= self.start_date) & (events["ex_date"] <= self.end_date)]
 
     def _quarterly_rebalance_dates(self, price_pivot: pd.DataFrame) -> list[date]:
         dates = pd.Index(item for item in price_pivot.index if self.start_date <= item <= self.end_date)
@@ -295,8 +269,8 @@ class FixedAllocationBacktestEngine:
                 self.warnings.append(f"Skipped {symbol} from {start_date} to {end_date}: missing or unusable price.")
                 continue
             price_return = (float(end_price) / float(start_price)) - 1.0
-            distribution_per_unit = _distribution_per_unit(distributions, symbol, start_date, end_date)
-            distribution_return = distribution_per_unit / float(start_price)
+            distribution_per_unit_value = distribution_per_unit(distributions, symbol, start_date, end_date)
+            distribution_return = distribution_per_unit_value / float(start_price)
             symbol_return = price_return + distribution_return
             if abs(symbol_return) > config.MAX_BACKTEST_PERIOD_RETURN:
                 self.warnings.append(
@@ -469,17 +443,6 @@ def _estimate_transaction_costs(trades: dict[str, float]) -> dict[str, float]:
         "estimated_tax": 0.0,
         "total_transaction_cost": total,
     }
-
-
-def _distribution_per_unit(distributions: pd.DataFrame, symbol: str, start_date: date, end_date: date) -> float:
-    if distributions.empty:
-        return 0.0
-    mask = (
-        (distributions["symbol"] == symbol.upper())
-        & (distributions["ex_date"] > start_date)
-        & (distributions["ex_date"] <= end_date)
-    )
-    return float(distributions.loc[mask, "amount_per_unit"].sum())
 
 
 def _weight_for_symbol(assets: list[dict[str, Any]], symbol: str) -> float:

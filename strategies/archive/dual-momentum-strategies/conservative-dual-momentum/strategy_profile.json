@@ -26,11 +26,11 @@
     "timezone": "Asia/Kolkata"
   },
   "documents": {
-    "public_methodology_path": "strategies/dual-momentum-strategies/conservative-dual-momentum/methodology.md",
-    "internal_methodology_path": "strategies/dual-momentum-strategies/conservative-dual-momentum/methodology_internal.md"
+    "public_methodology_path": "strategies/archive/dual-momentum-strategies/conservative-dual-momentum/methodology.md",
+    "internal_methodology_path": "strategies/archive/dual-momentum-strategies/conservative-dual-momentum/methodology_internal.md"
   },
   "optimization": {
-    "engine_path": "strategies/dual-momentum-strategies/conservative-dual-momentum/experiments/optimizer.py",
+    "engine_path": "strategies/archive/dual-momentum-strategies/conservative-dual-momentum/experiments/optimizer.py",
     "results_path": "data/output/conservative-dual-momentum/conservative_trials_net_return_to_drawdown.csv",
     "finalized_config_path": "data/output/finalized/conservative_dual_momentum_best_net_config.json",
     "objective": "net_return_to_drawdown",

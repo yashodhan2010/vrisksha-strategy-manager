@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import ceil, isclose
+from math import isclose
 
 import pandas as pd
 
@@ -94,7 +94,7 @@ def select_with_buffer(
         ranked["rank"] = range(1, len(ranked) + 1)
     ranked = ranked.sort_values("rank", ascending=True)
     previous_symbols = {symbol.strip().upper() for symbol in (previous_symbols or set())}
-    buffer_rank = max(top_n, ceil(top_n * (1.0 + buffer_pct / 100.0)))
+    buffer_rank = max(float(top_n), top_n * (1.0 + buffer_pct / 100.0))
 
     retained = ranked[(ranked["symbol"].isin(previous_symbols)) & (ranked["rank"] <= buffer_rank)]
     selected = retained.sort_values("rank", ascending=True)["symbol"].head(top_n).tolist()

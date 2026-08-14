@@ -94,8 +94,12 @@ def _parameters_from_row(row: pd.Series) -> dict[str, Any]:
     high_cutoff_pct = _optional_float(row, "high_cutoff_pct")
     max_stock_weight = _optional_float(row, "max_stock_weight")
     max_stock_weight_pct = _optional_float(row, "max_stock_weight_pct")
+    min_avg_momentum_pct = _optional_float(row, "min_avg_momentum_pct")
+    min_12m_return_pct = _optional_float(row, "min_12m_return_pct")
+    require_price_above_ema = _optional_bool(row, "require_price_above_ema")
+    price_ema_days = _optional_float(row, "price_ema_days")
     max_sector_weight = 1.0 if sector_cap_pct in (None, 0.0) else sector_cap_pct / 100.0
-    high_52w_threshold = 0.80 if high_cutoff_pct is None else (100.0 - high_cutoff_pct) / 100.0
+    high_52w_threshold = 0.80 if high_cutoff_pct is None else (0.0 if high_cutoff_pct == 0 else (100.0 - high_cutoff_pct) / 100.0)
     if max_stock_weight is None and max_stock_weight_pct is not None:
         max_stock_weight = max_stock_weight_pct / 100.0
     return {
@@ -109,7 +113,12 @@ def _parameters_from_row(row: pd.Series) -> dict[str, Any]:
         "MAX_STOCK_WEIGHT": max_stock_weight or config.MAX_STOCK_WEIGHT,
         "MAX_SECTOR_WEIGHT": max_sector_weight,
         "HIGH_52W_THRESHOLD": high_52w_threshold,
+        "MIN_AVG_MOMENTUM_RETURN": 0.0 if min_avg_momentum_pct is None else min_avg_momentum_pct / 100.0,
+        "MIN_12M_RETURN": -1.0 if min_12m_return_pct is None else min_12m_return_pct / 100.0,
+        "REQUIRE_PRICE_ABOVE_EMA": bool(require_price_above_ema) if require_price_above_ema is not None else False,
+        "PRICE_EMA_DAYS": int(price_ema_days or config.PRICE_EMA_DAYS),
         "SAFE_ASSET_SYMBOL": config.SAFE_ASSET_SYMBOL,
+        "SAFE_ASSET_FALLBACK_SYMBOL": config.SAFE_ASSET_FALLBACK_SYMBOL,
         "BUFFER_PCT": _optional_float(row, "buffer_pct"),
     }
 
@@ -126,7 +135,15 @@ def _apply_parameters(parameters: dict[str, Any]) -> None:
     config.MAX_STOCK_WEIGHT = float(parameters["MAX_STOCK_WEIGHT"])
     config.MAX_SECTOR_WEIGHT = float(parameters["MAX_SECTOR_WEIGHT"])
     config.HIGH_52W_THRESHOLD = float(parameters["HIGH_52W_THRESHOLD"])
+    config.MIN_AVG_MOMENTUM_RETURN = float(parameters.get("MIN_AVG_MOMENTUM_RETURN", 0.0))
+    config.MIN_12M_RETURN = float(parameters.get("MIN_12M_RETURN", -1.0))
+    config.REQUIRE_PRICE_ABOVE_EMA = bool(parameters.get("REQUIRE_PRICE_ABOVE_EMA", False))
+    config.PRICE_EMA_DAYS = int(parameters.get("PRICE_EMA_DAYS", config.PRICE_EMA_DAYS))
     config.SAFE_ASSET_SYMBOL = str(parameters["SAFE_ASSET_SYMBOL"]).strip().upper()
+    config.SAFE_ASSET_FALLBACK_SYMBOL = str(parameters.get("SAFE_ASSET_FALLBACK_SYMBOL") or "").strip().upper()
+    config.SAFE_ASSET_SYMBOLS = sorted(
+        {symbol for symbol in [config.SAFE_ASSET_SYMBOL, config.SAFE_ASSET_FALLBACK_SYMBOL] if symbol}
+    )
 
 
 def _required_float(row: pd.Series, key: str) -> float:
@@ -139,6 +156,20 @@ def _optional_float(row: pd.Series, key: str) -> float | None:
     if key not in row or pd.isna(row[key]):
         return None
     return float(row[key])
+
+
+def _optional_bool(row: pd.Series, key: str) -> bool | None:
+    if key not in row or pd.isna(row[key]):
+        return None
+    value = row[key]
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"1", "true", "yes", "y"}:
+        return True
+    if text in {"0", "false", "no", "n"}:
+        return False
+    return bool(value)
 
 
 def _clean_mapping(payload: dict[str, Any]) -> dict[str, Any]:
