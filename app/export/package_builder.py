@@ -194,6 +194,7 @@ def _manifest(run: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
         "rebalance_frequency": _rebalance_frequency(summary),
         "target_holdings": _target_holdings(config_payload, summary),
         "min_capital_guidance": config.STRATEGY_PACKAGE_MIN_CAPITAL_GUIDANCE,
+        "catalogue": config.STRATEGY_CATALOGUE_METADATA,
         "portfolio_as_of_date": run["actual_end_date"],
         "data_frequency": "daily",
         "public_methodology_file": "methodology.md",

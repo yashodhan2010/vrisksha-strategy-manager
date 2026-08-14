@@ -31,6 +31,7 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     distribution_events_path = distribution_path_from_profile(profile)
 
     config.STRATEGY_PROFILE_PATH = str(profile_path)
+    config.STRATEGY_CATALOGUE_METADATA = profile.get("catalogue") or {}
     config.STRATEGY_PACKAGE_ID = str(profile["strategy_id"])
     config.STRATEGY_PACKAGE_SLUG = str(profile["slug"])
     config.STRATEGY_PACKAGE_INTERNAL_NAME = str(profile["name"])

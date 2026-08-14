@@ -4,6 +4,32 @@
   "name": "Multi Asset ETF Dual Momentum",
   "public_name": "Bamboo Trunk - ETF Edition",
   "short_description": "Rules-based multi-asset ETF momentum model portfolio using equity, debt, commodity, REIT, and INVIT ETFs",
+  "catalogue": {
+    "catalogue_ref": "S-MA-1",
+    "jira": "KAN-59",
+    "category": "Systematic",
+    "subcategory": "Multi-asset",
+    "style": "Momentum",
+    "website_name": "",
+    "public_name": "Bamboo Trunk - ETF Edition",
+    "status": "LIVE",
+    "pricing": {
+      "monthly_price": "Rs. 2000/month",
+      "minimum_investment": "Rs. 10,000",
+      "recommended_investment": "Rs. 25,000"
+    },
+    "asset_mix": {
+      "stocks": false,
+      "index_etf": true,
+      "factor_etf": false,
+      "sector_etf": false,
+      "invits": true,
+      "reits": true,
+      "debt": true,
+      "gold": true
+    },
+    "note": "Dual momentum ranked on 3, 6, and 12 month average momentum score. Equal-weight positions. Rebalanced monthly."
+  },
   "category_labels": [
     "Momentum",
     "Asset Allocation",
@@ -11,7 +37,7 @@
     "Model Portfolio"
   ],
   "portfolio_objective": "Build my Core",
-  "ra_entity": "Prathamesh Gupta",
+  "ra_entity": "Prathmesh Gupta",
   "sebi_registration_number": "INH000027788",
   "universe": "Multi Asset ETF universe",
   "benchmark": "NIFTY 50 TRI",

@@ -38,6 +38,17 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_PUBLIC_NAME", "Momentum - Bamboo Canopy Edition")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_INTERNAL_NAME", "Dual Momentum")
     monkeypatch.setattr("app.export.package_builder.config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE", "Grow my Wealth")
+    monkeypatch.setattr(
+        "app.export.package_builder.config.STRATEGY_CATALOGUE_METADATA",
+        {
+            "catalogue_ref": "S-EQ-3",
+            "pricing": {
+                "monthly_price": "Rs. 5000/month",
+                "minimum_investment": "Rs. 1,00,000",
+                "recommended_investment": "Rs. 5,00,000",
+            },
+        },
+    )
 
     run_id = create_backtest_run(
         date(2024, 1, 1),
@@ -104,10 +115,12 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     assert manifest["target_holdings"] == 2
     assert manifest["public_methodology_file"] == "methodology.md"
     assert manifest["internal_methodology_file"] == "methodology_internal.md"
+    assert manifest["catalogue"]["catalogue_ref"] == "S-EQ-3"
+    assert manifest["catalogue"]["pricing"]["monthly_price"] == "Rs. 5000/month"
     assert "holding_buffer_pct" not in manifest
     public_methodology = (path / "methodology.md").read_text(encoding="utf-8")
     internal_methodology = (path / "methodology_internal.md").read_text(encoding="utf-8")
-    assert "exact implementation parameters" in public_methodology
+    assert "Bamboo Canopy is our flagship rules-based momentum model portfolio" in public_methodology
     assert "Signal Construction" in internal_methodology
     latest_rows = _read_csv(path / "latest_model_portfolio.csv")
     assert latest_rows[0]["strategy_id"] == "dual_momentum_nifty500_v1"

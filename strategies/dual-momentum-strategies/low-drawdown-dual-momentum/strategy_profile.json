@@ -4,6 +4,42 @@
   "name": "Low Drawdown Dual Momentum",
   "public_name": "Bamboo Root",
   "short_description": "Low volatility tilted rules-based momentum model portfolio with built-in diversification and risk controls.",
+  "catalogue": {
+    "catalogue_ref": "S-EQ-5",
+    "jira": "LIVE",
+    "category": "Systematic",
+    "subcategory": "Equity",
+    "style": "Momentum",
+    "website_name": "Momentum - Bamboo Trunk Edition",
+    "public_name": "Bamboo Root",
+    "status": "LIVE",
+    "pricing": {
+      "monthly_price": "Rs. 2,500/month",
+      "minimum_investment": "Rs. 1,00,000",
+      "recommended_investment": "Rs. 5,00,000"
+    },
+    "asset_mix": {
+      "stocks": true,
+      "index_etf": false,
+      "factor_etf": false,
+      "sector_etf": false,
+      "invits": false,
+      "reits": false,
+      "debt": false,
+      "gold": false
+    },
+    "risks": [
+      "Turnover risk: Periodic reshuffles can increase transaction costs and reduce realised returns.",
+      "Whipsaw risk: Trend reversals in range-bound markets can trigger losses around rebalance points.",
+      "Factor-crowding risk: Momentum exposures can correct sharply when market leadership rotates.",
+      "Concentration risk: High-scoring names and sectors can cluster despite rule-based diversification.",
+      "Gap risk between rebalances: Large overnight moves can materially change realised portfolio outcomes.",
+      "Capacity and market-impact risk: Larger deployment can increase slippage, especially in less liquid constituents.",
+      "Tracking and execution risk: Delays and rounding can create return drift from specified weights.",
+      "Model risk: Research depends on historical signal extraction, assumptions, and interpretation."
+    ],
+    "note": "Renamed from Low Drawdown Dual Momentum - see KAN-142."
+  },
   "category_labels": [
     "Momentum",
     "Low Drawdown",
@@ -12,8 +48,8 @@
     "Model Portfolio"
   ],
   "portfolio_objective": "Grow my Wealth",
-  "ra_entity": "Prathamesh Gupta",
-  "sebi_registration_number": "",
+  "ra_entity": "Prathmesh Gupta",
+  "sebi_registration_number": "INH000027788",
   "universe": "NIFTY 500",
   "benchmark": "NIFTY 500 TRI",
   "min_capital_guidance": 100000,

@@ -4,6 +4,40 @@
   "name": "Diversified Asset Income",
   "public_name": "Mahogany Root ETF Edition",
   "short_description": "A timeless core multi-asset ETF portfolio with equal asset class weights providing inflation protection and income.",
+  "catalogue": {
+    "catalogue_ref": "S-MA-3",
+    "jira": "KAN-60",
+    "category": "Systematic",
+    "subcategory": "Multi-asset",
+    "style": "Asset Allocation",
+    "website_name": "",
+    "public_name": "Mahogany Root ETF Edition",
+    "status": "LIVE",
+    "pricing": {
+      "monthly_price": "Rs. 1000/month",
+      "minimum_investment": "Rs. 5,000",
+      "recommended_investment": "Rs. 10,000"
+    },
+    "asset_mix": {
+      "stocks": false,
+      "index_etf": true,
+      "factor_etf": false,
+      "sector_etf": false,
+      "invits": true,
+      "reits": true,
+      "debt": true,
+      "gold": true
+    },
+    "target_asset_weights": {
+      "index_etf": "20%",
+      "invits": "20%",
+      "reits": "20%",
+      "debt": "20%",
+      "gold": "20%"
+    },
+    "public_disclosure_boundary": "NA",
+    "note": "Equal weight asset allocation to Nifty 50, InvITs, REITs, Gold, and Debt. Rebalanced quarterly."
+  },
   "strategy_type": "fixed_allocation",
   "category_labels": [
     "Multi Asset",
@@ -12,7 +46,7 @@
     "Model Portfolio"
   ],
   "portfolio_objective": "Build my Core",
-  "ra_entity": "Prathamesh Gupta",
+  "ra_entity": "Prathmesh Gupta",
   "sebi_registration_number": "INH000027788",
   "universe": "InvIT, REIT, Gold, Debt, Nifty 50",
   "benchmark": "NIFTY 50 TRI",
