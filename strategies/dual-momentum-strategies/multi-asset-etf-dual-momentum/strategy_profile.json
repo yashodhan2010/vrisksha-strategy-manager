@@ -2,7 +2,7 @@
   "strategy_id": "multi_asset_etf_dual_momentum_v1",
   "slug": "multi-asset-etf-dual-momentum",
   "name": "Multi Asset ETF Dual Momentum",
-  "public_name": "Multi Asset ETF Dual Momentum",
+  "public_name": "Bamboo Trunk - ETF Edition",
   "short_description": "Rules-based multi-asset ETF momentum model portfolio using equity, debt, commodity, REIT, and INVIT ETFs",
   "category_labels": [
     "Momentum",

@@ -6,7 +6,7 @@
     "performance_metrics_included": false,
     "subscriber_logic_included": false
   },
-  "generated_at": "2026-08-14T23:04:06+05:30",
+  "generated_at": "2026-08-14T23:30:20+05:30",
   "schema_version": "1.0.0",
   "source_registry": "strategies/registry.json",
   "strategies": [
@@ -41,9 +41,14 @@
         "strategy_package_exists": true
       },
       "finalized_config_path": "data/output/finalized/dual_momentum_best_config.json",
-      "last_successful_run": null,
-      "latest_model_portfolio_as_of": null,
-      "latest_model_portfolio_exists": false,
+      "last_successful_run": {
+        "date": "2026-07-16",
+        "generated_at": "2026-08-14T23:13:11+05:30",
+        "run_id": null,
+        "type": "strategy_package"
+      },
+      "latest_model_portfolio_as_of": "2026-07-16",
+      "latest_model_portfolio_exists": true,
       "latest_model_portfolio_path": "data/output/packages/dual-momentum/strategy-package/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/dual-momentum/model-portfolio-update",
       "name": "Dual Momentum",
@@ -96,9 +101,14 @@
         "strategy_package_exists": true
       },
       "finalized_config_path": "data/output/finalized/low_drawdown_dual_momentum_best_config.json",
-      "last_successful_run": null,
-      "latest_model_portfolio_as_of": null,
-      "latest_model_portfolio_exists": false,
+      "last_successful_run": {
+        "date": "2026-07-16",
+        "generated_at": "2026-08-14T23:13:11+05:30",
+        "run_id": null,
+        "type": "strategy_package"
+      },
+      "latest_model_portfolio_as_of": "2026-07-16",
+      "latest_model_portfolio_exists": true,
       "latest_model_portfolio_path": "data/output/packages/low-drawdown-dual-momentum/strategy-package/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/low-drawdown-dual-momentum/model-portfolio-update",
       "name": "Low Drawdown Dual Momentum",
@@ -147,12 +157,17 @@
         "model_update_exists": false,
         "optimization_results_exists": true,
         "profile_exists": true,
-        "strategy_package_exists": false
+        "strategy_package_exists": true
       },
       "finalized_config_path": "data/output/finalized/multi_asset_etf_dual_momentum_best_config.json",
-      "last_successful_run": null,
-      "latest_model_portfolio_as_of": null,
-      "latest_model_portfolio_exists": false,
+      "last_successful_run": {
+        "date": "2026-08-03",
+        "generated_at": "2026-08-14T23:29:01+05:30",
+        "run_id": null,
+        "type": "strategy_package"
+      },
+      "latest_model_portfolio_as_of": "2026-08-03",
+      "latest_model_portfolio_exists": true,
       "latest_model_portfolio_path": "data/output/packages/multi-asset-etf-dual-momentum/strategy-package/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/multi-asset-etf-dual-momentum/model-portfolio-update",
       "name": "Multi Asset ETF Dual Momentum",
@@ -160,7 +175,7 @@
       "package_output_dir": "data/output/packages/multi-asset-etf-dual-momentum/strategy-package",
       "portfolio_objective": "Build my Core",
       "profile_path": "strategies/dual-momentum-strategies/multi-asset-etf-dual-momentum/strategy_profile.json",
-      "public_name": "Multi Asset ETF Dual Momentum",
+      "public_name": "Bamboo Trunk - ETF Edition",
       "rebalance_schedule": {
         "target_days": [
           1
@@ -200,9 +215,14 @@
         "strategy_package_exists": true
       },
       "finalized_config_path": "",
-      "last_successful_run": null,
-      "latest_model_portfolio_as_of": null,
-      "latest_model_portfolio_exists": false,
+      "last_successful_run": {
+        "date": "2026-07-01",
+        "generated_at": "2026-08-14T23:13:10+05:30",
+        "run_id": null,
+        "type": "strategy_package"
+      },
+      "latest_model_portfolio_as_of": "2026-07-01",
+      "latest_model_portfolio_exists": true,
       "latest_model_portfolio_path": "data/output/packages/diversified-asset-income/strategy-package/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/diversified-asset-income/model-portfolio-update",
       "name": "Diversified Asset Income",
