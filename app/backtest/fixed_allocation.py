@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import date
 from math import floor
@@ -400,9 +401,9 @@ class FixedAllocationBacktestEngine:
 
 
 def _assets_from_profile(profile: dict[str, Any]) -> list[dict[str, Any]]:
-    assets = ((profile.get("allocation") or {}).get("assets") or [])
+    assets = _allocation_assets(profile)
     if not assets:
-        raise ValueError("allocation.assets is required for fixed-allocation backtests.")
+        raise ValueError("allocation.assets or data.universe_json_path is required for fixed-allocation backtests.")
     cleaned = [
         {
             "sleeve": str(asset.get("sleeve") or asset.get("symbol") or "").strip(),
@@ -417,6 +418,25 @@ def _assets_from_profile(profile: dict[str, Any]) -> list[dict[str, Any]]:
     if not math.isclose(total_weight, 1.0, rel_tol=1e-9, abs_tol=1e-9):
         raise ValueError(f"Fixed allocation weights must sum to 1.0; got {total_weight:.6f}.")
     return cleaned
+
+
+def _allocation_assets(profile: dict[str, Any]) -> list[dict[str, Any]]:
+    allocation = profile.get("allocation") or {}
+    assets = allocation.get("assets") or []
+    if assets:
+        return assets
+
+    universe_path = (profile.get("data") or {}).get("universe_json_path")
+    if not universe_path:
+        return []
+
+    path = Path(universe_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Fixed allocation universe JSON not found at {path}.")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        raise ValueError(f"Fixed allocation universe JSON must contain a list of assets: {path}.")
+    return [asset for asset in payload if asset.get("is_active", True)]
 
 
 def _estimate_transaction_costs(trades: dict[str, float]) -> dict[str, float]:

@@ -14,7 +14,7 @@ Create a simple fixed-ratio income-oriented multi-asset portfolio that diversifi
 | Debt | LIQUIDBEES | 20% |
 | Nifty 50 | NIFTYBEES | 20% |
 
-Symbols are profile-level configuration and can be replaced if a cleaner debt, REIT, or InvIT proxy is preferred.
+Symbols are maintained in `data/reference/diversified_asset_income_universe.json` and referenced from the strategy profile. They can be replaced if a cleaner debt, REIT, or InvIT proxy is preferred.
 
 ## Rebalance
 

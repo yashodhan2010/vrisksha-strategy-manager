@@ -99,3 +99,35 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
     assert config.FINALIZED_STRATEGY_CONFIG_PATH == "data/output/finalized/sample.json"
     assert config.OPTIMIZATION_ENGINE_PATH == "strategies/sample-strategy/experiments/optimizer.py"
     assert config.OPTIMIZATION_ENGINE_MODULE == "sample.optimizer"
+
+
+def test_apply_strategy_profile_counts_reference_universe_holdings(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(config, "STRATEGY_PACKAGE_TARGET_HOLDINGS", config.STRATEGY_PACKAGE_TARGET_HOLDINGS)
+    universe = tmp_path / "universe.json"
+    universe.write_text(
+        json.dumps(
+            [
+                {"symbol": "AAA", "company_name": "AAA", "industry": "A", "sector": "A", "weight": 0.5},
+                {"symbol": "BBB", "company_name": "BBB", "industry": "B", "sector": "B", "weight": 0.5},
+                {"symbol": "OLD", "company_name": "OLD", "industry": "O", "sector": "O", "weight": 0.0, "is_active": False},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    path = tmp_path / "strategy_profile.json"
+    path.write_text(
+        json.dumps(
+            {
+                "strategy_id": "fixed_strategy_v1",
+                "slug": "fixed-strategy",
+                "name": "Fixed Strategy",
+                "data": {"universe_json_path": str(universe)},
+                "allocation": {"method": "fixed_equal_weight"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    apply_strategy_profile(path)
+
+    assert config.STRATEGY_PACKAGE_TARGET_HOLDINGS == 2

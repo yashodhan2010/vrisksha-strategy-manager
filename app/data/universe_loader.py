@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import fields
 from pathlib import Path
 
 from app import config
@@ -25,4 +26,5 @@ def load_universe(
         )
 
     payload = json.loads(runtime_json.read_text(encoding="utf-8"))
-    return [UniverseStock(**item) for item in payload]
+    universe_fields = {field.name for field in fields(UniverseStock)}
+    return [UniverseStock(**{key: value for key, value in item.items() if key in universe_fields}) for item in payload]

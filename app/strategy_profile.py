@@ -38,7 +38,7 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     config.STRATEGY_PACKAGE_PUBLIC_NAME = str(profile.get("public_name") or profile["name"])
     config.STRATEGY_PACKAGE_NAME = config.STRATEGY_PACKAGE_PUBLIC_NAME
     config.STRATEGY_PACKAGE_REBALANCE_FREQUENCY = _rebalance_frequency_from_schedule(schedule)
-    config.STRATEGY_PACKAGE_TARGET_HOLDINGS = len(allocation.get("assets") or [])
+    config.STRATEGY_PACKAGE_TARGET_HOLDINGS = _target_holdings(profile)
     config.STRATEGY_PACKAGE_SHORT_DESCRIPTION = str(profile.get("short_description") or "")
     config.STRATEGY_PACKAGE_CATEGORY_LABELS = ",".join(profile.get("category_labels") or [])
     config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE = str(
@@ -106,6 +106,24 @@ def apply_strategy_profile(profile_path: str | Path = config.STRATEGY_PROFILE_PA
     if "max_sector_weight" in parameters:
         config.MAX_SECTOR_WEIGHT = float(parameters["max_sector_weight"])
     return profile
+
+
+def _target_holdings(profile: dict[str, Any]) -> int:
+    allocation = profile.get("allocation") or {}
+    assets = allocation.get("assets") or []
+    if assets:
+        return len(assets)
+
+    universe_path = (profile.get("data") or {}).get("universe_json_path")
+    if not universe_path:
+        return 0
+    path = Path(universe_path)
+    if not path.exists():
+        return 0
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        return 0
+    return sum(1 for item in payload if item.get("is_active", True))
 
 
 def _rebalance_frequency_from_schedule(schedule: dict[str, Any]) -> str:

@@ -51,6 +51,9 @@
   "universe": "InvIT, REIT, Gold, Debt, Nifty 50",
   "benchmark": "NIFTY 50 TRI",
   "min_capital_guidance": 5000,
+  "data": {
+    "universe_json_path": "data/reference/diversified_asset_income_universe.json"
+  },
   "backtest": {
     "benchmark_symbol": "NIFTY50"
   },
@@ -65,34 +68,7 @@
     "events_path": "data/reference/diversified_asset_income_distributions.csv"
   },
   "allocation": {
-    "method": "fixed_equal_weight",
-    "assets": [
-      {
-        "sleeve": "InvIT",
-        "symbol": "PGINVIT",
-        "weight": 0.2
-      },
-      {
-        "sleeve": "REIT",
-        "symbol": "EMBASSY",
-        "weight": 0.2
-      },
-      {
-        "sleeve": "Gold",
-        "symbol": "GOLDBEES",
-        "weight": 0.2
-      },
-      {
-        "sleeve": "Debt",
-        "symbol": "LIQUIDBEES",
-        "weight": 0.2
-      },
-      {
-        "sleeve": "Nifty 50",
-        "symbol": "NIFTYBEES",
-        "weight": 0.2
-      }
-    ]
+    "method": "fixed_equal_weight"
   },
   "experiment_outputs": {
     "summary_path": "data/output/diversified-asset-income/fixed_allocation_summary.csv",

@@ -66,6 +66,17 @@ def _write_profile(tmp_path: Path) -> Path:
     return profile
 
 
+def _write_reference_universe_profile(tmp_path: Path) -> Path:
+    profile = _write_profile(tmp_path)
+    payload = json.loads(profile.read_text(encoding="utf-8"))
+    universe_path = tmp_path / "diversified_asset_income_universe.json"
+    universe_path.write_text(json.dumps(payload["allocation"]["assets"]), encoding="utf-8")
+    payload["data"] = {"universe_json_path": str(universe_path)}
+    payload["allocation"] = {"method": "fixed_equal_weight"}
+    profile.write_text(json.dumps(payload), encoding="utf-8")
+    return profile
+
+
 def test_fixed_allocation_backtest_persists_quarterly_results(tmp_path: Path) -> None:
     db = tmp_path / "fixed.db"
     initialize_database(db)
@@ -109,6 +120,27 @@ def test_fixed_allocation_backtest_persists_quarterly_results(tmp_path: Path) ->
     assert detail["distribution_return"].sum() > 0
     assert detail["reit_distribution_cash"].sum() > 0
     assert detail["invit_distribution_cash"].sum() > 0
+
+
+def test_fixed_allocation_backtest_reads_assets_from_reference_universe(tmp_path: Path) -> None:
+    db = tmp_path / "fixed.db"
+    initialize_database(db)
+    profile = _write_reference_universe_profile(tmp_path)
+    dates = _business_dates(date(2024, 1, 1), date(2024, 10, 3))
+    symbols = ["PGINVIT", "EMBASSY", "GOLDBEES", "LIQUIDBEES", "NIFTYBEES"]
+    bars: list[PriceBar] = []
+    for index, price_date in enumerate(dates):
+        for symbol_index, symbol in enumerate(symbols):
+            price = 100.0 + index * (0.05 + symbol_index * 0.01)
+            bars.append(PriceBar(symbol, price_date, price, price, price, price, price, 1000, "TEST", "now"))
+    upsert_price_bars(bars, db)
+    run_id = create_backtest_run(date(2024, 1, 1), date(2024, 10, 3), "NIFTY50", {}, RunStatus.STARTED, db)
+
+    FixedAllocationBacktestEngine(run_id, profile, date(2024, 1, 1), date(2024, 10, 3), 100_000, db).run()
+
+    with get_connection(db) as connection:
+        holdings = connection.execute("SELECT DISTINCT symbol FROM holding_snapshots WHERE run_id = ?", (run_id,)).fetchall()
+    assert sorted(row[0] for row in holdings) == sorted(symbols)
 
 
 def test_fixed_allocation_backtest_rejects_non_100_percent_weights(tmp_path: Path) -> None:
