@@ -293,6 +293,24 @@ def test_build_strategy_package_without_run_id_filters_to_active_strategy(monkey
     assert manifest["target_holdings"] == 5
 
 
+def test_package_price_loader_prefers_kite_over_yahoo_outlier(tmp_path: Path) -> None:
+    db = tmp_path / "package.db"
+    initialize_database(db)
+    upsert_price_bars(
+        [
+            PriceBar("GOLDBEES", date(2019, 12, 19), 0.3355, 0.3355, 0.3355, 0.3355, 0.3355, 1000, "YAHOO", "now"),
+            PriceBar("GOLDBEES", date(2019, 12, 19), 33.55, 33.55, 33.55, 33.55, 33.55, 1000, "KITE", "now"),
+            PriceBar("GOLDBEES", date(2019, 12, 20), 33.65, 33.65, 33.65, 33.65, 33.65, 1000, "KITE", "now"),
+        ],
+        db,
+    )
+
+    frame = package_builder._load_price_frame(db)
+
+    goldbees = frame[frame["symbol"] == "GOLDBEES"].sort_values("price_date")
+    assert list(goldbees["price"]) == [33.55, 33.65]
+
+
 def _insert_prices(db: Path) -> None:
     bars: list[PriceBar] = []
     current = date(2024, 1, 1)

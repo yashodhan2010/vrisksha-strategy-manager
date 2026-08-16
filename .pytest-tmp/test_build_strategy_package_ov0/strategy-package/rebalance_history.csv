@@ -1,0 +1,5 @@
+strategy_id,rebalance_date,symbol,company_name,action,old_weight,new_weight,old_reference_price,new_reference_price,rationale
+dual_momentum_nifty500_v1,2024-02-01,AAA,Alpha Ltd,ADDED,0.0,0.5,,110.0,Rebalanced according to the Strategy Research Factory model rules.
+dual_momentum_nifty500_v1,2024-02-01,BBB,Beta Ltd,ADDED,0.0,0.5,,95.0,Rebalanced according to the Strategy Research Factory model rules.
+dual_momentum_nifty500_v1,2024-03-01,AAA,Alpha Ltd,WEIGHT_CHANGED,0.5,0.6,110.0,120.0,Rebalanced according to the Strategy Research Factory model rules.
+dual_momentum_nifty500_v1,2024-03-01,BBB,Beta Ltd,WEIGHT_CHANGED,0.5,0.4,95.0,100.0,Rebalanced according to the Strategy Research Factory model rules.

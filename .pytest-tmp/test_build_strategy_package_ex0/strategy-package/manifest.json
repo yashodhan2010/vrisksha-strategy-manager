@@ -1,0 +1,44 @@
+{
+  "backtest_end_date": "2024-03-01",
+  "backtest_start_date": "2024-01-01",
+  "base_currency": "INR",
+  "benchmark": "NIFTY 500 TRI",
+  "catalogue": {
+    "catalogue_ref": "S-EQ-3",
+    "pricing": {
+      "minimum_investment": "Rs. 1,00,000",
+      "monthly_price": "Rs. 5000/month",
+      "recommended_investment": "Rs. 5,00,000"
+    }
+  },
+  "category_labels": [
+    "Momentum",
+    "Factor Strategy",
+    "Equity",
+    "Model Portfolio"
+  ],
+  "data_frequency": "daily",
+  "generated_at": "2026-08-16T17:27:36+05:30",
+  "generated_by": "dual-momentum-research-project",
+  "internal_methodology_file": "methodology_internal.md",
+  "internal_name": "Dual Momentum",
+  "lookback_period": "Multi-window trend and risk lookbacks; exact finalized parameters are proprietary.",
+  "min_capital_guidance": 0,
+  "name": "Momentum - Bamboo Canopy Edition",
+  "package_schema_version": "1.0.0",
+  "portfolio_as_of_date": "2024-03-01",
+  "portfolio_objective": "Grow my Wealth",
+  "public_content_policy": "Do not render internal methodology, finalized config, exact ranking parameters, thresholds, or buffers on public pages.",
+  "public_methodology_file": "methodology.md",
+  "public_name": "Momentum - Bamboo Canopy Edition",
+  "public_visibility": true,
+  "ra_entity": "Prathamesh Gupta",
+  "rebalance_frequency": "monthly",
+  "sebi_registration_number": "",
+  "short_description": "A Nifty 500 rules-based momentum model portfolio with built-in diversification and risk controls.",
+  "slug": "dual-momentum",
+  "strategy_id": "dual_momentum_nifty500_v1",
+  "target_holdings": 2,
+  "universe": "NIFTY 500",
+  "version": "1.0.0"
+}

@@ -1,0 +1,5 @@
+strategy_id,date,symbol,company_name,exchange,isin,sector,marketcap_bucket,weight,reference_price
+dual_momentum_nifty500_v1,2024-02-01,AAA,Alpha Ltd,NSE,INE000A01001,Technology,,0.5,110.0
+dual_momentum_nifty500_v1,2024-02-01,BBB,Beta Ltd,NSE,INE000B01001,Financial Services,,0.5,95.0
+dual_momentum_nifty500_v1,2024-03-01,AAA,Alpha Ltd,NSE,INE000A01001,Technology,,0.6,120.0
+dual_momentum_nifty500_v1,2024-03-01,BBB,Beta Ltd,NSE,INE000B01001,Financial Services,,0.4,100.0

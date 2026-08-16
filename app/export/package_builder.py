@@ -151,7 +151,7 @@ def _load_price_frame(database_path: str | Path) -> pd.DataFrame:
     with get_connection(database_path) as connection:
         rows = connection.execute(
             """
-            SELECT symbol, price_date, COALESCE(adjusted_close, close) AS price
+            SELECT symbol, price_date, COALESCE(adjusted_close, close) AS price, source
             FROM market_prices
             WHERE COALESCE(adjusted_close, close) IS NOT NULL
             ORDER BY price_date, symbol
@@ -161,7 +161,12 @@ def _load_price_frame(database_path: str | Path) -> pd.DataFrame:
     if frame.empty:
         return frame
     frame["price_date"] = pd.to_datetime(frame["price_date"]).dt.date
-    return frame
+    frame["_source_priority"] = frame["source"].astype(str).str.upper().map({"KITE": 0}).fillna(1)
+    return (
+        frame.sort_values(["symbol", "price_date", "_source_priority"])
+        .drop_duplicates(subset=["symbol", "price_date"], keep="first")
+        .drop(columns="_source_priority")
+    )
 
 
 def _manifest(run: dict[str, Any], summary: dict[str, Any], prices: pd.DataFrame | None = None) -> dict[str, Any]:
