@@ -102,7 +102,38 @@ def test_apply_strategy_profile_updates_package_and_pipeline_config(monkeypatch,
 
 
 def test_apply_strategy_profile_counts_reference_universe_holdings(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(config, "STRATEGY_PACKAGE_TARGET_HOLDINGS", config.STRATEGY_PACKAGE_TARGET_HOLDINGS)
+    for name in [
+        "STRATEGY_PROFILE_PATH",
+        "STRATEGY_CATALOGUE_METADATA",
+        "STRATEGY_PACKAGE_ID",
+        "STRATEGY_PACKAGE_SLUG",
+        "STRATEGY_PACKAGE_INTERNAL_NAME",
+        "STRATEGY_PACKAGE_PUBLIC_NAME",
+        "STRATEGY_PACKAGE_NAME",
+        "STRATEGY_PACKAGE_REBALANCE_FREQUENCY",
+        "STRATEGY_PACKAGE_TARGET_HOLDINGS",
+        "STRATEGY_PACKAGE_SHORT_DESCRIPTION",
+        "STRATEGY_PACKAGE_CATEGORY_LABELS",
+        "STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE",
+        "STRATEGY_PACKAGE_UNIVERSE",
+        "STRATEGY_PACKAGE_BENCHMARK",
+        "STRATEGY_PACKAGE_RA_ENTITY",
+        "STRATEGY_PACKAGE_SEBI_REGISTRATION_NUMBER",
+        "STRATEGY_PACKAGE_MIN_CAPITAL_GUIDANCE",
+        "STRATEGY_PUBLIC_METHODOLOGY_PATH",
+        "STRATEGY_INTERNAL_METHODOLOGY_PATH",
+        "STRATEGY_PACKAGE_OUTPUT_DIR",
+        "STRATEGY_PACKAGE_VERSION",
+        "UNIVERSE_EXCEL_PATH",
+        "UNIVERSE_JSON_PATH",
+        "UNIVERSE_VALIDATION_REPORT_PATH",
+        "DISTRIBUTION_EVENTS_PATH",
+        "OPTIMIZATION_RESULTS_PATH",
+        "FINALIZED_STRATEGY_CONFIG_PATH",
+        "OPTIMIZATION_ENGINE_PATH",
+        "OPTIMIZATION_ENGINE_MODULE",
+    ]:
+        monkeypatch.setattr(config, name, getattr(config, name))
     universe = tmp_path / "universe.json"
     universe.write_text(
         json.dumps(

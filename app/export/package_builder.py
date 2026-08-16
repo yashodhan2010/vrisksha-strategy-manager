@@ -45,8 +45,8 @@ def build_strategy_package(
     drawdowns = _drawdowns(daily)
     metrics = _metrics(run, snapshots, daily, monthly, yearly, benchmark, holdings)
     performance_showcases = _performance_showcases(daily, benchmark)
-    manifest = _manifest(run, summary)
-    latest_portfolio = _latest_model_portfolio(manifest["strategy_id"], holdings, universe)
+    manifest = _manifest(run, summary, prices)
+    latest_portfolio = _latest_model_portfolio(manifest["strategy_id"], holdings, universe, summary, prices)
     holdings_history = _holdings_history(manifest["strategy_id"], holdings, universe)
     rebalance_history = _rebalance_history(manifest["strategy_id"], holdings, universe)
     sector_exposure = _exposure_rows(manifest["strategy_id"], latest_portfolio, "sector")
@@ -164,7 +164,7 @@ def _load_price_frame(database_path: str | Path) -> pd.DataFrame:
     return frame
 
 
-def _manifest(run: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
+def _manifest(run: dict[str, Any], summary: dict[str, Any], prices: pd.DataFrame | None = None) -> dict[str, Any]:
     config_payload = json.loads(run.get("config_json") or "{}")
     return {
         "package_schema_version": "1.0.0",
@@ -195,13 +195,19 @@ def _manifest(run: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
         "target_holdings": _target_holdings(config_payload, summary),
         "min_capital_guidance": config.STRATEGY_PACKAGE_MIN_CAPITAL_GUIDANCE,
         "catalogue": config.STRATEGY_CATALOGUE_METADATA,
-        "portfolio_as_of_date": run["actual_end_date"],
+        "portfolio_as_of_date": _portfolio_as_of_date(run, summary, prices),
         "data_frequency": "daily",
         "public_methodology_file": "methodology.md",
         "internal_methodology_file": "methodology_internal.md",
         "public_content_policy": "Do not render internal methodology, finalized config, exact ranking parameters, thresholds, or buffers on public pages.",
         "public_visibility": True,
     }
+
+
+def _portfolio_as_of_date(run: dict[str, Any], summary: dict[str, Any], prices: pd.DataFrame | None) -> str:
+    if summary.get("strategy_type") == "fixed_allocation" and prices is not None and not prices.empty:
+        return max(prices["price_date"]).isoformat()
+    return str(run["actual_end_date"])
 
 
 def _rebalance_frequency(summary: dict[str, Any]) -> str:
@@ -611,7 +617,14 @@ def _latest_model_portfolio(
     strategy_id: str,
     holdings: list[dict[str, Any]],
     universe: dict[str, Any],
+    summary: dict[str, Any] | None = None,
+    prices: pd.DataFrame | None = None,
 ) -> list[dict[str, Any]]:
+    if (summary or {}).get("strategy_type") == "fixed_allocation":
+        fixed_rows = _fixed_allocation_latest_model_portfolio(strategy_id, holdings, universe, summary or {}, prices)
+        if fixed_rows:
+            return fixed_rows
+
     latest_date = max(row["snapshot_date"] for row in holdings)
     entry_dates = _entry_dates(holdings)
     rows = []
@@ -637,6 +650,60 @@ def _latest_model_portfolio(
         )
     validate_weights(rows, "target_weight")
     return rows
+
+
+def _fixed_allocation_latest_model_portfolio(
+    strategy_id: str,
+    holdings: list[dict[str, Any]],
+    universe: dict[str, Any],
+    summary: dict[str, Any],
+    prices: pd.DataFrame | None,
+) -> list[dict[str, Any]]:
+    assets = summary.get("assets") or []
+    if not assets:
+        return []
+    latest_date = _latest_price_date(prices) or max(row["snapshot_date"] for row in holdings)
+    reference_prices = _latest_reference_prices(prices)
+    rows = []
+    for asset in assets:
+        symbol = str(asset.get("symbol") or "").strip().upper()
+        if not symbol:
+            continue
+        stock = universe.get(symbol)
+        rows.append(
+            {
+                "strategy_id": strategy_id,
+                "as_of_date": latest_date,
+                "symbol": symbol,
+                "company_name": getattr(stock, "company_name", symbol),
+                "exchange": getattr(stock, "exchange", "NSE"),
+                "isin": getattr(stock, "isin", "") or "",
+                "sector": getattr(stock, "sector", asset.get("sleeve") or ""),
+                "marketcap_bucket": "",
+                "target_weight": _clean_float(asset.get("weight") or 0.0),
+                "reference_price": _clean_float(reference_prices.get(symbol)),
+                "entry_date": latest_date,
+                "notes": "Fixed allocation target weight.",
+            }
+        )
+    validate_weights(rows, "target_weight")
+    return rows
+
+
+def _latest_price_date(prices: pd.DataFrame | None) -> str | None:
+    if prices is None or prices.empty:
+        return None
+    return max(prices["price_date"]).isoformat()
+
+
+def _latest_reference_prices(prices: pd.DataFrame | None) -> dict[str, float]:
+    if prices is None or prices.empty:
+        return {}
+    frame = prices.sort_values(["symbol", "price_date"])
+    return {
+        str(row.symbol): float(row.price)
+        for row in frame.dropna(subset=["price"]).groupby("symbol", as_index=False).tail(1).itertuples()
+    }
 
 
 def _holdings_history(strategy_id: str, holdings: list[dict[str, Any]], universe: dict[str, Any]) -> list[dict[str, Any]]:

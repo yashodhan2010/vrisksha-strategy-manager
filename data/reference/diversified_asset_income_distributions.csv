@@ -1,204 +1,180 @@
 symbol,ex_date,amount_per_unit,distribution_type,notes
-EMBASSY,2019-08-20,5.4,dividend,Yahoo Finance chart dividend event
-EMBASSY,2019-11-18,6.0,dividend,Yahoo Finance chart dividend event
-EMBASSY,2020-02-20,6.1,dividend,Yahoo Finance chart dividend event
-EMBASSY,2020-05-27,6.89,dividend,Yahoo Finance chart dividend event
-EMBASSY,2020-08-13,5.83,dividend,Yahoo Finance chart dividend event
-EMBASSY,2020-11-09,5.5,dividend,Yahoo Finance chart dividend event
-EMBASSY,2021-02-18,4.55,dividend,Yahoo Finance chart dividend event
-EMBASSY,2021-05-06,5.6,dividend,Yahoo Finance chart dividend event
-EMBASSY,2021-08-04,5.64,dividend,Yahoo Finance chart dividend event
-EMBASSY,2021-11-09,5.66,dividend,Yahoo Finance chart dividend event
-EMBASSY,2022-02-04,5.2,dividend,Yahoo Finance chart dividend event
-EMBASSY,2022-05-06,5.26,dividend,Yahoo Finance chart dividend event
-EMBASSY,2022-07-28,5.33,dividend,Yahoo Finance chart dividend event
-EMBASSY,2022-10-31,5.46,dividend,Yahoo Finance chart dividend event
-EMBASSY,2023-02-03,5.31,dividend,Yahoo Finance chart dividend event
-EMBASSY,2023-05-04,5.61,dividend,Yahoo Finance chart dividend event
-EMBASSY,2023-08-03,5.38,dividend,Yahoo Finance chart dividend event
-EMBASSY,2023-11-03,5.53,dividend,Yahoo Finance chart dividend event
-EMBASSY,2024-02-12,5.2,dividend,Yahoo Finance chart dividend event
-EMBASSY,2024-05-06,5.22,dividend,Yahoo Finance chart dividend event
-EMBASSY,2024-08-02,5.6,dividend,Yahoo Finance chart dividend event
-EMBASSY,2024-10-29,5.83,dividend,Yahoo Finance chart dividend event
-EMBASSY,2025-01-31,5.9,dividend,Yahoo Finance chart dividend event
-EMBASSY,2025-05-02,5.68,dividend,Yahoo Finance chart dividend event
-EMBASSY,2025-08-05,5.8,dividend,Yahoo Finance chart dividend event
-EMBASSY,2025-11-07,6.51,dividend,Yahoo Finance chart dividend event
-EMBASSY,2026-02-11,6.47,dividend,Yahoo Finance chart dividend event
-EMBASSY,2026-04-30,6.5,dividend,Yahoo Finance chart dividend event
-EMBASSY,2026-08-04,6.31,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-01-31,4.807608,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-02-28,4.195917,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-03-31,4.816572,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-04-29,4.153344,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-05-31,4.434834,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-06-28,4.040636,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-07-31,4.447951,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-08-30,5.798431,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-09-30,1.372568,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-10-31,5.458008,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-11-29,4.758855,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2013-12-31,5.115358,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-01-31,4.980548,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-02-28,4.514188,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-03-31,5.193362,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-04-29,4.782695,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-05-30,4.963781,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-06-30,4.91513,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-07-31,5.224548,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-08-31,4.919601,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-09-30,4.614091,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-10-31,4.584808,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-11-30,4.308461,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2014-12-31,4.661373,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-01-30,4.436656,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-02-27,3.97479,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-03-31,4.353391,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-04-29,4.199502,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-05-29,4.167952,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-06-30,3.864691,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-07-31,3.978026,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-08-31,3.964146,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-09-30,3.878907,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-10-30,3.678193,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-11-30,3.810818,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2015-12-31,3.783955,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-01-31,3.857865,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-02-29,3.457543,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-03-31,3.712569,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-04-29,3.251065,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-05-31,3.556395,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-06-30,3.755725,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-07-31,3.459206,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-08-31,3.417821,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-09-30,3.291529,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-10-31,3.453568,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-11-30,3.251197,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2016-12-30,3.237,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-01-31,3.428259,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-02-28,2.884168,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-03-31,3.126635,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-04-28,2.88761,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-05-31,3.447457,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-06-30,3.196446,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-07-31,3.32258,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-08-31,3.174125,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-09-29,2.96069,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-10-31,3.229655,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-11-30,3.13286,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2017-12-31,3.276715,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-01-31,3.219944,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-02-28,2.926727,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-03-31,3.312574,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-04-29,3.067041,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-05-31,3.364156,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-06-29,3.129243,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-07-31,3.531108,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-08-31,3.543162,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-09-30,3.40081,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-10-31,3.496305,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-11-30,3.418373,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2018-12-31,3.54574,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-01-31,3.51772,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-02-28,3.142984,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-03-31,3.414762,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-04-30,3.188005,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-05-31,3.343666,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-06-30,3.020385,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-07-31,3.033567,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-08-30,2.789018,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-09-30,2.828347,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-10-31,2.5807,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-11-29,2.462351,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2019-12-31,2.6165,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-01-31,2.472436,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-02-28,2.101325,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-03-31,1.623751,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-04-30,1.4847,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-05-31,1.830485,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-06-30,1.857763,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-07-31,2.053509,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-08-31,1.6781,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-09-30,2.058299,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-10-29,1.784823,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-11-30,1.888084,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2020-12-31,1.877047,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-01-31,1.893051,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-02-28,1.790707,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-03-31,2.131499,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-04-30,1.949854,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-05-31,1.791073,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-06-30,2.133871,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-07-30,1.542761,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-08-31,2.021478,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-09-30,1.586718,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-10-31,2.187418,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-11-30,2.104476,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2021-12-31,2.023106,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-01-31,2.384756,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-02-28,0.071278,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-03-31,2.314554,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-04-29,2.171747,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-05-31,2.770197,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-06-30,2.705983,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-07-31,3.344091,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-08-31,3.757324,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-09-30,3.584019,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-10-31,4.52935,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-11-30,3.933296,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2022-12-30,4.448828,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-01-31,4.20513,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-02-28,4.340305,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-03-31,4.747269,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-04-28,4.475128,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-05-31,5.28773,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-06-30,4.769264,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-07-31,4.54164,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-08-31,4.318876,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-09-29,4.427259,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-10-31,4.490269,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-11-30,3.82847,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2023-12-31,3.653926,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-01-31,4.317189,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-02-29,3.672751,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-03-31,3.873379,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-04-30,3.844841,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-05-31,3.517854,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-06-30,3.522461,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-07-31,3.453316,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-08-30,3.255658,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-09-30,3.622192,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-10-31,3.857046,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-11-29,3.466284,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2024-12-31,4.015233,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2025-01-31,4.942364,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2025-02-28,3.653112,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2025-03-31,4.089838,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2025-04-30,3.538602,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2025-05-30,3.586182,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2025-06-30,3.177129,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2025-07-31,3.651373,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2025-08-31,3.063889,dividend,Yahoo Finance chart dividend event
-LIQUIDBEES,2025-09-30,3.077137,dividend,Yahoo Finance chart dividend event
-PGINVIT,2021-11-12,4.5,dividend,Yahoo Finance chart dividend event
-PGINVIT,2022-02-02,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2022-05-31,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2022-08-01,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2022-11-14,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2023-01-27,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2023-01-30,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2023-05-31,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2023-08-02,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2023-11-13,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2024-01-30,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2024-05-28,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2024-08-01,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2024-11-12,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2025-01-27,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2025-05-29,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2025-08-08,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2025-11-10,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2026-02-12,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2026-05-20,3.0,dividend,Yahoo Finance chart dividend event
-PGINVIT,2026-07-31,3.0,dividend,Yahoo Finance chart dividend event
+BIRET,2021-08-17,6,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2021-11-16,6,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2022-02-18,5,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2022-05-25,5.1,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2022-08-11,5.1,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2022-11-15,5.1,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2023-02-15,5,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2023-05-26,5,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2023-08-23,3.85,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2023-11-13,4.4,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2024-02-20,4.75,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2024-05-24,4.75,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2024-08-14,4.5,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2024-11-08,4.6,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2025-02-04,4.9,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2025-05-08,5.25,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2025-08-06,5.25,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2025-11-07,5.25,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2026-02-03,5.4,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2026-05-14,5.5,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+BIRET,2026-08-13,5.6,dividend,Yahoo Finance chart dividend event (BIRET.NS)
+EMBASSY,2019-08-20,5.4,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2019-11-18,6,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2020-02-20,6.1,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2020-05-27,6.89,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2020-08-13,5.83,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2020-11-09,5.5,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2021-02-18,4.55,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2021-05-06,5.6,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2021-08-04,5.64,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2021-11-09,5.66,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2022-02-04,5.2,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2022-05-06,5.26,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2022-07-28,5.33,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2022-10-31,5.46,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2023-02-03,5.31,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2023-05-04,5.61,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2023-08-03,5.38,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2023-11-03,5.53,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2024-02-12,5.2,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2024-05-06,5.22,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2024-08-02,5.6,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2024-10-29,5.83,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2025-01-31,5.9,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2025-05-02,5.68,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2025-08-05,5.8,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2025-11-07,6.51,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2026-02-11,6.47,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2026-04-30,6.5,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+EMBASSY,2026-08-04,6.31,dividend,Yahoo Finance chart dividend event (EMBASSY.NS)
+INDIGRID,2017-08-03,0.92,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2017-11-06,2.76,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2018-01-22,2.89,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2018-04-27,3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2018-08-01,3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2018-10-25,3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2019-01-21,3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2019-04-26,3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2019-08-02,2.88,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2019-10-30,3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2020-01-27,3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2020-06-01,3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2020-08-11,3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2020-11-09,3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2021-01-27,3.1,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2021-06-01,3.1,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2021-08-04,3.1875,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2021-11-01,3.1875,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2022-02-01,3.1875,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2022-05-25,3.1875,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2022-07-29,3.3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2022-11-15,3.3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2023-01-31,3.3,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2023-05-18,3.45,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2023-08-03,3.45,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2023-11-09,3.55,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2024-01-31,3.55,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2024-05-30,3.55,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2024-07-30,3.75,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2024-10-30,3.75,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2025-01-28,3.75,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2025-05-20,4.1,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2025-07-29,4,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2025-11-14,4,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2026-02-17,4,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+INDIGRID,2026-05-19,4,dividend,Yahoo Finance chart dividend event (INDIGRID.NS)
+IRBINVIT,2017-08-03,1.05,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2017-11-07,3,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2018-02-01,3,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2018-05-08,3,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2018-08-03,3.05,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2018-10-30,3,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2019-01-28,3.1,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2019-05-09,3.1,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2019-08-02,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2019-10-29,2.5,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2020-02-12,2.7,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2020-06-10,1.8,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2020-08-24,1.5,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2020-11-03,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2021-01-20,2.5,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2021-05-19,2.5,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2021-08-11,1.8,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2021-10-26,2.2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2022-02-10,2.4,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2022-05-11,2.6,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2022-08-03,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2022-10-20,2.05,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2023-02-10,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2023-05-12,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2023-08-10,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2023-11-01,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2024-02-05,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2024-05-07,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2024-07-31,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2024-10-31,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2025-01-30,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2025-05-13,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2025-07-24,2,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2025-11-18,1.5,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2026-02-16,1.5,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2026-05-20,1.6,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+IRBINVIT,2026-07-28,1.625,dividend,Yahoo Finance chart dividend event (IRBINVIT.NS)
+MINDSPACE,2021-02-17,4.78,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2021-05-20,4.81,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2021-08-17,4.6,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2021-11-17,4.6,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2022-02-15,4.64,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2022-05-17,4.61,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2022-08-11,4.74,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2022-11-18,4.75,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2023-02-06,4.8,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2023-05-10,4.81,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2023-07-31,4.8,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2023-11-06,4.79,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2024-02-06,4.8,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2024-05-09,4.77,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2024-08-02,5.04,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2024-10-30,5.15,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2025-01-29,5.32,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2025-05-06,6.44,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2025-08-07,5.79,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2025-11-07,5.83,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2026-01-30,5.83,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2026-05-05,6.64,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+MINDSPACE,2026-08-07,6.67,dividend,Yahoo Finance chart dividend event (MINDSPACE.NS)
+NXST,2023-11-17,2.98,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2024-02-14,2,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2024-05-17,2.091,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2024-08-07,2.147,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2024-11-21,2.007,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2025-02-07,2.196,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2025-05-16,2,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2025-08-04,2.23,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2025-11-10,2.198,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2026-02-05,2.367,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2026-05-15,2.286,dividend,Yahoo Finance chart dividend event (NXST.NS)
+NXST,2026-08-06,2.442,dividend,Yahoo Finance chart dividend event (NXST.NS)
+PGINVIT,2021-11-12,4.5,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2022-02-02,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2022-05-31,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2022-08-01,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2022-11-14,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2023-01-27,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2023-01-30,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2023-05-31,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2023-08-02,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2023-11-13,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2024-01-30,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2024-05-28,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2024-08-01,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2024-11-12,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2025-01-27,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2025-05-29,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2025-08-08,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2025-11-10,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2026-02-12,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2026-05-20,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)
+PGINVIT,2026-07-31,3,dividend,Yahoo Finance chart dividend event (PGINVIT.NS)

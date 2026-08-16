@@ -6,15 +6,15 @@ Create a simple fixed-ratio income-oriented multi-asset portfolio that diversifi
 
 ## Asset Sleeves
 
-| Sleeve | Default symbol | Target weight |
+| Sleeve | Symbols | Target weight |
 |---|---:|---:|
-| InvIT | PGINVIT | 20% |
-| REIT | EMBASSY | 20% |
+| Equity | NIFTYBEES | 20% |
+| Debt | GILT5YBEES, GSEC10IETF, LTGILTBEES | 20% |
+| InvIT | INDIGRID, PGINVIT, IRBINVIT | 20% |
+| REIT | KRT, EMBASSY, MINDSPACE, BIRET, NXST | 20% |
 | Gold | GOLDBEES | 20% |
-| Debt | LIQUIDBEES | 20% |
-| Nifty 50 | NIFTYBEES | 20% |
 
-Symbols are maintained in `data/reference/diversified_asset_income_universe.json` and referenced from the strategy profile. They can be replaced if a cleaner debt, REIT, or InvIT proxy is preferred.
+Symbols and instrument-level weights are maintained in `data/reference/diversified_asset_income_universe.json` and referenced from the strategy profile. They can be replaced if a cleaner debt, REIT, or InvIT proxy is preferred.
 
 ## Rebalance
 
@@ -48,7 +48,7 @@ Expected columns:
 
 Optional descriptive columns such as `distribution_type` and `notes` are allowed. Events are included when `period_start < ex_date <= period_end`. The engine adds `amount_per_unit / period_start_price` to that sleeve's period return and carries the resulting cash into ending NAV before the next rebalance.
 
-The current event file is sourced from Yahoo Finance chart dividend events for the configured sleeve symbols. Events are available for `PGINVIT`, `EMBASSY`, and `LIQUIDBEES`; Yahoo returned no dividend events for `GOLDBEES` or `NIFTYBEES` in the fetched timeline.
+The current event file is sourced from Yahoo Finance chart dividend events for the configured sleeve symbols. Events are available for `INDIGRID`, `PGINVIT`, `IRBINVIT`, `EMBASSY`, `MINDSPACE`, `BIRET`, and `NXST`; Yahoo returned no dividend events for the ETF sleeves or `KRT` in the fetched timeline.
 
 ## Experiment Output
 
