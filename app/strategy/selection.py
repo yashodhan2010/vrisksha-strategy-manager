@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import isclose
+from math import floor, isclose
 
 import pandas as pd
 
@@ -50,7 +50,14 @@ def allocate_from_ranking(
         return StrategyAllocation(allocation, [], normalized_mode)
 
     if normalized_mode == "TOP_N_EQUAL":
-        selected = select_with_buffer(ranking, top_n, previous_symbols, buffer_pct)
+        selected = select_with_buffer(
+            ranking,
+            top_n,
+            previous_symbols,
+            buffer_pct,
+            sector_by_symbol=sector_by_symbol,
+            max_sector_weight=max_sector_weight,
+        )
         allocation = allocate_equal_weight_with_cap(
             selected,
             max_stock_weight=max_stock_weight,
@@ -81,6 +88,8 @@ def select_with_buffer(
     top_n: int,
     previous_symbols: set[str] | None = None,
     buffer_pct: float = 0.0,
+    sector_by_symbol: dict[str, str] | None = None,
+    max_sector_weight: float = 1.0,
 ) -> list[str]:
     if top_n <= 0:
         raise ValueError("top_n must be greater than zero.")
@@ -95,16 +104,28 @@ def select_with_buffer(
     ranked = ranked.sort_values("rank", ascending=True)
     previous_symbols = {symbol.strip().upper() for symbol in (previous_symbols or set())}
     buffer_rank = max(float(top_n), top_n * (1.0 + buffer_pct / 100.0))
+    sector_by_symbol = sector_by_symbol or _sector_map_from_ranking(ranked)
+    max_sector_count = _max_sector_count(top_n, max_sector_weight)
 
     retained = ranked[(ranked["symbol"].isin(previous_symbols)) & (ranked["rank"] <= buffer_rank)]
-    selected = retained.sort_values("rank", ascending=True)["symbol"].head(top_n).tolist()
+    selected: list[str] = []
     selected_set = set(selected)
-    for symbol in ranked["symbol"].head(top_n).tolist():
+    sector_counts: dict[str, int] = {}
+    for symbol in retained.sort_values("rank", ascending=True)["symbol"].tolist():
+        if len(selected) >= top_n:
+            break
+        if _can_add_symbol(symbol, sector_by_symbol, sector_counts, max_sector_count):
+            selected.append(symbol)
+            selected_set.add(symbol)
+            _increment_sector_count(symbol, sector_by_symbol, sector_counts)
+    for symbol in ranked["symbol"].tolist():
         if len(selected) >= top_n:
             break
         if symbol not in selected_set:
-            selected.append(symbol)
-            selected_set.add(symbol)
+            if _can_add_symbol(symbol, sector_by_symbol, sector_counts, max_sector_count):
+                selected.append(symbol)
+                selected_set.add(symbol)
+                _increment_sector_count(symbol, sector_by_symbol, sector_counts)
     return selected
 
 
@@ -112,6 +133,35 @@ def _sector_map_from_ranking(ranking: pd.DataFrame) -> dict[str, str]:
     if ranking.empty or "sector" not in ranking.columns:
         return {}
     return dict(zip(ranking["symbol"].astype(str).str.upper(), ranking["sector"].astype(str), strict=False))
+
+
+def _max_sector_count(top_n: int, max_sector_weight: float) -> int | None:
+    if max_sector_weight >= 1:
+        return None
+    if max_sector_weight <= 0:
+        raise ValueError("max_sector_weight must be greater than zero.")
+    return max(1, floor(top_n * max_sector_weight + 1e-12))
+
+
+def _sector_for_symbol(symbol: str, sector_by_symbol: dict[str, str]) -> str:
+    return (sector_by_symbol.get(symbol.upper()) or "UNKNOWN").strip().upper()
+
+
+def _can_add_symbol(
+    symbol: str,
+    sector_by_symbol: dict[str, str],
+    sector_counts: dict[str, int],
+    max_sector_count: int | None,
+) -> bool:
+    if max_sector_count is None:
+        return True
+    sector = _sector_for_symbol(symbol, sector_by_symbol)
+    return sector_counts.get(sector, 0) < max_sector_count
+
+
+def _increment_sector_count(symbol: str, sector_by_symbol: dict[str, str], sector_counts: dict[str, int]) -> None:
+    sector = _sector_for_symbol(symbol, sector_by_symbol)
+    sector_counts[sector] = sector_counts.get(sector, 0) + 1
 
 
 def _dynamic_stock_weights(ranking: pd.DataFrame, min_weight: float, max_weight: float) -> dict[str, float]:

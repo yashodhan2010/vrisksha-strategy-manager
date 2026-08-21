@@ -653,6 +653,7 @@ def _latest_model_portfolio(
                 "notes": _holding_note(row),
             }
         )
+    _close_weight_rounding_residue(rows, "target_weight")
     validate_weights(rows, "target_weight")
     return rows
 
@@ -691,6 +692,7 @@ def _fixed_allocation_latest_model_portfolio(
                 "notes": "Fixed allocation target weight.",
             }
         )
+    _close_weight_rounding_residue(rows, "target_weight")
     validate_weights(rows, "target_weight")
     return rows
 
@@ -845,3 +847,18 @@ def _clean_float(value: Any) -> float | str:
     if not math.isfinite(number):
         return ""
     return round(number, 10)
+
+
+def _close_weight_rounding_residue(rows: list[dict[str, Any]], key: str, tolerance: float = 1e-8) -> None:
+    if not rows:
+        return
+    weights = [float(row.get(key) or 0.0) for row in rows]
+    residue = round(1.0 - sum(weights), 10)
+    if residue == 0 or abs(residue) > tolerance:
+        return
+    for row in reversed(rows):
+        weight = float(row.get(key) or 0.0)
+        adjusted = weight + residue
+        if adjusted >= 0:
+            row[key] = _clean_float(adjusted)
+            return

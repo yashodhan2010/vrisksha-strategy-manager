@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import json
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
 from app.export import model_portfolio_update
@@ -66,6 +67,38 @@ def test_export_latest_model_portfolio_update_uses_monthly_holdings(monkeypatch,
     assert latest_rows[0]["target_weight"] == "0.6"
     rebalance_rows = _read_csv(path / "rebalance_history.csv")
     assert {row["action"] for row in rebalance_rows} >= {"ADDED", "WEIGHT_CHANGED"}
+
+
+def test_export_latest_model_portfolio_update_closes_weight_rounding_residue(monkeypatch, tmp_path: Path) -> None:
+    db = tmp_path / "update.db"
+    output_dir = tmp_path / "model-portfolio-update"
+    initialize_database(db)
+    monkeypatch.setattr(
+        model_portfolio_update,
+        "load_universe",
+        lambda: [
+            UniverseStock("AAA", "Alpha Ltd", "Software", "Technology", isin="INE000A01001"),
+            UniverseStock("BBB", "Beta Ltd", "Banks", "Financial Services", isin="INE000B01001"),
+            UniverseStock("CCC", "Cash Sleeve", "Safe Asset", "SAFE_ASSET", isin=""),
+        ],
+    )
+    monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_ID", "low_drawdown_dual_momentum_nifty500_v1")
+
+    run_id = create_strategy_run(RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, database_path=db)
+    insert_holding_snapshots(
+        [
+            _holding(run_id, date(2026, 8, 21), "CCC", "SAFE_ASSET", 0.325, 1000.0, "SAFE_ASSET", 0),
+            _holding(run_id, date(2026, 8, 21), "AAA", "Technology", 0.010714285714285714, 110.0, "ENTERED", 1),
+            _holding(run_id, date(2026, 8, 21), "BBB", "Financial Services", 0.6642857142857143, 95.0, "ENTERED", 2),
+        ],
+        db,
+    )
+
+    path = export_latest_model_portfolio_update(output_dir, history_dates=1, database_path=db)
+
+    latest_rows = _read_csv(path / "latest_model_portfolio.csv")
+    total_weight = sum(Decimal(row["target_weight"]) for row in latest_rows)
+    assert total_weight == Decimal("1.0000000000")
 
 
 def _holding(

@@ -49,10 +49,38 @@ def test_allocation_accepts_sector_cap_and_safe_asset() -> None:
     )
 
     assert result.allocation.safe_asset_symbol == "GOLDBEES"
-    assert result.allocation.stock_weights["AAA"] == pytest.approx(0.04)
-    assert result.allocation.stock_weights["BBB"] == pytest.approx(0.04)
+    assert result.selected_symbols == ["AAA", "CCC"]
+    assert result.allocation.stock_weights["AAA"] == pytest.approx(0.05)
+    assert "BBB" not in result.allocation.stock_weights
     assert result.allocation.stock_weights["CCC"] == pytest.approx(0.05)
-    assert result.allocation.safe_asset_weight == pytest.approx(0.87)
+    assert result.allocation.safe_asset_weight == pytest.approx(0.90)
+
+
+def test_top_n_equal_sector_cap_refills_with_lower_ranked_stocks() -> None:
+    ranking = pd.DataFrame(
+        [
+            {"symbol": "H1", "score": 1.0, "rank": 1, "sector": "Healthcare"},
+            {"symbol": "H2", "score": 0.9, "rank": 2, "sector": "Healthcare"},
+            {"symbol": "H3", "score": 0.8, "rank": 3, "sector": "Healthcare"},
+            {"symbol": "H4", "score": 0.7, "rank": 4, "sector": "Healthcare"},
+            {"symbol": "F1", "score": 0.6, "rank": 5, "sector": "Financial Services"},
+            {"symbol": "F2", "score": 0.5, "rank": 6, "sector": "Financial Services"},
+            {"symbol": "C1", "score": 0.4, "rank": 7, "sector": "Capital Goods"},
+        ]
+    )
+
+    result = allocate_from_ranking(
+        ranking,
+        mode="TOP_N_EQUAL",
+        top_n=5,
+        max_stock_weight=0.20,
+        max_sector_weight=0.40,
+    )
+
+    assert result.selected_symbols == ["H1", "H2", "F1", "F2", "C1"]
+    assert set(result.allocation.stock_weights) == {"H1", "H2", "F1", "F2", "C1"}
+    assert set(result.allocation.stock_weights.values()) == {0.20}
+    assert result.allocation.safe_asset_weight == pytest.approx(0.0)
 
 
 def test_select_with_buffer_retains_existing_holdings_inside_buffer() -> None:

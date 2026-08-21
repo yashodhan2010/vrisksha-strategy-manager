@@ -355,7 +355,7 @@ def test_build_finalized_package_uses_profile_objective(tmp_path: Path) -> None:
     assert result.returncode == 1
     assert payload["selection"]["objective"] == "net_return_to_drawdown"
     assert payload["strategy_parameters"]["STRATEGY_TOP_N"] == 60
-    assert payload["strategy_parameters"]["MAX_STOCK_WEIGHT"] == 0.035
+    assert payload["strategy_parameters"]["MAX_STOCK_WEIGHT"] == 1 / 60
 
 
 def test_build_finalized_package_uses_existing_config_when_trials_missing(tmp_path: Path) -> None:

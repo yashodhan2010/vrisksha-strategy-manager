@@ -102,6 +102,8 @@ def _parameters_from_row(row: pd.Series) -> dict[str, Any]:
     high_52w_threshold = 0.80 if high_cutoff_pct is None else (0.0 if high_cutoff_pct == 0 else (100.0 - high_cutoff_pct) / 100.0)
     if max_stock_weight is None and max_stock_weight_pct is not None:
         max_stock_weight = max_stock_weight_pct / 100.0
+    top_n = int(_required_float(row, "top_n"))
+    max_stock_weight = _recalibrated_top_n_equal_max_stock_weight(max_stock_weight or config.MAX_STOCK_WEIGHT, top_n)
     return {
         "BACKTEST_REBALANCES_PER_MONTH": int(_required_float(row, "rebalances_per_month")),
         "STRATEGY_RANKING_METHOD": "AVERAGE_RANK",
@@ -109,8 +111,8 @@ def _parameters_from_row(row: pd.Series) -> dict[str, Any]:
         "RANKING_BETA_WEIGHT": _required_float(row, "beta_weight"),
         "RANKING_VOLATILITY_WEIGHT": _required_float(row, "volatility_weight"),
         "STRATEGY_ALLOCATION_MODE": "TOP_N_EQUAL",
-        "STRATEGY_TOP_N": int(_required_float(row, "top_n")),
-        "MAX_STOCK_WEIGHT": max_stock_weight or config.MAX_STOCK_WEIGHT,
+        "STRATEGY_TOP_N": top_n,
+        "MAX_STOCK_WEIGHT": max_stock_weight,
         "MAX_SECTOR_WEIGHT": max_sector_weight,
         "HIGH_52W_THRESHOLD": high_52w_threshold,
         "MIN_AVG_MOMENTUM_RETURN": 0.0 if min_avg_momentum_pct is None else min_avg_momentum_pct / 100.0,
@@ -132,7 +134,11 @@ def _apply_parameters(parameters: dict[str, Any]) -> None:
     config.STRATEGY_ALLOCATION_MODE = str(parameters["STRATEGY_ALLOCATION_MODE"]).strip().upper()
     config.STRATEGY_TOP_N = int(parameters["STRATEGY_TOP_N"])
     config.BUFFER_PCT = float(parameters.get("BUFFER_PCT") or 0.0)
-    config.MAX_STOCK_WEIGHT = float(parameters["MAX_STOCK_WEIGHT"])
+    config.MAX_STOCK_WEIGHT = _recalibrated_top_n_equal_max_stock_weight(
+        float(parameters["MAX_STOCK_WEIGHT"]),
+        config.STRATEGY_TOP_N,
+        config.STRATEGY_ALLOCATION_MODE,
+    )
     config.MAX_SECTOR_WEIGHT = float(parameters["MAX_SECTOR_WEIGHT"])
     config.HIGH_52W_THRESHOLD = float(parameters["HIGH_52W_THRESHOLD"])
     config.MIN_AVG_MOMENTUM_RETURN = float(parameters.get("MIN_AVG_MOMENTUM_RETURN", 0.0))
@@ -170,6 +176,16 @@ def _optional_bool(row: pd.Series, key: str) -> bool | None:
     if text in {"0", "false", "no", "n"}:
         return False
     return bool(value)
+
+
+def _recalibrated_top_n_equal_max_stock_weight(
+    max_stock_weight: float,
+    top_n: int,
+    allocation_mode: str = "TOP_N_EQUAL",
+) -> float:
+    if allocation_mode.strip().upper() != "TOP_N_EQUAL" or top_n <= 0:
+        return max_stock_weight
+    return 1.0 / top_n
 
 
 def _clean_mapping(payload: dict[str, Any]) -> dict[str, Any]:

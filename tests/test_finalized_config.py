@@ -47,7 +47,7 @@ def test_build_finalized_config_maps_best_experiment_row(tmp_path: Path) -> None
     assert params["STRATEGY_TOP_N"] == 40
     assert params["BACKTEST_REBALANCES_PER_MONTH"] == 2
     assert params["MAX_SECTOR_WEIGHT"] == 1.0
-    assert params["MAX_STOCK_WEIGHT"] == 0.035
+    assert params["MAX_STOCK_WEIGHT"] == 1 / 40
     assert params["HIGH_52W_THRESHOLD"] == 0.8
     assert params["RANKING_MOMENTUM_WEIGHT"] == 0.7
     assert params["BUFFER_PCT"] == 60
@@ -80,7 +80,63 @@ def test_build_finalized_config_maps_max_stock_weight_pct(tmp_path: Path) -> Non
         rank_column="rank_by_net_return_to_drawdown",
     )
 
-    assert payload["strategy_parameters"]["MAX_STOCK_WEIGHT"] == 0.035
+    assert payload["strategy_parameters"]["MAX_STOCK_WEIGHT"] == 1 / 60
+
+
+def test_build_finalized_config_uses_top_n_equal_weight_when_source_cap_is_lower(tmp_path: Path) -> None:
+    results_path = tmp_path / "trials.csv"
+    pd.DataFrame(
+        [
+            {
+                "rank_by_lowest_drawdown_cagr_gt_20_score": 1,
+                "rebalances_per_month": 2,
+                "top_n": 35,
+                "sector_cap_pct": 15,
+                "high_cutoff_pct": 15,
+                "momentum_weight": 0.5,
+                "beta_weight": 0.25,
+                "volatility_weight": 0.25,
+                "buffer_pct": 80,
+                "max_stock_weight_pct": 2.5,
+                "lowest_drawdown_cagr_gt_20_score": -0.16,
+            }
+        ]
+    ).to_csv(results_path, index=False)
+
+    payload = build_finalized_config_from_results(
+        results_path,
+        objective="lowest_drawdown_cagr_gt_20_score",
+        rank_column="rank_by_lowest_drawdown_cagr_gt_20_score",
+    )
+
+    assert payload["strategy_parameters"]["STRATEGY_TOP_N"] == 35
+    assert payload["strategy_parameters"]["MAX_STOCK_WEIGHT"] == 1 / 35
+
+
+def test_build_finalized_config_uses_top_n_equal_weight_when_source_cap_is_higher(tmp_path: Path) -> None:
+    results_path = tmp_path / "trials.csv"
+    pd.DataFrame(
+        [
+            {
+                "rank_by_cagr": 1,
+                "rebalances_per_month": 2,
+                "top_n": 35,
+                "sector_cap_pct": 0,
+                "high_cutoff_pct": 15,
+                "momentum_weight": 0.7,
+                "beta_weight": 0.15,
+                "volatility_weight": 0.15,
+                "buffer_pct": 40,
+                "max_stock_weight": 0.05,
+                "cagr": 0.36,
+            }
+        ]
+    ).to_csv(results_path, index=False)
+
+    payload = build_finalized_config_from_results(results_path)
+
+    assert payload["strategy_parameters"]["STRATEGY_TOP_N"] == 35
+    assert payload["strategy_parameters"]["MAX_STOCK_WEIGHT"] == 1 / 35
 
 
 def test_apply_finalized_config_updates_runtime_config(tmp_path: Path) -> None:
@@ -108,4 +164,29 @@ def test_apply_finalized_config_updates_runtime_config(tmp_path: Path) -> None:
     assert config.BACKTEST_REBALANCES_PER_MONTH == 2
     assert config.BUFFER_PCT == 60
     assert config.RANKING_MOMENTUM_WEIGHT == 0.7
+    assert config.MAX_STOCK_WEIGHT == 1 / 40
     assert json.loads(path.read_text(encoding="utf-8"))["strategy_parameters"]["STRATEGY_TOP_N"] == 40
+
+
+def test_apply_finalized_config_recalibrates_existing_low_cap_to_top_n_equal_weight(tmp_path: Path) -> None:
+    payload = {
+        "strategy_parameters": {
+            "BACKTEST_REBALANCES_PER_MONTH": 2,
+            "STRATEGY_RANKING_METHOD": "AVERAGE_RANK",
+            "RANKING_MOMENTUM_WEIGHT": 0.5,
+            "RANKING_BETA_WEIGHT": 0.25,
+            "RANKING_VOLATILITY_WEIGHT": 0.25,
+            "STRATEGY_ALLOCATION_MODE": "TOP_N_EQUAL",
+            "STRATEGY_TOP_N": 35,
+            "BUFFER_PCT": 80,
+            "MAX_STOCK_WEIGHT": 0.025,
+            "MAX_SECTOR_WEIGHT": 0.15,
+            "HIGH_52W_THRESHOLD": 0.85,
+            "SAFE_ASSET_SYMBOL": "LIQUIDBEES",
+        }
+    }
+    path = write_finalized_config(payload, tmp_path / "final.json")
+
+    apply_finalized_config(path)
+
+    assert config.MAX_STOCK_WEIGHT == 1 / 35
