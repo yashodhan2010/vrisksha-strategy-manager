@@ -21,7 +21,12 @@ from app.data.price_ingestion import fetch_and_store_history
 from app.data.universe_loader import load_universe
 from app.data.universe_sync import UniverseSyncError, sync_universe
 from app.execution.kite_session import exchange_request_token, get_login_url, save_access_token_to_env, validate_saved_access_token
-from app.export import build_strategy_package, export_latest_model_portfolio_update
+from app.export import (
+    build_strategy_package,
+    export_latest_model_portfolio_update,
+    export_live_performance_dashboard,
+    export_live_performance_tracker_index,
+)
 from app.logging_config import get_logger
 from app.admin_dashboard_snapshot import export_admin_dashboard_snapshot
 from app.optimization import (
@@ -39,6 +44,7 @@ from app.storage.repositories import (
     find_completed_backtest_run_by_scenario,
 )
 from app.storage.market_data_repository import get_symbol_price_ranges
+from app.storage.market_data_repository import get_symbol_price_coverage
 from app.strategy_profile import apply_strategy_profile, load_strategy_profile
 from app.strategy_registry import validate_strategy_registry
 from app.strategy.rebalance import RebalanceEngine
@@ -183,6 +189,55 @@ def _history_missing(symbols: list[str], start_date: date, end_date: date) -> tu
     if stale_dates:
         return True, min(stale_dates)
     return False, start_date
+
+
+def _required_signal_price_rows() -> int:
+    return config.BETA_LOOKBACK_DAYS + max(config.MOMENTUM_SKIP_RECENT_DAYS, 0) + 1
+
+
+def _print_signal_coverage_preflight(as_of_date: date) -> None:
+    universe = load_universe()
+    symbols = [stock.symbol for stock in universe]
+    required_rows = _required_signal_price_rows()
+    coverage = get_symbol_price_coverage(symbols, as_of_date)
+    missing = [symbol for symbol in symbols if symbol not in coverage]
+    insufficient = [
+        symbol
+        for symbol in symbols
+        if symbol in coverage and int(coverage[symbol].get("price_rows") or 0) < required_rows
+    ]
+    eligible_count = len(symbols) - len(missing) - len(insufficient)
+    latest_dates: dict[str, int] = {}
+    for symbol in symbols:
+        row = coverage.get(symbol)
+        last_date = str(row.get("last_price_date") or "") if row else ""
+        if last_date:
+            latest_dates[last_date] = latest_dates.get(last_date, 0) + 1
+
+    print(
+        "Signal data coverage: "
+        f"{eligible_count}/{len(symbols)} symbols have at least {required_rows} priced dates "
+        f"for 12M momentum + beta as of {as_of_date.isoformat()}."
+    )
+    if missing:
+        print(f"Missing price history: {len(missing)} symbols ({', '.join(missing[:10])}{'...' if len(missing) > 10 else ''}).")
+    if insufficient:
+        samples = []
+        for symbol in insufficient[:10]:
+            row = coverage[symbol]
+            samples.append(
+                f"{symbol}:{int(row.get('price_rows') or 0)} rows "
+                f"{row.get('first_price_date') or '?'}..{row.get('last_price_date') or '?'}"
+            )
+        print(f"Insufficient signal history: {len(insufficient)} symbols ({'; '.join(samples)}{'...' if len(insufficient) > 10 else ''}).")
+    if latest_dates:
+        latest_summary = ", ".join(f"{item}:{count}" for item, count in sorted(latest_dates.items(), reverse=True)[:3])
+        print(f"Latest stored price dates: {latest_summary}.")
+    if eligible_count < config.STRATEGY_TOP_N:
+        print(
+            "WARNING: Fewer symbols have sufficient signal history than STRATEGY_TOP_N; "
+            "the rebalance may produce a sparse or empty model portfolio."
+        )
 
 
 def _ensure_history_for_finalized_run(args: argparse.Namespace, start_date: date, end_date: date) -> None:
@@ -375,6 +430,7 @@ def cmd_monthly_run(args: argparse.Namespace) -> int:
         status = RunStatus.SKIPPED
     else:
         try:
+            _print_signal_coverage_preflight(today)
             result = RebalanceEngine(run_id=run_id, run_date=today).run()
         except ValueError as exc:
             message = f"Scheduled rebalance failed: {exc}"
@@ -920,6 +976,37 @@ def cmd_build_model_portfolio_update(args: argparse.Namespace) -> int:
         print(f"Model portfolio update export failed: {exc}")
         return 1
     print(f"Model portfolio update exported to {output_path}")
+
+    try:
+        live_output_path = export_live_performance_dashboard(
+            strategy_id=config.STRATEGY_PACKAGE_ID,
+            strategy_slug=config.STRATEGY_PACKAGE_SLUG,
+        )
+        tracker_output_path = export_live_performance_tracker_index()
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"Live performance dashboard export failed: {exc}")
+        return 1
+    print(f"Live performance dashboard exported to {live_output_path}")
+    print(f"All-strategy live tracker exported to {tracker_output_path / 'index.html'}")
+    return 0
+
+
+def cmd_export_live_performance_dashboard(args: argparse.Namespace) -> int:
+    initialize_database()
+    try:
+        profile = apply_strategy_profile(args.strategy_profile or config.STRATEGY_PROFILE_PATH)
+        output_path = export_live_performance_dashboard(
+            output_dir=args.output_dir,
+            strategy_id=str(profile.get("strategy_id") or config.STRATEGY_PACKAGE_ID),
+            strategy_slug=str(profile.get("slug") or config.STRATEGY_PACKAGE_SLUG),
+        )
+        tracker_output_path = export_live_performance_tracker_index()
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Live performance dashboard export failed: {exc}")
+        return 1
+    print(f"Live performance dashboard exported to {output_path}")
+    print(f"Open {output_path / 'index.html'} in your browser.")
+    print(f"All-strategy live tracker exported to {tracker_output_path / 'index.html'}")
     return 0
 
 
@@ -1162,6 +1249,11 @@ def build_parser() -> argparse.ArgumentParser:
     model_update.add_argument("--no-benchmark", action="store_true")
     model_update.add_argument("--no-safe-asset", action="store_true")
     model_update.set_defaults(func=cmd_build_model_portfolio_update)
+
+    live_dashboard = subparsers.add_parser("export-live-performance-dashboard")
+    live_dashboard.add_argument("--strategy-profile")
+    live_dashboard.add_argument("--output-dir")
+    live_dashboard.set_defaults(func=cmd_export_live_performance_dashboard)
 
     subparsers.add_parser("kite-login-url").set_defaults(func=cmd_kite_login_url)
     subparsers.add_parser("kite-token-status").set_defaults(func=cmd_kite_token_status)

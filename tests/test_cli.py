@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from app import cli
+
 
 def _env(tmp_path: Path) -> dict[str, str]:
     env = os.environ.copy()
@@ -416,3 +418,54 @@ def test_build_finalized_package_uses_existing_config_when_trials_missing(tmp_pa
     assert "Using existing finalized config" in result.stdout
     assert "Optimization results file not found" not in result.stdout
     assert "No market prices found" in result.stdout
+
+
+def test_build_model_portfolio_update_exports_live_dashboard(monkeypatch, tmp_path: Path, capsys) -> None:
+    calls: list[tuple[str, object]] = []
+    monkeypatch.setattr(cli, "initialize_database", lambda: None)
+    monkeypatch.setattr(
+        cli,
+        "_apply_profile_and_finalized_config",
+        lambda strategy_profile, finalized_config: {"finalized_config_path": "finalized.json"},
+    )
+    monkeypatch.setattr(cli, "sync_universe", lambda: {"active_rows": 1})
+    monkeypatch.setattr(cli, "cmd_monthly_run", lambda args: 0)
+    monkeypatch.setattr(
+        cli,
+        "export_latest_model_portfolio_update",
+        lambda output_dir, history_dates: calls.append(("model", output_dir)) or tmp_path / "model-update",
+    )
+    monkeypatch.setattr(
+        cli,
+        "export_live_performance_dashboard",
+        lambda strategy_id, strategy_slug: calls.append(("live", (strategy_id, strategy_slug))) or tmp_path / "live-performance",
+    )
+    monkeypatch.setattr(
+        cli,
+        "export_live_performance_tracker_index",
+        lambda: calls.append(("tracker", None)) or tmp_path / "live-performance",
+    )
+    monkeypatch.setattr(cli.config, "STRATEGY_PACKAGE_ID", "test_strategy_v1")
+    monkeypatch.setattr(cli.config, "STRATEGY_PACKAGE_SLUG", "test-strategy")
+
+    status = cli.cmd_build_model_portfolio_update(
+        __import__("argparse").Namespace(
+            strategy_profile="profile.json",
+            finalized_config=None,
+            output_dir=None,
+            history_dates=2,
+            history_lookback_days=10,
+            no_fetch_history=True,
+            selenium_token=False,
+            timeout_seconds=1,
+            symbols=None,
+            no_benchmark=False,
+            no_safe_asset=False,
+        )
+    )
+
+    assert status == 0
+    assert calls == [("model", None), ("live", ("test_strategy_v1", "test-strategy")), ("tracker", None)]
+    stdout = capsys.readouterr().out
+    assert "Live performance dashboard exported" in stdout
+    assert "All-strategy live tracker exported" in stdout

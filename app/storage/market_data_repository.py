@@ -132,6 +132,38 @@ def get_symbol_price_ranges(
     return {str(row["symbol"]).upper(): dict(row) for row in rows}
 
 
+def get_symbol_price_coverage(
+    symbols: list[str],
+    end_date: date,
+    database_path: str | Path = config.DATABASE_PATH,
+) -> dict[str, dict[str, Any]]:
+    cleaned = sorted({symbol.strip().upper() for symbol in symbols if symbol.strip()})
+    if not cleaned:
+        return {}
+    placeholders = ",".join("?" for _ in cleaned)
+    with get_connection(database_path) as connection:
+        try:
+            rows = connection.execute(
+                f"""
+                SELECT
+                    symbol,
+                    COUNT(DISTINCT CASE WHEN COALESCE(adjusted_close, close) IS NOT NULL THEN price_date END) AS price_rows,
+                    MIN(CASE WHEN COALESCE(adjusted_close, close) IS NOT NULL THEN price_date END) AS first_price_date,
+                    MAX(CASE WHEN COALESCE(adjusted_close, close) IS NOT NULL THEN price_date END) AS last_price_date
+                FROM market_prices
+                WHERE symbol IN ({placeholders})
+                    AND price_date <= ?
+                GROUP BY symbol
+                """,
+                (*cleaned, end_date.isoformat()),
+            ).fetchall()
+        except sqlite3.OperationalError as exc:
+            if "no such table" in str(exc).lower():
+                return {}
+            raise
+    return {str(row["symbol"]).upper(): dict(row) for row in rows}
+
+
 def get_latest_ingestion_run(database_path: str | Path = config.DATABASE_PATH) -> dict[str, Any] | None:
     with get_connection(database_path) as connection:
         row = connection.execute("SELECT * FROM data_ingestion_runs ORDER BY id DESC LIMIT 1").fetchone()

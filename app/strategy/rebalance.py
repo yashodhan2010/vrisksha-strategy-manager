@@ -58,7 +58,7 @@ class RebalanceEngine:
         universe = load_universe()
         symbols = [stock.symbol for stock in universe]
         universe_by_symbol = {stock.symbol: stock for stock in universe}
-        price_pivot = self._pivot_prices(price_frame, symbols)
+        price_pivot = self._pivot_prices(price_frame, symbols + config.SAFE_ASSET_SYMBOLS)
         if price_pivot.empty:
             raise ValueError("No universe symbols have stored prices. Run fetch-history before rebalance.")
 
@@ -80,6 +80,8 @@ class RebalanceEngine:
             price_pivot=price_pivot,
             snapshot_date=rebalance_date,
             previous_holdings=set(previous_holdings),
+            safe_asset_symbol=allocation.liquidbees_symbol,
+            safe_asset_weight=allocation.liquidbees_weight,
         )
         insert_portfolio_snapshot(
             run_id=self.run_id,
@@ -95,7 +97,7 @@ class RebalanceEngine:
         )
         insert_holding_snapshots(rows, self.database_path)
         proposals, buy_scaling_ratio = self._order_proposals(
-            target_weights=allocation.stock_weights,
+            target_weights=self._target_weights_with_safe_asset(allocation.stock_weights, allocation.liquidbees_symbol, allocation.liquidbees_weight),
             previous_holdings=previous_holdings,
             price_pivot=price_pivot,
             snapshot_date=rebalance_date,
@@ -121,7 +123,8 @@ class RebalanceEngine:
         return frame.dropna(subset=["price"])
 
     def _pivot_prices(self, prices: pd.DataFrame, symbols: list[str]) -> pd.DataFrame:
-        filtered = prices[prices["symbol"].isin(symbols)]
+        cleaned_symbols = {symbol.strip().upper() for symbol in symbols if symbol.strip()}
+        filtered = prices[prices["symbol"].isin(cleaned_symbols)]
         pivot = filtered.pivot_table(index="price_date", columns="symbol", values="price", aggfunc="last").sort_index()
         return _bounded_forward_fill(pivot)
 
@@ -156,6 +159,8 @@ class RebalanceEngine:
         price_pivot: pd.DataFrame,
         snapshot_date: date,
         previous_holdings: set[str],
+        safe_asset_symbol: str,
+        safe_asset_weight: float,
     ) -> list[dict[str, object]]:
         rank_by_symbol = dict(zip(ranking["symbol"], ranking["rank"], strict=False)) if not ranking.empty else {}
         rows: list[dict[str, object]] = []
@@ -181,7 +186,71 @@ class RebalanceEngine:
                     "total_months_held": 0,
                 }
             )
+        if safe_asset_weight > 0:
+            row = self._safe_asset_holding_row(safe_asset_symbol, safe_asset_weight, price_pivot, snapshot_date)
+            if row:
+                rows.append(row)
         return rows
+
+    def _safe_asset_holding_row(
+        self,
+        safe_asset_symbol: str,
+        safe_asset_weight: float,
+        price_pivot: pd.DataFrame,
+        snapshot_date: date,
+    ) -> dict[str, object] | None:
+        usable_symbol = self._usable_safe_asset_symbol(safe_asset_symbol, price_pivot, snapshot_date)
+        if usable_symbol is None:
+            self.warnings.append(
+                f"No usable reference price for {safe_asset_symbol}; residual allocation treated as cash in holdings export."
+            )
+            return None
+        price = float(price_pivot.at[snapshot_date, usable_symbol])
+        quantity = floor((self.portfolio_value * safe_asset_weight) / price) if price > 0 else None
+        return {
+            "run_id": self.run_id,
+            "snapshot_date": snapshot_date,
+            "symbol": usable_symbol,
+            "industry": "SAFE_ASSET",
+            "sector": "SAFE_ASSET",
+            "rank": None,
+            "selected": True,
+            "weight": safe_asset_weight,
+            "quantity": quantity,
+            "reference_price": price,
+            "market_value": (quantity * price) if quantity is not None else None,
+            "holding_action": "SAFE_ASSET",
+            "consecutive_months_held": 0,
+            "total_months_held": 0,
+        }
+
+    def _usable_safe_asset_symbol(
+        self,
+        safe_asset_symbol: str,
+        price_pivot: pd.DataFrame,
+        snapshot_date: date,
+    ) -> str | None:
+        for symbol in [safe_asset_symbol, config.SAFE_ASSET_FALLBACK_SYMBOL]:
+            if not symbol or symbol not in price_pivot.columns:
+                continue
+            price = price_pivot.at[snapshot_date, symbol]
+            if pd.notna(price) and float(price) > 0:
+                return symbol
+        return None
+
+    def _target_weights_with_safe_asset(
+        self,
+        stock_weights: dict[str, float],
+        safe_asset_symbol: str,
+        safe_asset_weight: float,
+    ) -> dict[str, float]:
+        target_weights = dict(stock_weights)
+        if safe_asset_weight <= 0:
+            return target_weights
+        safe_asset = safe_asset_symbol.strip().upper()
+        if safe_asset:
+            target_weights[safe_asset] = target_weights.get(safe_asset, 0.0) + safe_asset_weight
+        return target_weights
 
     def _order_proposals(
         self,

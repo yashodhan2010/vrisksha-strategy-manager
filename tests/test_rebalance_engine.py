@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date, timedelta
 from pathlib import Path
 
+import pytest
+
 from app.data.historical_data import PriceBar
 from app.storage.database import get_connection, initialize_database
 from app.storage.market_data_repository import upsert_price_bars
@@ -36,7 +38,12 @@ def test_rebalance_engine_persists_holdings_and_order_proposals(monkeypatch, tmp
     dates = _business_dates(date(2023, 1, 2), 320)
     bars: list[PriceBar] = []
     for index, price_date in enumerate(dates):
-        for symbol, base, drift in [("AAA", 100.0, 0.4), ("BBB", 90.0, 0.2), ("NIFTY500", 1000.0, 0.15)]:
+        for symbol, base, drift in [
+            ("AAA", 100.0, 0.4),
+            ("BBB", 90.0, 0.2),
+            ("NIFTY500", 1000.0, 0.15),
+            ("LIQUIDBEES", 1000.0, 0.01),
+        ]:
             price = base + index * drift
             bars.append(PriceBar(symbol, price_date, price, price, price, price, price, 1000, "TEST", "now"))
     upsert_price_bars(bars, db)
@@ -47,8 +54,8 @@ def test_rebalance_engine_persists_holdings_and_order_proposals(monkeypatch, tmp
     result = RebalanceEngine(run_id, dates[-1], 100_000, 5_000, db).run()
 
     assert result.selected_count == 2
-    assert result.proposal_count == 2
-    assert result.buy_scaling_ratio == 0.5
+    assert result.proposal_count == 3
+    assert result.buy_scaling_ratio == pytest.approx(0.05)
     with get_connection(db) as connection:
         holdings = connection.execute("SELECT COUNT(*) FROM holding_snapshots WHERE run_id = ?", (run_id,)).fetchone()[0]
         orders = connection.execute("SELECT COUNT(*) FROM order_proposals WHERE run_id = ?", (run_id,)).fetchone()[0]
@@ -60,7 +67,13 @@ def test_rebalance_engine_persists_holdings_and_order_proposals(monkeypatch, tmp
             "SELECT COUNT(*) FROM order_proposals WHERE run_id = ? AND quantity != CAST(quantity AS INTEGER)",
             (run_id,),
         ).fetchone()[0]
-    assert holdings == 2
-    assert orders == 2
+        safe_asset = connection.execute(
+            "SELECT weight, holding_action FROM holding_snapshots WHERE run_id = ? AND symbol = 'LIQUIDBEES'",
+            (run_id,),
+        ).fetchone()
+    assert holdings == 3
+    assert orders == 3
     assert buy_value <= 5_000
     assert fractional_quantities == 0
+    assert safe_asset["weight"] == pytest.approx(0.90)
+    assert safe_asset["holding_action"] == "SAFE_ASSET"

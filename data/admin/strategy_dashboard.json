@@ -1,12 +1,12 @@
 {
-  "as_of_date": "2026-08-14",
+  "as_of_date": "2026-08-16",
   "content_policy": {
     "broker_secrets_included": false,
     "holdings_rows_included": false,
     "performance_metrics_included": false,
     "subscriber_logic_included": false
   },
-  "generated_at": "2026-08-14T23:54:27+05:30",
+  "generated_at": "2026-08-16T17:31:44+05:30",
   "schema_version": "1.0.0",
   "source_registry": "strategies/registry.json",
   "strategies": [
@@ -348,12 +348,12 @@
       },
       "finalized_config_path": "",
       "last_successful_run": {
-        "date": "2026-07-01",
-        "generated_at": "2026-08-14T23:54:13+05:30",
+        "date": "2026-08-14",
+        "generated_at": "2026-08-16T17:27:52+05:30",
         "run_id": null,
         "type": "strategy_package"
       },
-      "latest_model_portfolio_as_of": "2026-07-01",
+      "latest_model_portfolio_as_of": "2026-08-14",
       "latest_model_portfolio_exists": true,
       "latest_model_portfolio_path": "data/output/packages/diversified-asset-income/strategy-package/latest_model_portfolio.csv",
       "model_portfolio_update_dir": "data/output/packages/diversified-asset-income/model-portfolio-update",
@@ -375,7 +375,7 @@
       },
       "slug": "diversified-asset-income",
       "strategy_id": "diversified_asset_income_v1",
-      "universe": "InvIT, REIT, Gold, Debt, Nifty 50"
+      "universe": "Equity, debt, InvIT, REIT, and gold listed ETF/trust universe"
     }
   ],
   "validation": {

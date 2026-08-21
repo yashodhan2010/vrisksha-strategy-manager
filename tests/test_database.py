@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import date
 
 from app.storage.database import get_connection, initialize_database
-from app.storage.market_data_repository import get_symbol_price_ranges
+from app.storage.market_data_repository import get_symbol_price_coverage, get_symbol_price_ranges
 from app.storage.repositories import (
     add_audit_event,
     create_backtest_run,
@@ -137,3 +137,32 @@ def test_symbol_price_ranges_tolerates_uninitialized_database(tmp_path: Path) ->
     ranges = get_symbol_price_ranges(["AAA"], tmp_path / "empty.db")
 
     assert ranges == {}
+
+
+def test_symbol_price_coverage_counts_priced_dates_through_as_of_date(tmp_path: Path) -> None:
+    db = tmp_path / "test.db"
+    initialize_database(db)
+    with get_connection(db) as connection:
+        connection.executemany(
+            """
+            INSERT INTO market_prices (
+                symbol, price_date, open, high, low, close, adjusted_close, volume, source, fetched_at
+            )
+            VALUES (?, ?, 1, 1, 1, ?, ?, 10, 'TEST', 'now')
+            """,
+            [
+                ("AAA", "2024-01-01", 10, 10),
+                ("AAA", "2024-01-02", 11, None),
+                ("AAA", "2024-01-03", 12, 12),
+                ("AAA", "2024-01-04", 13, 13),
+                ("BBB", "2024-01-01", None, None),
+            ],
+        )
+
+    coverage = get_symbol_price_coverage(["AAA", "BBB", "CCC"], date(2024, 1, 3), db)
+
+    assert coverage["AAA"]["price_rows"] == 3
+    assert coverage["AAA"]["first_price_date"] == "2024-01-01"
+    assert coverage["AAA"]["last_price_date"] == "2024-01-03"
+    assert coverage["BBB"]["price_rows"] == 0
+    assert "CCC" not in coverage

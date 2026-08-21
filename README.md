@@ -2,7 +2,7 @@
 
 Local Python foundation for Indian-equities strategy research, optimization, backtesting, model-portfolio generation, and portable Vriksha strategy-package exports.
 
-This repository currently contains four strategy profiles: Dual Momentum, Conservative Dual Momentum, Low Drawdown Dual Momentum, and Diversified Asset Income. Each strategy owns its profile, methodology files, engine or optimizer path, and Vriksha package output folder. See [docs/strategy_harness.md](docs/strategy_harness.md) for the strict operating contract and [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
+This repository currently contains four active strategy profiles: Dual Momentum, Low Drawdown Dual Momentum, Multi Asset ETF Dual Momentum, and Diversified Asset Income. Each strategy owns its profile, methodology files, engine or optimizer path, and Vriksha package output folder. See [docs/strategy_harness.md](docs/strategy_harness.md) for the strict operating contract and [docs/strategy_factory.md](docs/strategy_factory.md) for the reusable profile-based workflow.
 
 This repository does not own Vriksha website accounts, payments, subscriptions, or access control.
 
@@ -48,19 +48,23 @@ Run these from the repository root.
 | Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --selenium-token` |
 | Dual Momentum | Generate latest live/paper model portfolio only | `python -m app.main monthly-run --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json` |
 | Dual Momentum | Refresh data daily and rebalance only on configured dates | `python -m app.main auto-daily-run --selenium-token --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json` |
-| Conservative Dual Momentum | Rerun net-Calmar optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json` |
-| Conservative Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
-| Conservative Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/conservative-dual-momentum/strategy_profile.json --selenium-token` |
 | Low Drawdown Dual Momentum | Rerun low-drawdown-with-CAGR-hurdle optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json` |
 | Low Drawdown Dual Momentum | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --start-date 2016-01-01 --end-date 2026-07-20 --initial-capital 1000000 --no-fetch-history` |
 | Low Drawdown Dual Momentum | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --selenium-token` |
 | Diversified Asset Income | Run fixed-allocation historical performance with dividends/distributions | `python -m app.main run-fixed-allocation-backtest --strategy-profile strategies/multi-asset-strategies/diversified-asset-income/strategy_profile.json --start-date 2017-01-01 --end-date 2026-07-20 --initial-capital 1000000` |
 | Future strategy | Rerun optimization and refresh best parameters | `python -m app.main refresh-finalized-parameters --strategy-profile strategies/<strategy-family>/<strategy-slug>/strategy_profile.json` |
 | Future optimized strategy | Build finalized Vriksha package | `python -m app.main build-finalized-package --strategy-profile strategies/<strategy-family>/<strategy-slug>/strategy_profile.json --start-date YYYY-MM-DD --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token` |
-| Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-slug>/strategy_profile.json --selenium-token` |
+| Future strategy | Build latest Vriksha model portfolio update | `python -m app.main build-model-portfolio-update --strategy-profile strategies/<strategy-family>/<strategy-slug>/strategy_profile.json --selenium-token` |
 | All strategies | Export safe Streamlit admin snapshot | `python -m app.main export-admin-dashboard` |
 | All strategies | Publish updated Streamlit admin snapshot | `python -m app.main export-admin-dashboard; git add data/admin/strategy_dashboard.json; git commit -m "Update admin dashboard snapshot"; git push origin main` |
 | All strategies | Open local admin dashboard | `streamlit run dashboards/admin_app.py` |
+
+To run the two active equity dual-momentum model-portfolio updates together, use PowerShell from the repository root:
+
+```powershell
+python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/dual-momentum/strategy_profile.json --selenium-token
+python -m app.main build-model-portfolio-update --strategy-profile strategies/dual-momentum-strategies/low-drawdown-dual-momentum/strategy_profile.json --selenium-token
+```
 
 Before committing any strategy/profile/doc change, run:
 
