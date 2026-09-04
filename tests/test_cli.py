@@ -469,3 +469,98 @@ def test_build_model_portfolio_update_exports_live_dashboard(monkeypatch, tmp_pa
     stdout = capsys.readouterr().out
     assert "Live performance dashboard exported" in stdout
     assert "All-strategy live tracker exported" in stdout
+
+
+def test_export_live_performance_tracker_exports_all_registry_profiles(monkeypatch, tmp_path: Path, capsys) -> None:
+    calls: list[tuple[str, object]] = []
+    profiles = [
+        {"strategy_id": "first_v1", "slug": "first-strategy"},
+        {"strategy_id": "second_v1", "slug": "second-strategy"},
+    ]
+    output_root = tmp_path / "live-performance"
+    monkeypatch.setattr(cli, "initialize_database", lambda: None)
+    monkeypatch.setattr(cli, "load_strategy_registry", lambda registry: [Path("first.json"), Path("second.json")])
+    monkeypatch.setattr(cli, "apply_strategy_profile", lambda profile_path: profiles.pop(0))
+    monkeypatch.setattr(
+        cli,
+        "export_live_performance_dashboard",
+        lambda output_dir, strategy_id, strategy_slug: calls.append(
+            ("dashboard", (Path(output_dir), strategy_id, strategy_slug))
+        )
+        or Path(output_dir),
+    )
+    monkeypatch.setattr(
+        cli,
+        "export_live_performance_tracker_index",
+        lambda output_dir, registry_path: calls.append(("tracker", (Path(output_dir), registry_path))) or Path(output_dir),
+    )
+
+    status = cli.cmd_export_live_performance_tracker(
+        __import__("argparse").Namespace(
+            registry="strategies/registry.json",
+            output_dir=str(output_root),
+        )
+    )
+
+    assert status == 0
+    assert calls == [
+        ("dashboard", (output_root / "first-strategy", "first_v1", "first-strategy")),
+        ("dashboard", (output_root / "second-strategy", "second_v1", "second-strategy")),
+        ("tracker", (output_root, "strategies/registry.json")),
+    ]
+    stdout = capsys.readouterr().out
+    assert "All-strategy live tracker exported" in stdout
+
+
+def test_export_live_performance_tracker_can_fetch_history_first(monkeypatch, tmp_path: Path) -> None:
+    calls: list[tuple[str, object]] = []
+    profiles = [
+        {"strategy_id": "first_v1", "slug": "first-strategy"},
+        {"strategy_id": "second_v1", "slug": "second-strategy"},
+    ]
+    monkeypatch.setattr(cli, "initialize_database", lambda: None)
+    monkeypatch.setattr(cli, "load_strategy_registry", lambda registry: [Path("first.json"), Path("second.json")])
+    monkeypatch.setattr(cli, "apply_strategy_profile", lambda profile_path: profiles.pop(0))
+    monkeypatch.setattr(cli, "_refresh_kite_token_if_needed", lambda use_selenium, timeout_seconds: calls.append(("token", (use_selenium, timeout_seconds))))
+    monkeypatch.setattr(
+        cli,
+        "fetch_and_store_history",
+        lambda start_date, end_date, symbols, include_benchmark, include_safe_asset: calls.append(
+            ("fetch", (symbols, include_benchmark, include_safe_asset))
+        )
+        or __import__("app.data.historical_data", fromlist=["FetchResult"]).FetchResult(2, 4, [], []),
+    )
+    monkeypatch.setattr(
+        cli,
+        "export_live_performance_dashboard",
+        lambda output_dir, strategy_id, strategy_slug: calls.append(("dashboard", strategy_slug)) or Path(output_dir),
+    )
+    monkeypatch.setattr(
+        cli,
+        "export_live_performance_tracker_index",
+        lambda output_dir, registry_path: calls.append(("tracker", registry_path)) or Path(output_dir),
+    )
+
+    status = cli.cmd_export_live_performance_tracker(
+        __import__("argparse").Namespace(
+            registry="strategies/registry.json",
+            output_dir=str(tmp_path / "live-performance"),
+            fetch_history=True,
+            history_lookback_days=5,
+            selenium_token=True,
+            timeout_seconds=12,
+            symbols=None,
+            no_benchmark=False,
+            no_safe_asset=False,
+        )
+    )
+
+    assert status == 0
+    assert calls == [
+        ("token", (True, 12)),
+        ("fetch", (None, True, True)),
+        ("dashboard", "first-strategy"),
+        ("fetch", (None, True, True)),
+        ("dashboard", "second-strategy"),
+        ("tracker", "strategies/registry.json"),
+    ]

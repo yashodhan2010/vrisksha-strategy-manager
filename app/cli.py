@@ -46,7 +46,7 @@ from app.storage.repositories import (
 from app.storage.market_data_repository import get_symbol_price_ranges
 from app.storage.market_data_repository import get_symbol_price_coverage
 from app.strategy_profile import apply_strategy_profile, load_strategy_profile
-from app.strategy_registry import validate_strategy_registry
+from app.strategy_registry import load_strategy_registry, validate_strategy_registry
 from app.strategy.rebalance import RebalanceEngine
 from app.strategy.models import RunMode, RunStatus, RunType
 
@@ -1010,6 +1010,63 @@ def cmd_export_live_performance_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_export_live_performance_tracker(args: argparse.Namespace) -> int:
+    initialize_database()
+    fetch_history = bool(getattr(args, "fetch_history", False))
+    try:
+        profile_paths = load_strategy_registry(args.registry)
+        output_root = Path(args.output_dir) if args.output_dir else Path("data/output/live-performance")
+        exported_paths = []
+        if fetch_history:
+            history_lookback_days = int(getattr(args, "history_lookback_days", config.AUTOMATION_HISTORY_LOOKBACK_DAYS))
+            if history_lookback_days <= 0:
+                print("--history-lookback-days must be greater than zero.")
+                return 2
+            _refresh_kite_token_if_needed(
+                bool(getattr(args, "selenium_token", False)),
+                int(getattr(args, "timeout_seconds", config.SELENIUM_LOGIN_TIMEOUT_SECONDS)),
+            )
+            history_start_date = date.today() - timedelta(days=history_lookback_days)
+            history_end_date = date.today()
+        for profile_path in profile_paths:
+            profile = apply_strategy_profile(profile_path)
+            if fetch_history:
+                print(f"Fetching recent history for {profile.get('slug')}: {history_start_date} to {history_end_date}...")
+                fetch_result = fetch_and_store_history(
+                    start_date=history_start_date,
+                    end_date=history_end_date,
+                    symbols=getattr(args, "symbols", None) or None,
+                    include_benchmark=not bool(getattr(args, "no_benchmark", False)),
+                    include_safe_asset=not bool(getattr(args, "no_safe_asset", False)),
+                )
+                print(
+                    f"Historical data refreshed for {profile.get('slug')}: "
+                    f"{fetch_result.stored_rows} rows stored for {fetch_result.requested_symbols} requested symbols."
+                )
+                if fetch_result.missing_symbols:
+                    print(f"Missing symbols: {', '.join(fetch_result.missing_symbols[:20])}")
+                    if len(fetch_result.missing_symbols) > 20:
+                        print(f"...and {len(fetch_result.missing_symbols) - 20} more.")
+            strategy_output_dir = output_root / str(profile.get("slug") or config.STRATEGY_PACKAGE_SLUG)
+            output_path = export_live_performance_dashboard(
+                output_dir=strategy_output_dir,
+                strategy_id=str(profile.get("strategy_id") or config.STRATEGY_PACKAGE_ID),
+                strategy_slug=str(profile.get("slug") or config.STRATEGY_PACKAGE_SLUG),
+            )
+            exported_paths.append(output_path)
+        tracker_output_path = export_live_performance_tracker_index(
+            output_dir=output_root,
+            registry_path=args.registry,
+        )
+    except (FileNotFoundError, ImportError, UniverseSyncError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Live performance tracker export failed: {exc}")
+        return 1
+    for output_path in exported_paths:
+        print(f"Live performance dashboard exported to {output_path}")
+    print(f"All-strategy live tracker exported to {tracker_output_path / 'index.html'}")
+    return 0
+
+
 def cmd_kite_login_url(_args: argparse.Namespace) -> int:
     try:
         print(get_login_url())
@@ -1254,6 +1311,18 @@ def build_parser() -> argparse.ArgumentParser:
     live_dashboard.add_argument("--strategy-profile")
     live_dashboard.add_argument("--output-dir")
     live_dashboard.set_defaults(func=cmd_export_live_performance_dashboard)
+
+    live_tracker = subparsers.add_parser("export-live-performance-tracker")
+    live_tracker.add_argument("--registry", default="strategies/registry.json")
+    live_tracker.add_argument("--output-dir")
+    live_tracker.add_argument("--fetch-history", action="store_true")
+    live_tracker.add_argument("--history-lookback-days", type=int, default=config.AUTOMATION_HISTORY_LOOKBACK_DAYS)
+    live_tracker.add_argument("--symbols", nargs="*")
+    live_tracker.add_argument("--selenium-token", action="store_true")
+    live_tracker.add_argument("--timeout-seconds", type=int, default=config.SELENIUM_LOGIN_TIMEOUT_SECONDS)
+    live_tracker.add_argument("--no-benchmark", action="store_true")
+    live_tracker.add_argument("--no-safe-asset", action="store_true")
+    live_tracker.set_defaults(func=cmd_export_live_performance_tracker)
 
     subparsers.add_parser("kite-login-url").set_defaults(func=cmd_kite_login_url)
     subparsers.add_parser("kite-token-status").set_defaults(func=cmd_kite_token_status)

@@ -32,9 +32,16 @@ def test_export_latest_model_portfolio_update_uses_monthly_holdings(monkeypatch,
     monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_INTERNAL_NAME", "Dual Momentum")
     monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_PORTFOLIO_OBJECTIVE", "Grow my Wealth")
 
-    first_run = create_strategy_run(RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, database_path=db)
-    stale_second_run = create_strategy_run(RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, database_path=db)
-    second_run = create_strategy_run(RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, database_path=db)
+    run_config = {"strategy_id": "dual_momentum_nifty500_v1", "strategy_slug": "dual-momentum"}
+    first_run = create_strategy_run(
+        RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, config_payload=run_config, database_path=db
+    )
+    stale_second_run = create_strategy_run(
+        RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, config_payload=run_config, database_path=db
+    )
+    second_run = create_strategy_run(
+        RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, config_payload=run_config, database_path=db
+    )
     skipped_run = create_strategy_run(RunType.MONTHLY, RunMode.PAPER, RunStatus.STARTED, database_path=db)
     complete_strategy_run(skipped_run, RunStatus.SKIPPED, "Weekend skip", database_path=db)
 
@@ -84,7 +91,13 @@ def test_export_latest_model_portfolio_update_closes_weight_rounding_residue(mon
     )
     monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_ID", "low_drawdown_dual_momentum_nifty500_v1")
 
-    run_id = create_strategy_run(RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, database_path=db)
+    run_id = create_strategy_run(
+        RunType.MONTHLY,
+        RunMode.PAPER,
+        RunStatus.COMPLETED,
+        config_payload={"strategy_id": "low_drawdown_dual_momentum_nifty500_v1"},
+        database_path=db,
+    )
     insert_holding_snapshots(
         [
             _holding(run_id, date(2026, 8, 21), "CCC", "SAFE_ASSET", 0.325, 1000.0, "SAFE_ASSET", 0),
@@ -99,6 +112,52 @@ def test_export_latest_model_portfolio_update_closes_weight_rounding_residue(mon
     latest_rows = _read_csv(path / "latest_model_portfolio.csv")
     total_weight = sum(Decimal(row["target_weight"]) for row in latest_rows)
     assert total_weight == Decimal("1.0000000000")
+
+
+def test_export_latest_model_portfolio_update_filters_history_by_strategy(monkeypatch, tmp_path: Path) -> None:
+    db = tmp_path / "update.db"
+    output_dir = tmp_path / "model-portfolio-update"
+    initialize_database(db)
+    monkeypatch.setattr(
+        model_portfolio_update,
+        "load_universe",
+        lambda: [
+            UniverseStock("AAA", "Alpha Ltd", "Software", "Technology", isin="INE000A01001"),
+            UniverseStock("BBB", "Beta Ltd", "Banks", "Financial Services", isin="INE000B01001"),
+            UniverseStock("CCC", "Contaminant Ltd", "Pharma", "Healthcare", isin="INE000C01001"),
+        ],
+    )
+    monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_ID", "target_strategy_v1")
+    monkeypatch.setattr("app.export.model_portfolio_update.config.STRATEGY_PACKAGE_SLUG", "target-strategy")
+
+    target_config = {"strategy_id": "target_strategy_v1", "strategy_slug": "target-strategy"}
+    other_config = {"strategy_id": "other_strategy_v1", "strategy_slug": "other-strategy"}
+    target_aug11 = create_strategy_run(
+        RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, config_payload=target_config, database_path=db
+    )
+    other_aug11 = create_strategy_run(
+        RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, config_payload=other_config, database_path=db
+    )
+    target_aug21 = create_strategy_run(
+        RunType.MONTHLY, RunMode.PAPER, RunStatus.COMPLETED, config_payload=target_config, database_path=db
+    )
+    insert_holding_snapshots(
+        [
+            _holding(target_aug11, date(2026, 8, 11), "AAA", "Technology", 0.50, 100.0, "ENTERED", 1),
+            _holding(target_aug11, date(2026, 8, 11), "BBB", "Financial Services", 0.50, 200.0, "ENTERED", 2),
+            _holding(other_aug11, date(2026, 8, 11), "CCC", "Healthcare", 1.00, 300.0, "ENTERED", 1),
+            _holding(target_aug21, date(2026, 8, 21), "BBB", "Financial Services", 1.00, 210.0, "HELD", 1),
+        ],
+        db,
+    )
+
+    path = export_latest_model_portfolio_update(output_dir, history_dates=2, database_path=db)
+
+    holdings_history = _read_csv(path / "holdings_history.csv")
+    assert {row["symbol"] for row in holdings_history if row["date"] == "2026-08-11"} == {"AAA", "BBB"}
+    rebalance_rows = _read_csv(path / "rebalance_history.csv")
+    removed_rows = [row for row in rebalance_rows if row["rebalance_date"] == "2026-08-21" and row["action"] == "REMOVED"]
+    assert [(row["symbol"], row["old_weight"], row["new_weight"]) for row in removed_rows] == [("AAA", "0.5", "0.0")]
 
 
 def _holding(

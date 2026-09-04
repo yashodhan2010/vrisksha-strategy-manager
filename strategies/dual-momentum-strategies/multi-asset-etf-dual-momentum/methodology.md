@@ -1,6 +1,6 @@
-# Bamboo Trunk - ETF Edition
+# Bamboo Root - ETF Edition
 
-Bamboo Trunk - ETF Edition selects a diversified basket from the local multi-asset ETF universe using rules-based price momentum.
+Bamboo Root - ETF Edition selects a diversified basket from the local multi-asset ETF universe using rules-based price momentum.
 
 The model ranks eligible ETFs by the average of their three, six, and twelve month returns, skipping the most recent trading month by default. It can require positive average momentum, a twelve month absolute return hurdle, proximity to the 52-week high, and price above the 200-day EMA. The current research grid tests four to eight equal-weight holdings with no holding buffer and monthly rebalancing.
 

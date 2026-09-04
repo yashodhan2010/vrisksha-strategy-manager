@@ -11,6 +11,7 @@ from typing import Any
 import pandas as pd
 
 from app import config
+from app.backtest.distributions import distribution_per_unit, load_distribution_events
 from app.backtest.engine import _bounded_forward_fill
 from app.data.universe_loader import load_universe
 from app.export.writers import write_json
@@ -458,6 +459,7 @@ def _compute_live_performance(
     price_dates = [item for item in pivot.index if start_date <= item <= end_date]
     if not price_dates:
         return [], [], [], [], [], ["No price dates overlap the live performance window."]
+    distributions = load_distribution_events(config.DISTRIBUTION_EVENTS_PATH, symbols, start_date, end_date, warnings)
 
     snapshot_by_date = {snapshot.snapshot_date: snapshot for snapshot in snapshots}
     current_snapshot = snapshots[0]
@@ -477,7 +479,8 @@ def _compute_live_performance(
             start_price = pivot.at[previous_date, symbol] if previous_date in pivot.index else pd.NA
             end_price = pivot.at[current_date, symbol]
             if pd.notna(start_price) and pd.notna(end_price) and float(start_price) > 0:
-                symbol_return = (float(end_price) / float(start_price)) - 1.0
+                distribution_return = distribution_per_unit(distributions, symbol, previous_date, current_date) / float(start_price)
+                symbol_return = (float(end_price) / float(start_price)) - 1.0 + distribution_return
                 contribution = weight * symbol_return
                 day_return += contribution
                 contribution_by_symbol[symbol] = contribution_by_symbol.get(symbol, 0.0) + contribution

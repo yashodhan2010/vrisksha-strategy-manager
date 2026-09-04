@@ -58,6 +58,29 @@ Run these from the repository root.
 | All strategies | Export safe Streamlit admin snapshot | `python -m app.main export-admin-dashboard` |
 | All strategies | Publish updated Streamlit admin snapshot | `python -m app.main export-admin-dashboard; git add data/admin/strategy_dashboard.json; git commit -m "Update admin dashboard snapshot"; git push origin main` |
 | All strategies | Open local admin dashboard | `streamlit run dashboards/admin_app.py` |
+| All strategies | Export local live performance tracker | `python -m app.main export-live-performance-tracker` |
+
+## Current Strategy Returns Tracker
+
+To refresh the local all-strategy returns tracker, run:
+
+```bash
+python -m app.main export-live-performance-tracker
+```
+
+To fetch recent Kite daily prices first and then rebuild every strategy tracker, run:
+
+```bash
+python -m app.main export-live-performance-tracker --fetch-history --selenium-token
+```
+
+Then open:
+
+```text
+data/output/live-performance/index.html
+```
+
+The tracker shows each registered strategy's return, annualized return, benchmark return, excess return, drawdown, current holdings, and data-quality status. This command regenerates every strategy listed in `strategies/registry.json` from live rebalance snapshots and stored market prices, then writes the shared comparison page. If you skip `--fetch-history`, the latest price date will be the newest price already stored in SQLite.
 
 To run the two active equity dual-momentum model-portfolio updates together, use PowerShell from the repository root:
 
@@ -393,6 +416,7 @@ python -m app.main kite-save-token --request-token YOUR_REQUEST_TOKEN
 python -m app.main kite-selenium-token
 python -m app.main auto-daily-run --selenium-token
 python -m app.main send-rebalance-reminders --dry-run
+python -m app.main export-live-performance-tracker
 ```
 
 `monthly-run` and the scheduled rebalance step inside `auto-daily-run` calculate a real target portfolio and proposed order list from stored `market_prices`. They still never submit live broker orders. `manual-run` remains a safe placeholder.
@@ -417,6 +441,14 @@ streamlit run dashboards/backtest_app.py
 ```
 
 The Live / Paper dashboard shows operational metadata and market-data summaries. The Backtest dashboard displays backtest-run metadata from SQLite.
+
+The generated live portfolio tracker is a static HTML file at:
+
+```text
+data/output/live-performance/index.html
+```
+
+Regenerate every registered strategy and the shared tracker with `python -m app.main export-live-performance-tracker`. To refresh recent Kite daily prices first, use `python -m app.main export-live-performance-tracker --fetch-history --selenium-token`. The same all-strategy tracker is also refreshed after `build-model-portfolio-update`, but only for the strategy updated by that run.
 
 The dashboard is live https://vrisksha-strategy-manager-hnqts9v2lylz4oappwtbixu.streamlit.app/
 

@@ -339,8 +339,17 @@ def list_latest_strategy_holdings(
 
 
 def get_latest_monthly_strategy_run(database_path: str | Path = config.DATABASE_PATH) -> dict[str, Any] | None:
+    return get_latest_monthly_strategy_run_for_strategy(database_path=database_path)
+
+
+def get_latest_monthly_strategy_run_for_strategy(
+    database_path: str | Path = config.DATABASE_PATH,
+    strategy_id: str | None = None,
+    strategy_slug: str | None = None,
+    strategy_profile_path: str | Path | None = None,
+) -> dict[str, Any] | None:
     with get_connection(database_path) as connection:
-        row = connection.execute(
+        rows = connection.execute(
             """
             SELECT s.*
             FROM strategy_runs s
@@ -348,53 +357,91 @@ def get_latest_monthly_strategy_run(database_path: str | Path = config.DATABASE_
             WHERE s.run_type = ? AND h.selected = 1
             GROUP BY s.id
             ORDER BY MAX(h.snapshot_date) DESC, s.id DESC
-            LIMIT 1
             """,
             (RunType.MONTHLY.value,),
-        ).fetchone()
-        return dict(row) if row else None
+        ).fetchall()
+        for row in rows:
+            item = dict(row)
+            if _strategy_run_matches(item, strategy_id, strategy_slug, strategy_profile_path):
+                return item
+        return None
 
 
 def list_monthly_holding_snapshots(
     database_path: str | Path = config.DATABASE_PATH,
     limit_dates: int | None = None,
+    strategy_id: str | None = None,
+    strategy_slug: str | None = None,
+    strategy_profile_path: str | Path | None = None,
 ) -> list[dict[str, Any]]:
-    date_limit = ""
-    if limit_dates is not None:
-        date_limit = """
-            AND hh.snapshot_date IN (
-                SELECT hhh.snapshot_date
-                FROM holding_snapshots hhh
-                JOIN strategy_runs sss ON sss.id = hhh.run_id
-                WHERE sss.run_type = ? AND hhh.selected = 1
-                GROUP BY hhh.snapshot_date
-                ORDER BY hhh.snapshot_date DESC
-                LIMIT ?
-            )
-        """
-        params: tuple[Any, ...] = (RunType.MONTHLY.value, RunType.MONTHLY.value, limit_dates)
-    else:
-        params = (RunType.MONTHLY.value,)
     with get_connection(database_path) as connection:
-        rows = connection.execute(
-            f"""
-            WITH latest_runs AS (
-                SELECT hh.snapshot_date, MAX(ss.id) AS run_id
-                FROM holding_snapshots hh
-                JOIN strategy_runs ss ON ss.id = hh.run_id
-                WHERE ss.run_type = ? AND hh.selected = 1
-                {date_limit}
-                GROUP BY hh.snapshot_date
-            )
+        candidates = connection.execute(
+            """
+            SELECT hh.snapshot_date, ss.id AS run_id, ss.config_json
+            FROM holding_snapshots hh
+            JOIN strategy_runs ss ON ss.id = hh.run_id
+            WHERE ss.run_type = ? AND hh.selected = 1
+            GROUP BY hh.snapshot_date, ss.id
+            ORDER BY hh.snapshot_date DESC, ss.id DESC
+            """,
+            (RunType.MONTHLY.value,),
+        ).fetchall()
+        latest_runs_by_date: dict[str, int] = {}
+        for candidate in candidates:
+            item = dict(candidate)
+            snapshot_date = item["snapshot_date"]
+            if snapshot_date in latest_runs_by_date:
+                continue
+            if not _strategy_run_matches(item, strategy_id, strategy_slug, strategy_profile_path):
+                continue
+            latest_runs_by_date[snapshot_date] = int(item["run_id"])
+            if limit_dates is not None and len(latest_runs_by_date) >= limit_dates:
+                break
+
+        rows: list[dict[str, Any]] = []
+        for snapshot_date, run_id in sorted(latest_runs_by_date.items()):
+            snapshot_rows = connection.execute(
+                """
             SELECT h.*
             FROM holding_snapshots h
-            JOIN latest_runs lr ON lr.run_id = h.run_id AND lr.snapshot_date = h.snapshot_date
-            WHERE h.selected = 1
+                WHERE h.selected = 1 AND h.run_id = ? AND h.snapshot_date = ?
             ORDER BY h.snapshot_date, h.rank, h.symbol
             """,
-            params,
-        ).fetchall()
-        return [dict(row) for row in rows]
+                (run_id, snapshot_date),
+            ).fetchall()
+            rows.extend(dict(row) for row in snapshot_rows)
+        return rows
+
+
+def _strategy_run_matches(
+    row: dict[str, Any],
+    strategy_id: str | None,
+    strategy_slug: str | None,
+    strategy_profile_path: str | Path | None,
+) -> bool:
+    filters = {
+        "strategy_id": strategy_id,
+        "strategy_slug": strategy_slug,
+        "strategy_profile_path": str(strategy_profile_path) if strategy_profile_path else None,
+    }
+    active_filters = {key: value for key, value in filters.items() if value}
+    if not active_filters:
+        return True
+    try:
+        payload = json.loads(row.get("config_json") or "{}")
+    except json.JSONDecodeError:
+        return False
+    if active_filters.get("strategy_id") and payload.get("strategy_id") == active_filters["strategy_id"]:
+        return True
+    if active_filters.get("strategy_slug") and payload.get("strategy_slug") == active_filters["strategy_slug"]:
+        return True
+    expected_path = active_filters.get("strategy_profile_path")
+    actual_path = payload.get("strategy_profile_path")
+    return bool(expected_path and actual_path and _normalise_path_text(actual_path) == _normalise_path_text(expected_path))
+
+
+def _normalise_path_text(value: str | Path) -> str:
+    return str(value).replace("\\", "/").strip().lower()
 
 
 def insert_order_proposals(

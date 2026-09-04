@@ -70,6 +70,46 @@ def test_export_live_performance_dashboard_tracks_selected_strategy_only(monkeyp
     assert any(row["symbol"] == "LIQUIDBEES" for row in data["attribution"])
 
 
+def test_export_live_performance_dashboard_includes_distribution_events(monkeypatch, tmp_path: Path) -> None:
+    db = tmp_path / "live.db"
+    output_dir = tmp_path / "live-dashboard"
+    distributions = tmp_path / "distributions.csv"
+    initialize_database(db)
+    monkeypatch.setattr(live_performance.config, "STRATEGY_PACKAGE_ID", "income_v1")
+    monkeypatch.setattr(live_performance.config, "STRATEGY_PACKAGE_SLUG", "income")
+    monkeypatch.setattr(live_performance.config, "STRATEGY_PACKAGE_NAME", "Income")
+    monkeypatch.setattr(live_performance.config, "STRATEGY_PACKAGE_PUBLIC_NAME", "Income")
+    monkeypatch.setattr(live_performance.config, "STRATEGY_PACKAGE_BENCHMARK", "NIFTY 500 TRI")
+    monkeypatch.setattr(live_performance.config, "TARGET_PORTFOLIO_VALUE", 100_000.0)
+    monkeypatch.setattr(live_performance.config, "SAFE_ASSET_SYMBOL", "LIQUIDBEES")
+    monkeypatch.setattr(live_performance.config, "SAFE_ASSET_FALLBACK_SYMBOL", "")
+    monkeypatch.setattr(live_performance.config, "DISTRIBUTION_EVENTS_PATH", str(distributions))
+    monkeypatch.setattr(
+        live_performance,
+        "load_universe",
+        lambda: [UniverseStock("AAA", "Alpha Ltd", "Income", "MULTI_ASSET", isin="INE000A01001")],
+    )
+    distributions.write_text("symbol,ex_date,amount_per_unit\nAAA,2024-01-02,5\n", encoding="utf-8")
+
+    _insert_prices(db)
+    run_id = _monthly_run(db, "income_v1")
+    insert_holding_snapshots([_holding(run_id, date(2024, 1, 1), "AAA", 1.00, 100.0)], db)
+    insert_portfolio_snapshot(run_id, date(2024, 1, 1), "ACTIVE", 100_000, None, None, 0.0, 1, run_id, db)
+
+    path = export_live_performance_dashboard(
+        output_dir=output_dir,
+        strategy_id="income_v1",
+        strategy_slug="income",
+        database_path=db,
+    )
+
+    data = json.loads((path / "dashboard_data.json").read_text(encoding="utf-8"))
+    assert data["daily"][1]["date"] == "2024-01-02"
+    assert data["daily"][1]["return"] == 0.15
+    assert data["metrics"]["total_return"] == 0.265
+    assert data["manifest"]["distributions_included"] is True
+
+
 def test_export_live_performance_tracker_index_includes_all_registry_profiles(tmp_path: Path) -> None:
     output_dir = tmp_path / "live-performance"
     strategy_dir = output_dir / "dual-momentum"

@@ -2,7 +2,7 @@
   "strategy_id": "multi_asset_etf_dual_momentum_v1",
   "slug": "multi-asset-etf-dual-momentum",
   "name": "Multi Asset ETF Dual Momentum",
-  "public_name": "Bamboo Trunk - ETF Edition",
+  "public_name": "Bamboo Root - ETF Edition",
   "short_description": "Rules-based multi-asset ETF momentum model portfolio using equity, debt, commodity, REIT, and INVIT ETFs",
   "catalogue": {
     "catalogue_ref": "S-MA-1",
@@ -11,7 +11,7 @@
     "subcategory": "Multi-asset",
     "style": "Momentum",
     "website_name": "",
-    "public_name": "Bamboo Trunk - ETF Edition",
+    "public_name": "Bamboo Root - ETF Edition",
     "status": "LIVE",
     "pricing": {
       "monthly_price": "Rs. 2000/month",

@@ -141,7 +141,7 @@
         "status": "LIVE",
         "style": "Momentum",
         "subcategory": "Equity",
-        "website_name": "Momentum - Bamboo Trunk Edition"
+        "website_name": "Momentum - Bamboo Root Edition"
       },
       "category_labels": [
         "Momentum",
@@ -223,7 +223,7 @@
           "monthly_price": "Rs. 2000/month",
           "recommended_investment": "Rs. 25,000"
         },
-        "public_name": "Bamboo Trunk - ETF Edition",
+        "public_name": "Bamboo Root - ETF Edition",
         "status": "LIVE",
         "style": "Momentum",
         "subcategory": "Multi-asset",
@@ -273,7 +273,7 @@
       "package_output_dir": "data/output/packages/multi-asset-etf-dual-momentum/strategy-package",
       "portfolio_objective": "Build my Core",
       "profile_path": "strategies/dual-momentum-strategies/multi-asset-etf-dual-momentum/strategy_profile.json",
-      "public_name": "Bamboo Trunk - ETF Edition",
+      "public_name": "Bamboo Root - ETF Edition",
       "rebalance_schedule": {
         "target_days": [
           1

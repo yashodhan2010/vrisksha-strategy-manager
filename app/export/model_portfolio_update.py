@@ -14,7 +14,7 @@ from app.export.package_builder import (
 from app.export.schemas import CSV_HEADERS
 from app.export.validators import validate_csv_rows
 from app.export.writers import write_csv, write_json
-from app.storage.repositories import get_latest_monthly_strategy_run, list_monthly_holding_snapshots
+from app.storage.repositories import get_latest_monthly_strategy_run_for_strategy, list_monthly_holding_snapshots
 
 UPDATE_FILES = [
     "manifest.json",
@@ -32,10 +32,21 @@ def export_latest_model_portfolio_update(
     database_path: str | Path = config.DATABASE_PATH,
 ) -> Path:
     output_path = Path(output_dir or _default_update_output_dir())
-    holdings = list_monthly_holding_snapshots(database_path=database_path, limit_dates=history_dates)
+    holdings = list_monthly_holding_snapshots(
+        database_path=database_path,
+        limit_dates=history_dates,
+        strategy_id=config.STRATEGY_PACKAGE_ID,
+        strategy_slug=config.STRATEGY_PACKAGE_SLUG,
+        strategy_profile_path=config.STRATEGY_PROFILE_PATH,
+    )
     if not holdings:
         raise ValueError("No monthly model portfolio holdings found. Run monthly-run first.")
-    latest_run = get_latest_monthly_strategy_run(database_path)
+    latest_run = get_latest_monthly_strategy_run_for_strategy(
+        database_path=database_path,
+        strategy_id=config.STRATEGY_PACKAGE_ID,
+        strategy_slug=config.STRATEGY_PACKAGE_SLUG,
+        strategy_profile_path=config.STRATEGY_PROFILE_PATH,
+    )
     universe = {stock.symbol: stock for stock in load_universe()}
     strategy_id = config.STRATEGY_PACKAGE_ID
     latest_portfolio = _latest_model_portfolio(strategy_id, holdings, universe)
