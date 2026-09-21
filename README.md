@@ -77,7 +77,7 @@ python -m app.main export-live-performance-tracker --fetch-history --selenium-to
 Then open:
 
 ```text
-data/output/live-performance/index.html
+C:\Users\Yashodhan\OneDrive\Documents\Algo\vrisksha-strategy-manager/data/output/live-performance/index.html
 ```
 
 The tracker shows each registered strategy's return, annualized return, benchmark return, excess return, drawdown, current holdings, and data-quality status. This command regenerates every strategy listed in `strategies/registry.json` from live rebalance snapshots and stored market prices, then writes the shared comparison page. If you skip `--fetch-history`, the latest price date will be the newest price already stored in SQLite.
