@@ -1,0 +1,22 @@
+{
+  "as_of_date": "2026-08-21",
+  "base_currency": "INR",
+  "catalogue": {},
+  "internal_name": "Strategy Research Factory",
+  "latest_run_id": 1,
+  "live_performance": {
+    "latest_live_date": null,
+    "live_inception_date": null,
+    "manifest_file": "live_manifest.json",
+    "status": "unavailable"
+  },
+  "name": "Strategy Research Factory",
+  "output_scope": "subscriber_model_portfolio_update",
+  "package_schema_version": "1.0.0",
+  "portfolio_objective": "Grow my Wealth",
+  "public_name": "Strategy Research Factory",
+  "slug": "dual-momentum",
+  "strategy_id": "low_drawdown_dual_momentum_nifty500_v1",
+  "update_type": "latest_model_portfolio",
+  "version": "1.0.0"
+}

@@ -10,7 +10,10 @@ import pandas as pd
 
 from app import config
 from app.data.universe_loader import load_universe
+from app.data.session_evidence import is_verified_non_session, session_evidence
 from app.export.docs import disclosures_md, import_notes_md, internal_methodology_md, public_methodology_md
+from app.export.live_performance import export_package_live_performance
+from app.export.benchmark_comparisons import export_benchmark_comparisons
 from app.export.schemas import CSV_HEADERS, PACKAGE_FILES
 from app.export.validators import validate_csv_rows, validate_manifest, validate_package_files, validate_weights
 from app.export.writers import write_csv, write_json, write_markdown
@@ -38,14 +41,29 @@ def build_strategy_package(
     warnings = json.loads(run.get("warnings_json") or "[]")
     universe = {stock.symbol: stock for stock in load_universe()}
     prices = _load_price_frame(database_path)
+    if not prices.empty:
+        prices = prices[~prices["price_date"].map(is_verified_non_session)]
     daily = _reconstruct_daily_returns(run, snapshots, holdings, prices, summary)
     benchmark = _benchmark_returns(run, prices)
+    strategy_dates = {row["date"] for row in daily}
+    benchmark_dates = {row["date"] for row in benchmark}
+    if strategy_dates != benchmark_dates:
+        raise ValueError(
+            "Historical strategy/benchmark dates differ; fetch missing observed prices before export. "
+            f"Missing benchmark: {sorted(strategy_dates - benchmark_dates)}; "
+            f"missing strategy: {sorted(benchmark_dates - strategy_dates)}"
+        )
     monthly = _monthly_returns(snapshots)
     yearly = _yearly_returns(daily)
     drawdowns = _drawdowns(daily)
     metrics = _metrics(run, snapshots, daily, monthly, yearly, benchmark, holdings)
     performance_showcases = _performance_showcases(daily, benchmark)
     manifest = _manifest(run, summary, prices)
+    manifest["session_completeness_2026"] = session_evidence(
+        max(pd.to_datetime(run["actual_start_date"]).date(), datetime(2026, 1, 1).date()),
+        pd.to_datetime(run["actual_end_date"]).date(),
+        [row["date"] for row in daily if row["date"] >= "2026-01-01"],
+    )
     latest_portfolio = _latest_model_portfolio(manifest["strategy_id"], holdings, universe, summary, prices)
     holdings_history = _holdings_history(manifest["strategy_id"], holdings, universe)
     rebalance_history = _rebalance_history(manifest["strategy_id"], holdings, universe)
@@ -55,6 +73,11 @@ def build_strategy_package(
     output_path = Path(output_dir)
     _prepare_output_path(output_path)
 
+    manifest["live_performance"] = export_package_live_performance(output_path, database_path, universe)
+    manifest["benchmark_comparisons"] = export_benchmark_comparisons(
+        output_path, prices, daily, "historical",
+        manifest["live_performance"].pop("benchmark_comparisons"),
+    )
     validate_manifest(manifest)
     write_json(output_path / "manifest.json", manifest)
     write_json(output_path / "backtest_metrics.json", metrics)

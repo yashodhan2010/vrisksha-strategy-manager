@@ -75,6 +75,18 @@ def import_notes_md(manifest: dict[str, Any], warnings: list[str]) -> str:
     warning_text = "\n".join(f"- {warning}" for warning in warnings) if warnings else "- None recorded."
     return f"""# Vriksha Import Notes
 
+## Live Performance Files
+
+This package also includes `live_manifest.json`, `live_metrics.json`, `live_nav.csv`,
+`live_benchmark.csv`, and `live_drawdowns.csv`. Read `manifest.json.live_performance`
+for availability and dates. Missing live history is never replaced with backtest data.
+Returns are decimals; the live equity curve starts at 1. Join it to historical daily
+data at live inception with matching date coverage, scaling to the historical curve
+and excluding overlapping backtest returns. Recompute composite metrics and monthly
+returns from that joined series. Live metrics and drawdowns cover only the live period.
+The live manifest retains the internal tracker provenance, calculation method, and
+data-quality warnings; availability is not publication approval.
+
 ## Data Source Used
 
 Historical prices are loaded from the local SQLite `market_prices` table populated by the configured market-data ingestion flow.

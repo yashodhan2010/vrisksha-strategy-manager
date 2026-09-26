@@ -1,0 +1,1 @@
+{"strategy_id": "dual_momentum_test_v1", "slug": "dual-momentum", "name": "Dual Momentum", "rebalance_schedule": {"type": "monthly_target_days", "target_days": [11, 21], "timezone": "Asia/Kolkata"}}

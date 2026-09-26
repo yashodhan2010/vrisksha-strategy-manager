@@ -1,0 +1,2 @@
+rank_by_net_return_to_drawdown,rebalances_per_month,top_n,sector_cap_pct,high_cutoff_pct,momentum_weight,beta_weight,volatility_weight,buffer_pct,max_stock_weight_pct,net_return_to_drawdown
+1,2,60,30,15,0.6,0.2,0.2,60,3.5,1.5

@@ -3,6 +3,7 @@ numpy
 openpyxl
 streamlit
 python-dotenv
+requests
 pytest
 yfinance
 kiteconnect

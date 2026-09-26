@@ -69,6 +69,37 @@ def test_export_live_performance_dashboard_tracks_selected_strategy_only(monkeyp
     assert data["metrics"]["total_return"] > 0
     assert any(row["symbol"] == "LIQUIDBEES" for row in data["attribution"])
 
+    package_dir = tmp_path / "package"
+    metadata = live_performance.export_package_live_performance(package_dir, db, {})
+    assert metadata["status"] == "available"
+    assert metadata["live_inception_date"] == "2024-01-01"
+    assert metadata["latest_live_date"] == "2024-01-03"
+    assert (package_dir / "live_nav.csv").read_text() == (path / "live_nav.csv").read_text()
+    assert (package_dir / "live_benchmark.csv").read_text() == (path / "live_benchmark.csv").read_text()
+    assert (package_dir / "live_drawdowns.csv").read_text() == (path / "live_drawdowns.csv").read_text()
+    manifest = json.loads((package_dir / "live_manifest.json").read_text())
+    comparisons = manifest["benchmark_comparisons"]
+    assert comparisons == data["manifest"]["benchmark_comparisons"]
+    comparison_file = next(e["live_file"] for e in comparisons if e["label"] == "NIFTY 500")
+    import csv
+    with (package_dir / comparison_file).open(newline="") as handle:
+        comparison_rows = list(csv.DictReader(handle))
+    assert [r["date"] for r in comparison_rows] == [r["date"] for r in data["daily"]]
+    assert float(comparison_rows[0]["equity_curve"]) == 1.0
+    assert manifest["strategy_id"] == "dual_momentum_nifty500_v1"
+    assert manifest["data_quality"]["live_rebalance_count"] == 2
+    assert "distribution_events_path" not in manifest
+    assert json.loads((package_dir / "live_metrics.json").read_text()) == data["metrics"]
+
+    # A repeat export must replace old live data, not retain it or use a backtest proxy.
+    monkeypatch.setattr(live_performance.config, "STRATEGY_PACKAGE_ID", "no_live_history")
+    metadata = live_performance.export_package_live_performance(package_dir, db, {})
+    assert metadata["status"] == "unavailable"
+    assert metadata["latest_live_date"] is None
+    assert not (package_dir / comparison_file).exists()
+    assert (package_dir / "live_nav.csv").read_text().splitlines() == ["date,return,equity_curve,nav"]
+    assert json.loads((package_dir / "live_metrics.json").read_text())["total_return"] is None
+
 
 def test_export_live_performance_dashboard_includes_distribution_events(monkeypatch, tmp_path: Path) -> None:
     db = tmp_path / "live.db"

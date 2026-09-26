@@ -1,0 +1,48 @@
+{
+  "benchmark": "NIFTY 500 TRI",
+  "calculation_method": "daily_returns_weighted_by_latest_rebalance_target_weights",
+  "data_quality": {
+    "latest_price_date": "2024-03-01",
+    "latest_rebalance_date": null,
+    "live_inception_date": null,
+    "live_rebalance_count": 0,
+    "missing_price_symbols": [],
+    "stale_price_symbols": [],
+    "tracked_symbols": 0
+  },
+  "distributions_included": false,
+  "files": [
+    "live_manifest.json",
+    "live_metrics.json",
+    "live_nav.csv",
+    "live_benchmark.csv",
+    "live_drawdowns.csv"
+  ],
+  "generated_at": "2026-09-24T15:21:31+05:30",
+  "internal_only": true,
+  "latest_live_date": null,
+  "live_inception_date": null,
+  "metrics": {
+    "annualized_return": null,
+    "benchmark_total_return": null,
+    "day_count": 0,
+    "excess_return": null,
+    "max_drawdown": null,
+    "total_return": null,
+    "win_rate": null
+  },
+  "name": "Momentum - Bamboo Canopy Edition",
+  "public_name": "Momentum - Bamboo Canopy Edition",
+  "report_source": "live_rebalance",
+  "report_type": "internal_live_performance",
+  "return_unit": "decimal",
+  "schema_version": "1.0.0",
+  "slug": "dual-momentum",
+  "status": "unavailable",
+  "strategy_id": "dual_momentum_nifty500_v1",
+  "target_portfolio_value": 1000000.0,
+  "warning_count": 1,
+  "warnings": [
+    "No completed live rebalance snapshots found for this strategy."
+  ]
+}

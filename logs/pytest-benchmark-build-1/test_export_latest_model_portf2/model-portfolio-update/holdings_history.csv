@@ -1,0 +1,4 @@
+strategy_id,date,symbol,company_name,exchange,isin,sector,marketcap_bucket,weight,reference_price
+target_strategy_v1,2026-08-11,AAA,Alpha Ltd,NSE,INE000A01001,Technology,,0.5,100.0
+target_strategy_v1,2026-08-11,BBB,Beta Ltd,NSE,INE000B01001,Financial Services,,0.5,200.0
+target_strategy_v1,2026-08-21,BBB,Beta Ltd,NSE,INE000B01001,Financial Services,,1.0,210.0

@@ -1,0 +1,2 @@
+strategy_id,rebalance_date,symbol,company_name,action,old_weight,new_weight,old_reference_price,new_reference_price,rationale
+income,2024-01-01,AAA,Alpha,ADDED,0,1.0,,100,test

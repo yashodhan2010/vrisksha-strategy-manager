@@ -1,0 +1,2 @@
+rank_by_lowest_drawdown_cagr_gt_20_score,rebalances_per_month,top_n,sector_cap_pct,high_cutoff_pct,momentum_weight,beta_weight,volatility_weight,buffer_pct,max_stock_weight_pct,lowest_drawdown_cagr_gt_20_score
+1,2,35,15,15,0.5,0.25,0.25,80,2.5,-0.16

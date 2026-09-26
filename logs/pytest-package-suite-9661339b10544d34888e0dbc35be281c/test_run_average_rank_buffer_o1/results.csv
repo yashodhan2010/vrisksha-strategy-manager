@@ -1,0 +1,3 @@
+rank_by_return_to_drawdown,rank_by_cagr,years,trial,rebalances_per_month,top_n,sector_cap_pct,high_cutoff_pct,momentum_weight,beta_weight,volatility_weight,buffer_pct,cagr,return_to_drawdown
+1,2,10,1,1,60,20,25,0.5,0.25,0.25,100,0.14,1.8
+2,1,10,2,2,40,0,20,0.7,0.15,0.15,60,0.2,1.2

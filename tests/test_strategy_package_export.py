@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+import pytest
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -104,10 +105,15 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
 
     path = build_strategy_package(run_id, output_dir, db)
 
-    assert sorted(item.name for item in path.iterdir()) == sorted(PACKAGE_FILES)
+    assert sorted(item.name for item in path.iterdir()) == sorted([*PACKAGE_FILES, "benchmarks"])
     manifest = json.loads((path / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["ra_entity"] == "Prathamesh Gupta"
     assert manifest["slug"] == "dual-momentum"
+    assert manifest["live_performance"]["manifest_file"] == "live_manifest.json"
+    assert manifest["live_performance"]["status"] == "unavailable"
+    live_manifest = json.loads((path / "live_manifest.json").read_text())
+    assert live_manifest["strategy_id"] == manifest["strategy_id"]
+    assert live_manifest["latest_live_date"] is None
     assert manifest["name"] == "Momentum - Bamboo Canopy Edition"
     assert manifest["public_name"] == "Momentum - Bamboo Canopy Edition"
     assert manifest["internal_name"] == "Dual Momentum"
@@ -127,6 +133,12 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     assert latest_rows[0]["company_name"] == "Alpha Ltd"
     assert latest_rows[0]["target_weight"] == "0.6"
     daily_rows = _read_csv(path / "returns_daily.csv")
+    comparisons = manifest["benchmark_comparisons"]
+    assert len(comparisons) == 5
+    nifty500 = next(item for item in comparisons if item["label"] == "NIFTY 500")
+    assert [r["date"] for r in _read_csv(path / nifty500["historical_file"])] == [r["date"] for r in daily_rows]
+    assert nifty500["live_file"] is None
+    assert next(item for item in comparisons if item["label"] == "NIFTY 500 TRI")["historical_file"] is None
     assert len(daily_rows) > 2
     metrics = json.loads((path / "backtest_metrics.json").read_text(encoding="utf-8"))
     assert metrics["cagr"] == 0.1234
@@ -141,6 +153,15 @@ def test_build_strategy_package_exports_vriksha_contract(monkeypatch, tmp_path: 
     assert showcases["ranges"][-1]["chart"][0]["equity_curve"] == 1.0
     rebalance_rows = _read_csv(path / "rebalance_history.csv")
     assert {row["action"] for row in rebalance_rows} >= {"ADDED", "WEIGHT_CHANGED"}
+
+    # A missing observed benchmark session must block export before replacing files.
+    original_manifest = (path / "manifest.json").read_bytes()
+    with get_connection(db) as connection:
+        connection.execute("DELETE FROM market_prices WHERE symbol = ? AND price_date = ?",
+                           ("NIFTY500", daily_rows[1]["date"]))
+    with pytest.raises(ValueError, match="Missing benchmark"):
+        build_strategy_package(run_id, output_dir, db)
+    assert (path / "manifest.json").read_bytes() == original_manifest
 
 
 def test_build_strategy_package_overwrites_known_files_without_deleting_output_dir(monkeypatch, tmp_path: Path) -> None:

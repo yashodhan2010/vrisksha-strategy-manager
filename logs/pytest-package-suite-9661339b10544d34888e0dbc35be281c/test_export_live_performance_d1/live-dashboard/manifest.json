@@ -1,0 +1,26 @@
+{
+  "benchmark": "NIFTY 500 TRI",
+  "distribution_events_path": "C:\\Users\\Yashodhan\\OneDrive\\Documents\\Algo\\vrisksha-strategy-manager\\logs\\pytest-package-suite-9661339b10544d34888e0dbc35be281c\\test_export_live_performance_d1\\distributions.csv",
+  "distributions_included": true,
+  "generated_at": "2026-09-24T15:21:59+05:30",
+  "internal_only": true,
+  "latest_live_date": "2024-01-03",
+  "live_inception_date": "2024-01-01",
+  "metrics": {
+    "annualized_return": 4.4084124638873733e+18,
+    "benchmark_total_return": 0.02,
+    "day_count": 3,
+    "excess_return": 0.245,
+    "max_drawdown": 0.0,
+    "total_return": 0.265,
+    "win_rate": 1.0
+  },
+  "name": "Income",
+  "public_name": "Income",
+  "report_source": "live_rebalance",
+  "report_type": "internal_live_performance",
+  "slug": "income",
+  "strategy_id": "income_v1",
+  "target_portfolio_value": 100000.0,
+  "warning_count": 0
+}

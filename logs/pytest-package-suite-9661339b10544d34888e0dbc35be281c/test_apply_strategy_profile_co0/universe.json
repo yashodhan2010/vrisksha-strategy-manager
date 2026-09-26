@@ -1,0 +1,1 @@
+[{"symbol": "AAA", "company_name": "AAA", "industry": "A", "sector": "A", "weight": 0.5}, {"symbol": "BBB", "company_name": "BBB", "industry": "B", "sector": "B", "weight": 0.5}, {"symbol": "OLD", "company_name": "OLD", "industry": "O", "sector": "O", "weight": 0.0, "is_active": false}]

@@ -1,0 +1,2 @@
+rank_by_cagr,rebalances_per_month,top_n,sector_cap_pct,high_cutoff_pct,momentum_weight,beta_weight,volatility_weight,buffer_pct,max_stock_weight,cagr
+1,2,35,0,15,0.7,0.15,0.15,40,0.05,0.36

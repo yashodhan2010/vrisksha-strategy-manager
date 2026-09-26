@@ -12,9 +12,11 @@ import pandas as pd
 
 from app import config
 from app.backtest.distributions import distribution_per_unit, load_distribution_events
-from app.backtest.engine import _bounded_forward_fill
 from app.data.universe_loader import load_universe
+from app.data.session_evidence import is_verified_non_session, session_evidence
 from app.export.writers import write_json
+from app.export.benchmark_comparisons import export_benchmark_comparisons
+from app.export.schemas import LIVE_PERFORMANCE_FILES
 from app.storage.database import get_connection
 from app.storage.market_data_repository import get_symbol_price_coverage, load_market_prices
 from app.strategy_profile import load_strategy_profile
@@ -29,6 +31,70 @@ class LiveSnapshot:
     reference_prices: dict[str, float | None]
     holding_rows: list[dict[str, Any]]
     liquidbees_weight: float
+
+
+def export_package_live_performance(
+    output_dir: str | Path,
+    database_path: str | Path,
+    universe: dict[str, Any],
+) -> dict[str, Any]:
+    """Export only this strategy's reconstructed live data, never a backtest proxy."""
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    snapshots = _load_live_snapshots(config.STRATEGY_PACKAGE_ID, database_path)
+    prices = _price_frame(database_path)
+    daily: list[dict[str, Any]] = []
+    benchmark: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    if snapshots and not prices.empty:
+        daily, benchmark, _, _, _, warnings = _compute_live_performance(
+            config.STRATEGY_PACKAGE_ID, snapshots, prices, universe,
+        )
+    else:
+        if not snapshots:
+            warnings.append("No completed live rebalance snapshots found for this strategy.")
+        if prices.empty:
+            warnings.append("No market prices found.")
+    metrics = _metrics(daily, benchmark)
+    relevant_prices = prices[prices["symbol"].isin(
+        {symbol for snapshot in snapshots for symbol in snapshot.weights} | {config.DEFAULT_BENCHMARK_SYMBOL}
+    )] if not prices.empty else prices
+    evidence = session_evidence(
+        snapshots[0].snapshot_date if snapshots else None,
+        max(relevant_prices["price_date"]) if snapshots and not relevant_prices.empty else None,
+        [row["date"] for row in daily],
+    )
+    if snapshots and evidence["window_covered"] and not evidence["complete"]:
+        warnings.append("Live trading-session coverage incomplete: " + ", ".join(evidence["missing_session_dates"]))
+    manifest = _manifest(
+        config.STRATEGY_PACKAGE_ID, config.STRATEGY_PACKAGE_SLUG,
+        snapshots, daily, metrics, warnings,
+    )
+    # Keep local paths out of the portable package; preserve the tracker provenance.
+    manifest.pop("distribution_events_path", None)
+    manifest.update({
+        "schema_version": "1.0.0",
+        "status": "available" if len(daily) > 1 else "unavailable",
+        "return_unit": "decimal",
+        "calculation_method": "daily_returns_weighted_by_latest_rebalance_target_weights",
+        "data_quality": _data_quality(snapshots, prices, database_path),
+        "session_completeness": evidence,
+        "warnings": warnings,
+        "files": LIVE_PERFORMANCE_FILES,
+    })
+    manifest["benchmark_comparisons"] = export_benchmark_comparisons(output_path, prices, daily, "live")
+    write_json(output_path / "live_manifest.json", manifest)
+    write_json(output_path / "live_metrics.json", metrics)
+    _write_csv(output_path / "live_nav.csv", ["date", "return", "equity_curve", "nav"], daily)
+    _write_csv(output_path / "live_benchmark.csv", ["date", "return", "equity_curve"], benchmark)
+    _write_csv(output_path / "live_drawdowns.csv", ["date", "drawdown"], _drawdowns(daily))
+    return {
+        "manifest_file": "live_manifest.json",
+        "status": manifest["status"],
+        "live_inception_date": manifest["live_inception_date"],
+        "latest_live_date": manifest["latest_live_date"],
+        "benchmark_comparisons": manifest["benchmark_comparisons"],
+    }
 
 
 def export_live_performance_dashboard(
@@ -70,6 +136,7 @@ def export_live_performance_dashboard(
     metrics = _metrics(daily, benchmark)
     data_quality = _data_quality(snapshots, prices, database_path)
     manifest = _manifest(strategy_id, strategy_slug, snapshots, daily, metrics, warnings)
+    manifest["benchmark_comparisons"] = export_benchmark_comparisons(output_path, prices, daily, "live")
     dashboard_data = {
         "manifest": manifest,
         "metrics": metrics,
@@ -450,9 +517,10 @@ def _compute_live_performance(
     warnings: list[str] = []
     start_date = snapshots[0].snapshot_date
     symbols = sorted({symbol for snapshot in snapshots for symbol in snapshot.weights} | {config.DEFAULT_BENCHMARK_SYMBOL})
-    pivot = _bounded_forward_fill(
-        prices[prices["symbol"].isin(symbols)].pivot_table(index="price_date", columns="symbol", values="price", aggfunc="last").sort_index()
-    )
+    prices = prices[~prices["price_date"].map(is_verified_non_session)]
+    pivot = prices[prices["symbol"].isin(symbols)].pivot_table(
+        index="price_date", columns="symbol", values="price", aggfunc="last"
+    ).sort_index()
     if pivot.empty:
         return [], [], [], [], [], ["No usable price pivot found for live holdings."]
     end_date = max(pivot.index)
@@ -468,9 +536,22 @@ def _compute_live_performance(
     contribution_by_symbol = {symbol: 0.0 for symbol in current_snapshot.weights}
     previous_date = start_date
     missing_pairs: set[str] = set()
+    required = {s for s, w in current_snapshot.weights.items() if w > 0} | {config.DEFAULT_BENCHMARK_SYMBOL}
+    if start_date not in pivot.index or any(
+        s not in pivot.columns or pd.isna(pivot.at[start_date, s]) or pivot.at[start_date, s] <= 0
+        for s in required
+    ):
+        return [], [], [], [], [], ["Missing observed inception prices; live curves cannot be normalized at inception."]
     for current_date in price_dates:
         if current_date <= start_date:
             continue
+        required = {s for s, w in current_snapshot.weights.items() if w > 0} | {config.DEFAULT_BENCHMARK_SYMBOL}
+        invalid = [s for s in required if s not in pivot.columns or any(
+            pd.isna(pivot.at[d, s]) or pivot.at[d, s] <= 0 for d in (previous_date, current_date)
+        )]
+        if invalid:
+            warnings.append(f"Live series stopped before {current_date}: missing observed prices for {', '.join(sorted(invalid))}.")
+            break
         day_return = 0.0
         for symbol, weight in current_snapshot.weights.items():
             if symbol not in pivot.columns:
@@ -504,7 +585,7 @@ def _compute_live_performance(
     if missing_pairs:
         warnings.append(f"Skipped live contribution for symbols with missing prices: {', '.join(sorted(missing_pairs)[:20])}.")
 
-    benchmark = _benchmark_series(pivot, start_date, end_date)
+    benchmark = _benchmark_series(pivot, start_date, date.fromisoformat(daily[-1]["date"]))
     latest_snapshot = snapshots[-1]
     current_holdings = _current_holdings(latest_snapshot, pivot, universe)
     attribution = _attribution_rows(contribution_by_symbol, latest_snapshot.weights)
@@ -674,12 +755,13 @@ def _metrics(daily: list[dict[str, Any]], benchmark: list[dict[str, Any]]) -> di
 
 def _data_quality(snapshots: list[LiveSnapshot], prices: pd.DataFrame, database_path: str | Path) -> dict[str, Any]:
     symbols = sorted({symbol for snapshot in snapshots for symbol in snapshot.weights})
+    coverage_symbols = sorted(set(symbols) | {config.DEFAULT_BENCHMARK_SYMBOL}) if snapshots else []
     end_date = max(prices["price_date"]) if not prices.empty else date.today()
-    coverage = get_symbol_price_coverage(symbols, end_date, database_path) if symbols else {}
-    missing = [symbol for symbol in symbols if symbol not in coverage]
+    coverage = get_symbol_price_coverage(coverage_symbols, end_date, database_path) if coverage_symbols else {}
+    missing = [symbol for symbol in coverage_symbols if symbol not in coverage]
     stale = [
         symbol
-        for symbol in symbols
+        for symbol in coverage_symbols
         if symbol in coverage and coverage[symbol].get("last_price_date") and coverage[symbol]["last_price_date"] < end_date.isoformat()
     ]
     return {

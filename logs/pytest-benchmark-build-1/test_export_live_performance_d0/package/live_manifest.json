@@ -1,0 +1,132 @@
+{
+  "benchmark": "NIFTY 500 TRI",
+  "benchmark_comparisons": [
+    {
+      "historical_file": null,
+      "label": "NIFTY 50",
+      "live_coverage": {
+        "missing_dates": [],
+        "reason": "no_strategy_dates",
+        "required_dates": 0,
+        "status": "unavailable"
+      },
+      "live_file": null,
+      "return_unit": "decimal",
+      "symbol": "NIFTY50"
+    },
+    {
+      "historical_file": null,
+      "label": "NIFTY 500",
+      "live_coverage": {
+        "missing_dates": [],
+        "reason": "no_strategy_dates",
+        "required_dates": 0,
+        "status": "unavailable"
+      },
+      "live_file": null,
+      "return_unit": "decimal",
+      "symbol": "NIFTY500"
+    },
+    {
+      "historical_file": null,
+      "label": "NIFTY 500 TRI",
+      "live_coverage": {
+        "missing_dates": [],
+        "reason": "no_strategy_dates",
+        "required_dates": 0,
+        "status": "unavailable"
+      },
+      "live_file": null,
+      "return_unit": "decimal",
+      "symbol": "NIFTY500TRI"
+    },
+    {
+      "historical_file": null,
+      "label": "NIFTY Gsec Composite",
+      "live_coverage": {
+        "missing_dates": [],
+        "reason": "no_strategy_dates",
+        "required_dates": 0,
+        "status": "unavailable"
+      },
+      "live_file": null,
+      "return_unit": "decimal",
+      "symbol": "NIFTYGSECCOMPOSITE"
+    },
+    {
+      "historical_file": null,
+      "label": "Gold",
+      "live_coverage": {
+        "missing_dates": [],
+        "reason": "no_strategy_dates",
+        "required_dates": 0,
+        "status": "unavailable"
+      },
+      "live_file": null,
+      "return_unit": "decimal",
+      "symbol": "GOLD"
+    }
+  ],
+  "calculation_method": "daily_returns_weighted_by_latest_rebalance_target_weights",
+  "data_quality": {
+    "latest_price_date": "2024-01-03",
+    "latest_rebalance_date": null,
+    "live_inception_date": null,
+    "live_rebalance_count": 0,
+    "missing_price_symbols": [],
+    "stale_price_symbols": [],
+    "tracked_symbols": 0
+  },
+  "distributions_included": false,
+  "files": [
+    "live_manifest.json",
+    "live_metrics.json",
+    "live_nav.csv",
+    "live_benchmark.csv",
+    "live_drawdowns.csv"
+  ],
+  "generated_at": "2026-09-26T12:03:52+05:30",
+  "internal_only": true,
+  "latest_live_date": null,
+  "live_inception_date": null,
+  "metrics": {
+    "annualized_return": null,
+    "benchmark_total_return": null,
+    "day_count": 0,
+    "excess_return": null,
+    "max_drawdown": null,
+    "total_return": null,
+    "win_rate": null
+  },
+  "name": "Momentum - Bamboo Canopy Edition",
+  "public_name": "Bamboo Canopy",
+  "report_source": "live_rebalance",
+  "report_type": "internal_live_performance",
+  "return_unit": "decimal",
+  "schema_version": "1.0.0",
+  "session_completeness": {
+    "complete": false,
+    "coverage_start": "2026-01-01",
+    "exchange": "NSE",
+    "expected_session_dates": [],
+    "missing_session_dates": [],
+    "segment": "cash",
+    "sources": [
+      "https://nsearchives.nseindia.com/content/circulars/CMTR71775.pdf",
+      "https://nsearchives.nseindia.com/content/circulars/CMTR72260.pdf",
+      "https://nsearchives.nseindia.com/content/circulars/CMTR72349.pdf"
+    ],
+    "timezone": "Asia/Kolkata",
+    "unexpected_session_dates": [],
+    "verified_through": "2026-09-24",
+    "window_covered": false
+  },
+  "slug": "dual-momentum",
+  "status": "unavailable",
+  "strategy_id": "no_live_history",
+  "target_portfolio_value": 100000.0,
+  "warning_count": 1,
+  "warnings": [
+    "No completed live rebalance snapshots found for this strategy."
+  ]
+}

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Internal Live Performance - Income</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    :root {
+      --ink: #18211f;
+      --muted: #62706a;
+      --line: #d9e1dc;
+      --panel: #ffffff;
+      --soft: #f3f7f4;
+      --live: #16836b;
+      --backtest: #7891a6;
+      --danger: #a64242;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #eef3ef;
+      color: var(--ink);
+    }
+    header {
+      padding: 28px 34px 20px;
+      background: linear-gradient(180deg, #fbfdfb, #eef3ef);
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow { color: var(--live); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 6px 0 6px; font-size: clamp(28px, 4vw, 48px); letter-spacing: 0; }
+    .subtitle { margin: 0; max-width: 980px; color: var(--muted); line-height: 1.5; }
+    main { padding: 22px 34px 38px; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+    button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      padding: 9px 13px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: 650;
+    }
+    button.active { background: var(--live); border-color: var(--live); color: #fff; }
+    .grid { display: grid; gap: 16px; }
+    .kpis { grid-template-columns: repeat(6, minmax(130px, 1fr)); }
+    .two { grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); align-items: start; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(20, 35, 30, .04);
+    }
+    .metric-label { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+    .metric-value { font-size: 24px; font-weight: 760; white-space: nowrap; }
+    .metric-sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
+    .section-title { margin: 0 0 12px; font-size: 18px; }
+    .chart { height: 390px; }
+    .small-chart { height: 260px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    .pill { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 999px; background: var(--soft); color: var(--muted); font-size: 12px; }
+    .warn { color: var(--danger); }
+    @media (max-width: 1050px) {
+      .kpis, .two { grid-template-columns: 1fr; }
+      main, header { padding-left: 18px; padding-right: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <script id="dashboard-data" type="application/json">{"manifest": {"report_type": "internal_live_performance", "report_source": "live_rebalance", "strategy_id": "income_v1", "slug": "income", "name": "Income", "public_name": "Income", "generated_at": "2026-09-26T12:03:52+05:30", "live_inception_date": "2024-01-01", "latest_live_date": "2024-01-03", "target_portfolio_value": 100000.0, "benchmark": "NIFTY 500 TRI", "metrics": {"total_return": 0.265, "annualized_return": 4.4084124638873733e+18, "max_drawdown": 0.0, "benchmark_total_return": 0.02, "excess_return": 0.245, "win_rate": 1.0, "day_count": 3}, "warning_count": 0, "internal_only": true, "distributions_included": true, "distribution_events_path": "C:\\Users\\Yashodhan\\OneDrive\\Documents\\Algo\\vrisksha-strategy-manager\\logs\\pytest-benchmark-build-1\\test_export_live_performance_d1\\distributions.csv", "benchmark_comparisons": [{"label": "NIFTY 50", "symbol": "NIFTY50", "return_unit": "decimal", "historical_file": null, "live_file": null, "live_coverage": {"status": "unavailable", "reason": "missing_observed_prices", "required_dates": 3, "missing_dates": ["2024-01-01", "2024-01-02", "2024-01-03"]}}, {"label": "NIFTY 500", "symbol": "NIFTY500", "return_unit": "decimal", "historical_file": null, "live_file": "benchmarks/nifty_500_live_returns.csv", "live_coverage": {"status": "available", "reason": null, "required_dates": 3, "missing_dates": []}}, {"label": "NIFTY 500 TRI", "symbol": "NIFTY500TRI", "return_unit": "decimal", "historical_file": null, "live_file": null, "live_coverage": {"status": "unavailable", "reason": "missing_observed_prices", "required_dates": 3, "missing_dates": ["2024-01-01", "2024-01-02", "2024-01-03"]}}, {"label": "NIFTY Gsec Composite", "symbol": "NIFTYGSECCOMPOSITE", "return_unit": "decimal", "historical_file": null, "live_file": null, "live_coverage": {"status": "unavailable", "reason": "missing_observed_prices", "required_dates": 3, "missing_dates": ["2024-01-01", "2024-01-02", "2024-01-03"]}}, {"label": "Gold", "symbol": "GOLD", "return_unit": "decimal", "historical_file": null, "live_file": null, "live_coverage": {"status": "unavailable", "reason": "missing_observed_prices", "required_dates": 3, "missing_dates": ["2024-01-01", "2024-01-02", "2024-01-03"]}}]}, "metrics": {"total_return": 0.265, "annualized_return": 4.4084124638873733e+18, "max_drawdown": 0.0, "benchmark_total_return": 0.02, "excess_return": 0.245, "win_rate": 1.0, "day_count": 3}, "data_quality": {"live_rebalance_count": 1, "live_inception_date": "2024-01-01", "latest_rebalance_date": "2024-01-01", "latest_price_date": "2024-01-03", "tracked_symbols": 1, "missing_price_symbols": [], "stale_price_symbols": []}, "daily": [{"date": "2024-01-01", "return": 0.0, "equity_curve": 1.0, "nav": 100000.0}, {"date": "2024-01-02", "return": 0.15, "equity_curve": 1.15, "nav": 115000.0}, {"date": "2024-01-03", "return": 0.1, "equity_curve": 1.265, "nav": 126500.0}], "drawdowns": [{"date": "2024-01-01", "drawdown": 0.0}, {"date": "2024-01-02", "drawdown": 0.0}, {"date": "2024-01-03", "drawdown": 0.0}], "benchmark": [{"date": "2024-01-01", "return": 0.0, "equity_curve": 1.0}, {"date": "2024-01-02", "return": 0.01, "equity_curve": 1.01}, {"date": "2024-01-03", "return": 0.0099009901, "equity_curve": 1.02}], "backtest": [], "attribution": [{"symbol": "AAA", "weight": 1.0, "contribution": 0.25}], "current_holdings": [{"symbol": "AAA", "company_name": "Alpha Ltd", "sector": "Technology", "weight": 1.0, "reference_price": 100.0, "current_price": 121.0, "market_value": 100000.0, "notes": "ENTERED"}], "rebalance_history": [{"run_id": 1, "snapshot_date": "2024-01-01", "holding_count": 1, "stock_weight": 1.0, "safe_asset_weight": 0.0}], "warnings": []}</script>
+  <header>
+    <div class="eyebrow">Internal live tracker</div>
+    <h1 id="title"></h1>
+    <p class="subtitle" id="subtitle"></p>
+  </header>
+  <main>
+    <div class="toolbar">
+      <button data-mode="combined" class="active">Backtest + Live</button>
+      <button data-mode="live">Live Only</button>
+      <button data-mode="backtest">Backtest Only</button>
+      <button data-mode="normalized">Normalize From Live Inception</button>
+    </div>
+    <section class="grid kpis" id="kpis"></section>
+    <section class="grid two" style="margin-top:16px">
+      <div class="panel">
+        <h2 class="section-title">Growth Of Capital</h2>
+        <div id="growth" class="chart"></div>
+      </div>
+      <div class="panel">
+        <h2 class="section-title">Data Quality</h2>
+        <div id="quality"></div>
+      </div>
+    </section>
+    <section class="grid two" style="margin-top:16px">
+      <div class="panel">
+        <h2 class="section-title">Drawdown</h2>
+        <div id="drawdown" class="small-chart"></div>
+      </div>
+      <div class="panel">
+        <h2 class="section-title">Daily Returns</h2>
+        <div id="returns" class="small-chart"></div>
+      </div>
+    </section>
+    <section class="grid two" style="margin-top:16px">
+      <div class="panel">
+        <h2 class="section-title">Current Model Portfolio</h2>
+        <div id="holdings"></div>
+      </div>
+      <div class="panel">
+        <h2 class="section-title">Top Contribution Since Inception</h2>
+        <div id="attribution"></div>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:16px">
+      <h2 class="section-title">Rebalance Trail</h2>
+      <div id="rebalances"></div>
+    </section>
+  </main>
+  <script>
+    const data = JSON.parse(document.getElementById('dashboard-data').textContent);
+    const fmtPct = value => value === null || value === undefined ? 'n/a' : (value * 100).toFixed(2) + '%';
+    const fmtNum = value => value === null || value === undefined ? 'n/a' : Number(value).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    document.getElementById('title').textContent = data.manifest.public_name || data.manifest.name;
+    document.getElementById('subtitle').textContent = `Live inception: ${data.manifest.live_inception_date || 'n/a'}. Latest live date: ${data.manifest.latest_live_date || 'n/a'}. Internal-only model performance reconstructed from stored rebalance snapshots and market prices.`;
+
+    const kpis = [
+      ['Live return', fmtPct(data.metrics.total_return)],
+      ['Annualized', fmtPct(data.metrics.annualized_return)],
+      ['Max drawdown', fmtPct(data.metrics.max_drawdown)],
+      ['Benchmark', fmtPct(data.metrics.benchmark_total_return)],
+      ['Excess return', fmtPct(data.metrics.excess_return)],
+      ['Win rate', fmtPct(data.metrics.win_rate)]
+    ];
+    document.getElementById('kpis').innerHTML = kpis.map(([label, value]) => `<div class="panel"><div class="metric-label">${label}</div><div class="metric-value">${value}</div></div>`).join('');
+
+    function series(rows, key) { return rows.map(row => row[key]); }
+    function liveTrace(normalize=false) {
+      const y = series(data.daily, 'equity_curve');
+      const base = normalize && y.length ? y[0] : 1;
+      return { x: series(data.daily, 'date'), y: y.map(v => v / base), name: 'Live model', mode: 'lines', line: { color: '#16836b', width: 3 } };
+    }
+    function backtestTrace() {
+      return { x: series(data.backtest, 'date'), y: series(data.backtest, 'equity_curve'), name: 'Backtest', mode: 'lines', line: { color: '#7891a6', width: 2 } };
+    }
+    function benchmarkTrace() {
+      return { x: series(data.benchmark, 'date'), y: series(data.benchmark, 'equity_curve'), name: 'Benchmark', mode: 'lines', line: { color: '#9d7b39', width: 2, dash: 'dot' } };
+    }
+    function layout(title) {
+      const inception = data.manifest.live_inception_date;
+      return {
+        title: { text: title, x: 0, font: { size: 13 } },
+        margin: { l: 44, r: 18, t: 32, b: 38 },
+        paper_bgcolor: '#ffffff',
+        plot_bgcolor: '#ffffff',
+        hovermode: 'x unified',
+        legend: { orientation: 'h', y: 1.12 },
+        shapes: inception ? [{
+          type: 'rect', xref: 'x', yref: 'paper', x0: inception, x1: data.manifest.latest_live_date,
+          y0: 0, y1: 1, fillcolor: 'rgba(22,131,107,.10)', line: { width: 0 }
+        }] : []
+      };
+    }
+    function draw(mode='combined') {
+      const traces = [];
+      if (mode === 'combined') traces.push(backtestTrace(), liveTrace(), benchmarkTrace());
+      if (mode === 'live') traces.push(liveTrace(), benchmarkTrace());
+      if (mode === 'backtest') traces.push(backtestTrace());
+      if (mode === 'normalized') traces.push(liveTrace(true), benchmarkTrace());
+      Plotly.react('growth', traces.filter(t => t.x.length), layout('Growth of 1'), { responsive: true, displayModeBar: false });
+    }
+    draw();
+    document.querySelectorAll('button[data-mode]').forEach(button => button.addEventListener('click', () => {
+      document.querySelectorAll('button[data-mode]').forEach(item => item.classList.remove('active'));
+      button.classList.add('active');
+      draw(button.dataset.mode);
+    }));
+    Plotly.newPlot('drawdown', [{ x: series(data.drawdowns, 'date'), y: series(data.drawdowns, 'drawdown'), type: 'scatter', fill: 'tozeroy', name: 'Drawdown', line: { color: '#a64242' } }], layout('Drawdown'), { responsive: true, displayModeBar: false });
+    Plotly.newPlot('returns', [{ x: series(data.daily, 'date'), y: series(data.daily, 'return'), type: 'bar', name: 'Return', marker: { color: '#16836b' } }], layout('Daily return'), { responsive: true, displayModeBar: false });
+
+    const table = (rows, columns) => rows.length ? `<table><thead><tr>${columns.map(c => `<th>${c.label}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${columns.map(c => `<td>${c.format ? c.format(row[c.key]) : (row[c.key] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '<span class="pill">No data</span>';
+    document.getElementById('quality').innerHTML = `
+      <p><span class="pill">Rebalances: ${data.data_quality.live_rebalance_count}</span></p>
+      <p><b>Latest price date:</b> ${data.data_quality.latest_price_date || 'n/a'}</p>
+      <p><b>Tracked symbols:</b> ${data.data_quality.tracked_symbols}</p>
+      <p><b>Missing prices:</b> ${(data.data_quality.missing_price_symbols || []).join(', ') || 'None'}</p>
+      <p><b>Stale prices:</b> ${(data.data_quality.stale_price_symbols || []).join(', ') || 'None'}</p>
+      ${data.warnings.length ? `<p class="warn">${data.warnings.join('<br>')}</p>` : ''}
+    `;
+    document.getElementById('holdings').innerHTML = table(data.current_holdings, [
+      { key: 'symbol', label: 'Symbol' },
+      { key: 'sector', label: 'Sector' },
+      { key: 'weight', label: 'Weight', format: fmtPct },
+      { key: 'current_price', label: 'Price', format: fmtNum },
+      { key: 'notes', label: 'Notes' }
+    ]);
+    document.getElementById('attribution').innerHTML = table(data.attribution.slice(0, 12), [
+      { key: 'symbol', label: 'Symbol' },
+      { key: 'weight', label: 'Latest Weight', format: fmtPct },
+      { key: 'contribution', label: 'Contribution', format: fmtPct }
+    ]);
+    document.getElementById('rebalances').innerHTML = table(data.rebalance_history, [
+      { key: 'snapshot_date', label: 'Date' },
+      { key: 'run_id', label: 'Run' },
+      { key: 'holding_count', label: 'Holdings' },
+      { key: 'stock_weight', label: 'Stock Weight', format: fmtPct },
+      { key: 'safe_asset_weight', label: 'Safe Asset', format: fmtPct }
+    ]);
+  </script>
+</body>
+</html>

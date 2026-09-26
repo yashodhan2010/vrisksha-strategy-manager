@@ -1,0 +1,130 @@
+{
+  "generated_at": "2026-09-26T11:44:38+05:30",
+  "strategies": [
+    {
+      "attribution": [],
+      "backtest": [
+        {
+          "date": "2024-01-01",
+          "equity_curve": 1.0,
+          "nav": 1000000.0,
+          "return": 0.0
+        },
+        {
+          "date": "2024-01-02",
+          "equity_curve": 1.01,
+          "nav": 1010000.0,
+          "return": 0.01
+        }
+      ],
+      "benchmark": [
+        {
+          "date": "2024-01-01",
+          "equity_curve": 1.0,
+          "return": 0.0
+        },
+        {
+          "date": "2024-01-02",
+          "equity_curve": 1.005,
+          "return": 0.005
+        }
+      ],
+      "current_holdings": [
+        {
+          "company_name": "Alpha",
+          "current_price": 101.0,
+          "market_value": 1000000.0,
+          "notes": "Backtest/package proxy holding",
+          "reference_price": 101.0,
+          "sector": "ETF",
+          "symbol": "AAA",
+          "weight": 1.0
+        }
+      ],
+      "daily": [
+        {
+          "date": "2024-01-01",
+          "equity_curve": 1.0,
+          "nav": 1000000.0,
+          "return": 0.0
+        },
+        {
+          "date": "2024-01-02",
+          "equity_curve": 1.01,
+          "nav": 1010000.0,
+          "return": 0.01
+        }
+      ],
+      "data_quality": {
+        "distribution_events_path": "C:\\Users\\Yashodhan\\OneDrive\\Documents\\Algo\\vrisksha-strategy-manager\\logs\\pytest-comparisons-3641e2b3427240f791ea49367b0b75e5\\test_tracker_index_uses_packag0\\distributions.csv",
+        "distributions_included": true,
+        "latest_price_date": "2024-01-02",
+        "latest_rebalance_date": null,
+        "live_inception_date": null,
+        "live_rebalance_count": 0,
+        "missing_price_symbols": [],
+        "source": "backtest_proxy",
+        "stale_price_symbols": [],
+        "tracked_symbols": 1
+      },
+      "drawdowns": [
+        {
+          "date": "2024-01-01",
+          "drawdown": 0.0
+        },
+        {
+          "date": "2024-01-02",
+          "drawdown": 0.0
+        }
+      ],
+      "manifest": {
+        "benchmark": "",
+        "distribution_events_path": "C:\\Users\\Yashodhan\\OneDrive\\Documents\\Algo\\vrisksha-strategy-manager\\logs\\pytest-comparisons-3641e2b3427240f791ea49367b0b75e5\\test_tracker_index_uses_packag0\\distributions.csv",
+        "distributions_included": true,
+        "generated_at": "2026-09-26T11:44:38+05:30",
+        "internal_only": true,
+        "latest_live_date": "2024-01-02",
+        "live_inception_date": "2024-01-01",
+        "metrics": {
+          "annualized_return": 0.12,
+          "benchmark_total_return": 0.005,
+          "day_count": 2,
+          "excess_return": 0.005,
+          "max_drawdown": 0.0,
+          "total_return": 0.01,
+          "win_rate": 1.0
+        },
+        "name": "Income",
+        "public_name": "Income",
+        "report_source": "backtest_proxy",
+        "report_type": "internal_live_performance",
+        "slug": "income",
+        "strategy_id": "income_v1",
+        "target_portfolio_value": 1000000.0,
+        "warning_count": 1
+      },
+      "metrics": {
+        "annualized_return": 0.12,
+        "benchmark_total_return": 0.005,
+        "day_count": 2,
+        "excess_return": 0.005,
+        "max_drawdown": 0.0,
+        "total_return": 0.01,
+        "win_rate": 1.0
+      },
+      "profile_path": "C:\\Users\\Yashodhan\\OneDrive\\Documents\\Algo\\vrisksha-strategy-manager\\logs\\pytest-comparisons-3641e2b3427240f791ea49367b0b75e5\\test_tracker_index_uses_packag0\\income.json",
+      "rebalance_history": [
+        {
+          "holding_count": 1,
+          "run_id": "",
+          "safe_asset_weight": 0.0,
+          "snapshot_date": "2024-01-01",
+          "stock_weight": 1.0
+        }
+      ],
+      "warnings": [
+        "Backtest/package proxy, not actual live tracker data. Dividend/distribution events are included where configured in the package backtest."
+      ]
+    }
+  ]
+}

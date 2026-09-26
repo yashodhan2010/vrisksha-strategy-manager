@@ -1,0 +1,4 @@
+strategy_id,date,symbol,company_name,exchange,isin,sector,marketcap_bucket,weight,reference_price
+low_drawdown_dual_momentum_nifty500_v1,2026-08-21,CCC,Cash Sleeve,NSE,,SAFE_ASSET,,0.325,1000.0
+low_drawdown_dual_momentum_nifty500_v1,2026-08-21,AAA,Alpha Ltd,NSE,INE000A01001,Technology,,0.0107142857,110.0
+low_drawdown_dual_momentum_nifty500_v1,2026-08-21,BBB,Beta Ltd,NSE,INE000B01001,Financial Services,,0.6642857143,95.0

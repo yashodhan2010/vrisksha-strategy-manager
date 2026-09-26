@@ -7,6 +7,10 @@ import pandas as pd
 import pytest
 
 from app import config
+from app.data.benchmark_comparison_sources import (
+    NseIndicesClient,
+    fetch_benchmark_comparison_bars,
+)
 from app.data import price_ingestion
 from app.data.historical_data import KiteHistoricalMarketDataProvider, PriceBar, frame_to_price_bars, iter_date_chunks, to_yahoo_symbol
 from app.storage.database import initialize_database
@@ -81,6 +85,11 @@ def test_fetch_and_store_history_uses_provider_and_records_missing(monkeypatch: 
             )
 
     monkeypatch.setattr(price_ingestion, "get_market_data_provider", lambda: FakeProvider())
+    monkeypatch.setattr(
+        price_ingestion,
+        "fetch_benchmark_comparison_bars",
+        lambda provider, start_date, end_date: ([], []),
+    )
     monkeypatch.setattr(price_ingestion, "upsert_price_bars", lambda bars: upsert_price_bars(bars, db))
     monkeypatch.setattr(
         price_ingestion,
@@ -128,6 +137,11 @@ def test_fetch_and_store_history_includes_all_safe_assets(monkeypatch: pytest.Mo
             )
 
     monkeypatch.setattr(price_ingestion, "get_market_data_provider", lambda: FakeProvider())
+    monkeypatch.setattr(
+        price_ingestion,
+        "fetch_benchmark_comparison_bars",
+        lambda provider, start_date, end_date: ([], []),
+    )
     monkeypatch.setattr(price_ingestion, "upsert_price_bars", lambda bars: upsert_price_bars(bars, db))
     monkeypatch.setattr(price_ingestion, "create_ingestion_run", lambda **kwargs: 1)
     monkeypatch.setattr(config, "SAFE_ASSET_SYMBOLS", ["LIQUIDBEES", "GOLDBEES"])
@@ -143,6 +157,134 @@ def test_fetch_and_store_history_includes_all_safe_assets(monkeypatch: pytest.Mo
 
     assert requested == ["ABC", "NIFTY500", "LIQUIDBEES", "GOLDBEES"]
     assert result.stored_rows == 4
+
+
+def test_fetch_and_store_history_adds_benchmark_comparison_bars(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    db = tmp_path / "prices.db"
+    initialize_database(db)
+
+    class FakeProvider:
+        source = "TEST"
+
+        def get_daily_prices(self, symbols: list[str], start_date: date, end_date: date) -> pd.DataFrame:
+            return pd.DataFrame(
+                [
+                    {
+                        "symbol": "ABC",
+                        "price_date": date(2024, 1, 1),
+                        "open": 1,
+                        "high": 2,
+                        "low": 0.5,
+                        "close": 1.5,
+                        "adjusted_close": 1.5,
+                        "volume": 100,
+                    }
+                ]
+            )
+
+    comparison_bar = PriceBar("GOLD", date(2024, 1, 1), 10, 10, 10, 10, 10, 1000, "TEST", "now")
+    monkeypatch.setattr(price_ingestion, "get_market_data_provider", lambda: FakeProvider())
+    monkeypatch.setattr(
+        price_ingestion,
+        "fetch_benchmark_comparison_bars",
+        lambda provider, start_date, end_date: ([comparison_bar], ["comparison warning"]),
+    )
+    monkeypatch.setattr(price_ingestion, "upsert_price_bars", lambda bars: upsert_price_bars(bars, db))
+    monkeypatch.setattr(price_ingestion, "create_ingestion_run", lambda **kwargs: 1)
+
+    result = price_ingestion.fetch_and_store_history(
+        date(2024, 1, 1),
+        date(2024, 1, 2),
+        symbols=["ABC"],
+        include_benchmark=False,
+        include_safe_asset=False,
+    )
+
+    summary = {row["symbol"]: row for row in get_price_summary(db)}
+    assert result.stored_rows == 2
+    assert "GOLD" in summary
+    assert result.warnings == ["comparison warning"]
+
+
+def test_benchmark_comparison_fetch_remaps_goldbees_to_gold() -> None:
+    class FakeProvider:
+        source = "KITE"
+
+        def get_daily_prices(self, symbols: list[str], start_date: date, end_date: date) -> pd.DataFrame:
+            return pd.DataFrame(
+                [
+                    {
+                        "symbol": symbols[0],
+                        "price_date": date(2024, 1, 1),
+                        "open": 10,
+                        "high": 11,
+                        "low": 9,
+                        "close": 10.5,
+                        "adjusted_close": 10.5,
+                        "volume": 100,
+                    }
+                ]
+            )
+
+    class FakeNseClient:
+        def get_total_return_index(self, index_name: str, start_date: date, end_date: date) -> pd.DataFrame:
+            return pd.DataFrame([{"price_date": date(2024, 1, 1), "price": 2000.0}])
+
+        def get_index_history(self, index_name: str, start_date: date, end_date: date) -> pd.DataFrame:
+            return pd.DataFrame([{"price_date": date(2024, 1, 1), "price": 1000.0}])
+
+    bars, warnings = fetch_benchmark_comparison_bars(
+        FakeProvider(),
+        date(2024, 1, 1),
+        date(2024, 1, 2),
+        nse_client=FakeNseClient(),
+    )
+
+    by_symbol = {bar.symbol: bar for bar in bars}
+    assert warnings == []
+    assert by_symbol["NIFTY50"].source == "KITE"
+    assert by_symbol["NIFTY500TRI"].source == "NSE_INDICES"
+    assert by_symbol["NIFTYGSECCOMPOSITE"].source == "NSE_INDICES"
+    assert by_symbol["GOLD"].close == 10.5
+
+
+def test_nse_indices_client_normalizes_json_payload() -> None:
+    class FakeResponse:
+        headers = {"content-type": "application/json"}
+
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self) -> dict[str, str]:
+            return {
+                "d": '[{"HistoricalDate":"01 Jan 2024","Total Returns Index":"12,345.67"},'
+                '{"HistoricalDate":"02 Jan 2024","Total Returns Index":"12,400.00"}]'
+            }
+
+    class FakeSession:
+        headers: dict[str, str] = {}
+
+        def get(self, url: str, timeout: int) -> FakeResponse:
+            return FakeResponse()
+
+        def post(self, url: str, json: dict[str, str], timeout: int) -> FakeResponse:
+            assert url.endswith("/Backpage.aspx/getTotalReturnIndexString")
+            assert "NIFTY 500" in json["cinfo"]
+            return FakeResponse()
+
+    frame = NseIndicesClient(session=FakeSession()).get_total_return_index(
+        "NIFTY 500",
+        date(2024, 1, 1),
+        date(2024, 1, 2),
+    )
+
+    assert frame.to_dict("records") == [
+        {"price_date": date(2024, 1, 1), "price": 12345.67},
+        {"price_date": date(2024, 1, 2), "price": 12400.0},
+    ]
 
 
 def test_kite_provider_fetches_daily_prices_in_chunks(monkeypatch: pytest.MonkeyPatch) -> None:

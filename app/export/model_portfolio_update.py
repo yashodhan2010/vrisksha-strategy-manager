@@ -11,7 +11,8 @@ from app.export.package_builder import (
     _latest_model_portfolio,
     _rebalance_history,
 )
-from app.export.schemas import CSV_HEADERS
+from app.export.schemas import CSV_HEADERS, LIVE_PERFORMANCE_FILES
+from app.export.live_performance import export_package_live_performance
 from app.export.validators import validate_csv_rows
 from app.export.writers import write_csv, write_json
 from app.storage.repositories import get_latest_monthly_strategy_run_for_strategy, list_monthly_holding_snapshots
@@ -23,6 +24,7 @@ UPDATE_FILES = [
     "holdings_history.csv",
     "sector_exposure.csv",
     "marketcap_exposure.csv",
+    *LIVE_PERFORMANCE_FILES,
 ]
 
 
@@ -56,9 +58,12 @@ def export_latest_model_portfolio_update(
     marketcap_exposure = _exposure_rows(strategy_id, latest_portfolio, "marketcap_bucket")
 
     output_path.mkdir(parents=True, exist_ok=True)
+    manifest = _manifest(latest_run, latest_portfolio[0]["as_of_date"] if latest_portfolio else "")
+    manifest["live_performance"] = export_package_live_performance(output_path, database_path, universe)
+    manifest["benchmark_comparisons"] = manifest["live_performance"].pop("benchmark_comparisons")
     write_json(
         output_path / "manifest.json",
-        _manifest(latest_run, latest_portfolio[0]["as_of_date"] if latest_portfolio else ""),
+        manifest,
     )
     _write_csv(output_path, "latest_model_portfolio.csv", latest_portfolio)
     _write_csv(output_path, "rebalance_history.csv", rebalance_history)
@@ -84,6 +89,7 @@ def _manifest(latest_run: dict[str, Any] | None, as_of_date: str) -> dict[str, A
         "as_of_date": as_of_date,
         "latest_run_id": latest_run.get("id") if latest_run else None,
         "base_currency": config.STRATEGY_PACKAGE_BASE_CURRENCY,
+        "benchmark": config.STRATEGY_PACKAGE_BENCHMARK,
         "output_scope": "subscriber_model_portfolio_update",
     }
 

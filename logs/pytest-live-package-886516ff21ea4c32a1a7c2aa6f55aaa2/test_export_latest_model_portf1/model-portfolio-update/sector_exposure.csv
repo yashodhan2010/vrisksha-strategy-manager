@@ -1,0 +1,4 @@
+strategy_id,as_of_date,sector,weight
+low_drawdown_dual_momentum_nifty500_v1,2026-08-21,Financial Services,0.6642857143
+low_drawdown_dual_momentum_nifty500_v1,2026-08-21,SAFE_ASSET,0.325
+low_drawdown_dual_momentum_nifty500_v1,2026-08-21,Technology,0.0107142857

@@ -1,0 +1,222 @@
+{
+  "attribution": [
+    {
+      "contribution": 0.1,
+      "symbol": "AAA",
+      "weight": 1.0
+    },
+    {
+      "contribution": 0.0,
+      "symbol": "LIQUIDBEES",
+      "weight": 0.0
+    }
+  ],
+  "backtest": [],
+  "benchmark": [
+    {
+      "date": "2024-01-01",
+      "equity_curve": 1.0,
+      "return": 0.0
+    },
+    {
+      "date": "2024-01-02",
+      "equity_curve": 1.01,
+      "return": 0.01
+    },
+    {
+      "date": "2024-01-03",
+      "equity_curve": 1.02,
+      "return": 0.0099009901
+    }
+  ],
+  "current_holdings": [
+    {
+      "company_name": "Alpha Ltd",
+      "current_price": 121.0,
+      "market_value": 100000.0,
+      "notes": "ENTERED",
+      "reference_price": 121.0,
+      "sector": "Technology",
+      "symbol": "AAA",
+      "weight": 1.0
+    }
+  ],
+  "daily": [
+    {
+      "date": "2024-01-01",
+      "equity_curve": 1.0,
+      "nav": 100000.0,
+      "return": 0.0
+    },
+    {
+      "date": "2024-01-02",
+      "equity_curve": 1.05,
+      "nav": 105000.0,
+      "return": 0.05
+    },
+    {
+      "date": "2024-01-03",
+      "equity_curve": 1.1025,
+      "nav": 110250.0,
+      "return": 0.05
+    }
+  ],
+  "data_quality": {
+    "latest_price_date": "2024-01-03",
+    "latest_rebalance_date": "2024-01-03",
+    "live_inception_date": "2024-01-01",
+    "live_rebalance_count": 2,
+    "missing_price_symbols": [],
+    "stale_price_symbols": [],
+    "tracked_symbols": 2
+  },
+  "drawdowns": [
+    {
+      "date": "2024-01-01",
+      "drawdown": 0.0
+    },
+    {
+      "date": "2024-01-02",
+      "drawdown": 0.0
+    },
+    {
+      "date": "2024-01-03",
+      "drawdown": 0.0
+    }
+  ],
+  "manifest": {
+    "benchmark": "NIFTY 500 TRI",
+    "benchmark_comparisons": [
+      {
+        "historical_file": null,
+        "label": "NIFTY 50",
+        "live_coverage": {
+          "missing_dates": [
+            "2024-01-01",
+            "2024-01-02",
+            "2024-01-03"
+          ],
+          "reason": "missing_observed_prices",
+          "required_dates": 3,
+          "status": "unavailable"
+        },
+        "live_file": null,
+        "return_unit": "decimal",
+        "symbol": "NIFTY50"
+      },
+      {
+        "historical_file": null,
+        "label": "NIFTY 500",
+        "live_coverage": {
+          "missing_dates": [],
+          "reason": null,
+          "required_dates": 3,
+          "status": "available"
+        },
+        "live_file": "benchmarks/nifty_500_live_returns.csv",
+        "return_unit": "decimal",
+        "symbol": "NIFTY500"
+      },
+      {
+        "historical_file": null,
+        "label": "NIFTY 500 TRI",
+        "live_coverage": {
+          "missing_dates": [
+            "2024-01-01",
+            "2024-01-02",
+            "2024-01-03"
+          ],
+          "reason": "missing_observed_prices",
+          "required_dates": 3,
+          "status": "unavailable"
+        },
+        "live_file": null,
+        "return_unit": "decimal",
+        "symbol": "NIFTY500TRI"
+      },
+      {
+        "historical_file": null,
+        "label": "NIFTY Gsec Composite",
+        "live_coverage": {
+          "missing_dates": [
+            "2024-01-01",
+            "2024-01-02",
+            "2024-01-03"
+          ],
+          "reason": "missing_observed_prices",
+          "required_dates": 3,
+          "status": "unavailable"
+        },
+        "live_file": null,
+        "return_unit": "decimal",
+        "symbol": "NIFTYGSECCOMPOSITE"
+      },
+      {
+        "historical_file": null,
+        "label": "Gold",
+        "live_coverage": {
+          "missing_dates": [
+            "2024-01-01",
+            "2024-01-02",
+            "2024-01-03"
+          ],
+          "reason": "missing_observed_prices",
+          "required_dates": 3,
+          "status": "unavailable"
+        },
+        "live_file": null,
+        "return_unit": "decimal",
+        "symbol": "GOLD"
+      }
+    ],
+    "distribution_events_path": "",
+    "distributions_included": false,
+    "generated_at": "2026-09-26T11:44:37+05:30",
+    "internal_only": true,
+    "latest_live_date": "2024-01-03",
+    "live_inception_date": "2024-01-01",
+    "metrics": {
+      "annualized_return": 54877141.00651303,
+      "benchmark_total_return": 0.02,
+      "day_count": 3,
+      "excess_return": 0.0825,
+      "max_drawdown": 0.0,
+      "total_return": 0.1025,
+      "win_rate": 1.0
+    },
+    "name": "Momentum - Bamboo Canopy Edition",
+    "public_name": "Bamboo Canopy",
+    "report_source": "live_rebalance",
+    "report_type": "internal_live_performance",
+    "slug": "dual-momentum",
+    "strategy_id": "dual_momentum_nifty500_v1",
+    "target_portfolio_value": 100000.0,
+    "warning_count": 0
+  },
+  "metrics": {
+    "annualized_return": 54877141.00651303,
+    "benchmark_total_return": 0.02,
+    "day_count": 3,
+    "excess_return": 0.0825,
+    "max_drawdown": 0.0,
+    "total_return": 0.1025,
+    "win_rate": 1.0
+  },
+  "rebalance_history": [
+    {
+      "holding_count": 2,
+      "run_id": 1,
+      "safe_asset_weight": 0.5,
+      "snapshot_date": "2024-01-01",
+      "stock_weight": 0.5
+    },
+    {
+      "holding_count": 1,
+      "run_id": 3,
+      "safe_asset_weight": 0.0,
+      "snapshot_date": "2024-01-03",
+      "stock_weight": 1.0
+    }
+  ],
+  "warnings": []
+}

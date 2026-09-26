@@ -62,6 +62,13 @@ def test_export_latest_model_portfolio_update_uses_monthly_holdings(monkeypatch,
     assert sorted(item.name for item in path.iterdir()) == sorted(UPDATE_FILES)
     manifest = json.loads((path / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["update_type"] == "latest_model_portfolio"
+    assert manifest["live_performance"]["manifest_file"] == "live_manifest.json"
+    assert manifest["live_performance"]["status"] == "unavailable"
+    live_manifest = json.loads((path / "live_manifest.json").read_text())
+    assert manifest["benchmark_comparisons"] == live_manifest["benchmark_comparisons"]
+    assert len(manifest["benchmark_comparisons"]) == 5
+    assert live_manifest["strategy_id"] == manifest["strategy_id"]
+    assert live_manifest["warnings"]
     assert manifest["name"] == "Momentum - Bamboo Canopy Edition"
     assert manifest["public_name"] == "Momentum - Bamboo Canopy Edition"
     assert manifest["internal_name"] == "Dual Momentum"

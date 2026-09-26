@@ -1,0 +1,127 @@
+{
+  "attribution": [
+    {
+      "contribution": 0.25,
+      "symbol": "AAA",
+      "weight": 1.0
+    }
+  ],
+  "backtest": [],
+  "benchmark": [
+    {
+      "date": "2024-01-01",
+      "equity_curve": 1.0,
+      "return": 0.0
+    },
+    {
+      "date": "2024-01-02",
+      "equity_curve": 1.01,
+      "return": 0.01
+    },
+    {
+      "date": "2024-01-03",
+      "equity_curve": 1.02,
+      "return": 0.0099009901
+    }
+  ],
+  "current_holdings": [
+    {
+      "company_name": "Alpha Ltd",
+      "current_price": 121.0,
+      "market_value": 100000.0,
+      "notes": "ENTERED",
+      "reference_price": 100.0,
+      "sector": "Technology",
+      "symbol": "AAA",
+      "weight": 1.0
+    }
+  ],
+  "daily": [
+    {
+      "date": "2024-01-01",
+      "equity_curve": 1.0,
+      "nav": 100000.0,
+      "return": 0.0
+    },
+    {
+      "date": "2024-01-02",
+      "equity_curve": 1.15,
+      "nav": 115000.0,
+      "return": 0.15
+    },
+    {
+      "date": "2024-01-03",
+      "equity_curve": 1.265,
+      "nav": 126500.0,
+      "return": 0.1
+    }
+  ],
+  "data_quality": {
+    "latest_price_date": "2024-01-03",
+    "latest_rebalance_date": "2024-01-01",
+    "live_inception_date": "2024-01-01",
+    "live_rebalance_count": 1,
+    "missing_price_symbols": [],
+    "stale_price_symbols": [],
+    "tracked_symbols": 1
+  },
+  "drawdowns": [
+    {
+      "date": "2024-01-01",
+      "drawdown": 0.0
+    },
+    {
+      "date": "2024-01-02",
+      "drawdown": 0.0
+    },
+    {
+      "date": "2024-01-03",
+      "drawdown": 0.0
+    }
+  ],
+  "manifest": {
+    "benchmark": "NIFTY 500 TRI",
+    "distribution_events_path": "C:\\Users\\Yashodhan\\OneDrive\\Documents\\Algo\\vrisksha-strategy-manager\\logs\\pytest-package-suite-9661339b10544d34888e0dbc35be281c\\test_export_live_performance_d1\\distributions.csv",
+    "distributions_included": true,
+    "generated_at": "2026-09-24T15:21:59+05:30",
+    "internal_only": true,
+    "latest_live_date": "2024-01-03",
+    "live_inception_date": "2024-01-01",
+    "metrics": {
+      "annualized_return": 4.4084124638873733e+18,
+      "benchmark_total_return": 0.02,
+      "day_count": 3,
+      "excess_return": 0.245,
+      "max_drawdown": 0.0,
+      "total_return": 0.265,
+      "win_rate": 1.0
+    },
+    "name": "Income",
+    "public_name": "Income",
+    "report_source": "live_rebalance",
+    "report_type": "internal_live_performance",
+    "slug": "income",
+    "strategy_id": "income_v1",
+    "target_portfolio_value": 100000.0,
+    "warning_count": 0
+  },
+  "metrics": {
+    "annualized_return": 4.4084124638873733e+18,
+    "benchmark_total_return": 0.02,
+    "day_count": 3,
+    "excess_return": 0.245,
+    "max_drawdown": 0.0,
+    "total_return": 0.265,
+    "win_rate": 1.0
+  },
+  "rebalance_history": [
+    {
+      "holding_count": 1,
+      "run_id": 1,
+      "safe_asset_weight": 0.0,
+      "snapshot_date": "2024-01-01",
+      "stock_weight": 1.0
+    }
+  ],
+  "warnings": []
+}

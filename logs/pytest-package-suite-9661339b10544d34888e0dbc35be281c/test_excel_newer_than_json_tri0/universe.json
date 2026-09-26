@@ -1,0 +1,16 @@
+[
+  {
+    "symbol": "XYZ",
+    "company_name": "X",
+    "industry": "I",
+    "sector": "S",
+    "exchange": "NSE",
+    "instrument_type": "EQ",
+    "is_active": true,
+    "kite_tradingsymbol": "XYZ",
+    "kite_instrument_token": null,
+    "isin": null,
+    "effective_from": null,
+    "effective_to": null
+  }
+]

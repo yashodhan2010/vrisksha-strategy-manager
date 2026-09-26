@@ -1,0 +1,109 @@
+{
+  "benchmark": "NIFTY 500 TRI",
+  "benchmark_comparisons": [
+    {
+      "historical_file": null,
+      "label": "NIFTY 50",
+      "live_coverage": {
+        "missing_dates": [
+          "2024-01-01",
+          "2024-01-02",
+          "2024-01-03"
+        ],
+        "reason": "missing_observed_prices",
+        "required_dates": 3,
+        "status": "unavailable"
+      },
+      "live_file": null,
+      "return_unit": "decimal",
+      "symbol": "NIFTY50"
+    },
+    {
+      "historical_file": null,
+      "label": "NIFTY 500",
+      "live_coverage": {
+        "missing_dates": [],
+        "reason": null,
+        "required_dates": 3,
+        "status": "available"
+      },
+      "live_file": "benchmarks/nifty_500_live_returns.csv",
+      "return_unit": "decimal",
+      "symbol": "NIFTY500"
+    },
+    {
+      "historical_file": null,
+      "label": "NIFTY 500 TRI",
+      "live_coverage": {
+        "missing_dates": [
+          "2024-01-01",
+          "2024-01-02",
+          "2024-01-03"
+        ],
+        "reason": "missing_observed_prices",
+        "required_dates": 3,
+        "status": "unavailable"
+      },
+      "live_file": null,
+      "return_unit": "decimal",
+      "symbol": "NIFTY500TRI"
+    },
+    {
+      "historical_file": null,
+      "label": "NIFTY Gsec Composite",
+      "live_coverage": {
+        "missing_dates": [
+          "2024-01-01",
+          "2024-01-02",
+          "2024-01-03"
+        ],
+        "reason": "missing_observed_prices",
+        "required_dates": 3,
+        "status": "unavailable"
+      },
+      "live_file": null,
+      "return_unit": "decimal",
+      "symbol": "NIFTYGSECCOMPOSITE"
+    },
+    {
+      "historical_file": null,
+      "label": "Gold",
+      "live_coverage": {
+        "missing_dates": [
+          "2024-01-01",
+          "2024-01-02",
+          "2024-01-03"
+        ],
+        "reason": "missing_observed_prices",
+        "required_dates": 3,
+        "status": "unavailable"
+      },
+      "live_file": null,
+      "return_unit": "decimal",
+      "symbol": "GOLD"
+    }
+  ],
+  "distribution_events_path": "C:\\Users\\Yashodhan\\OneDrive\\Documents\\Algo\\vrisksha-strategy-manager\\logs\\pytest-benchmark-build-1\\test_export_live_performance_d1\\distributions.csv",
+  "distributions_included": true,
+  "generated_at": "2026-09-26T12:03:52+05:30",
+  "internal_only": true,
+  "latest_live_date": "2024-01-03",
+  "live_inception_date": "2024-01-01",
+  "metrics": {
+    "annualized_return": 4.4084124638873733e+18,
+    "benchmark_total_return": 0.02,
+    "day_count": 3,
+    "excess_return": 0.245,
+    "max_drawdown": 0.0,
+    "total_return": 0.265,
+    "win_rate": 1.0
+  },
+  "name": "Income",
+  "public_name": "Income",
+  "report_source": "live_rebalance",
+  "report_type": "internal_live_performance",
+  "slug": "income",
+  "strategy_id": "income_v1",
+  "target_portfolio_value": 100000.0,
+  "warning_count": 0
+}

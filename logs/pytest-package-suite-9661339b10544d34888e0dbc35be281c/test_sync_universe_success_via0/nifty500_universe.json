@@ -1,0 +1,16 @@
+[
+  {
+    "symbol": "EX",
+    "company_name": "Example",
+    "industry": "Fiction",
+    "sector": "Test",
+    "exchange": "NSE",
+    "instrument_type": "EQ",
+    "is_active": true,
+    "kite_tradingsymbol": "EX",
+    "kite_instrument_token": null,
+    "isin": null,
+    "effective_from": null,
+    "effective_to": null
+  }
+]

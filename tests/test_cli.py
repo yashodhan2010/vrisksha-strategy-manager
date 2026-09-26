@@ -525,8 +525,8 @@ def test_export_live_performance_tracker_can_fetch_history_first(monkeypatch, tm
     monkeypatch.setattr(
         cli,
         "fetch_and_store_history",
-        lambda start_date, end_date, symbols, include_benchmark, include_safe_asset: calls.append(
-            ("fetch", (symbols, include_benchmark, include_safe_asset))
+        lambda start_date, end_date, symbols, include_benchmark, include_safe_asset, include_benchmark_comparisons: calls.append(
+            ("fetch", (symbols, include_benchmark, include_safe_asset, include_benchmark_comparisons))
         )
         or __import__("app.data.historical_data", fromlist=["FetchResult"]).FetchResult(2, 4, [], []),
     )
@@ -558,9 +558,9 @@ def test_export_live_performance_tracker_can_fetch_history_first(monkeypatch, tm
     assert status == 0
     assert calls == [
         ("token", (True, 12)),
-        ("fetch", (None, True, True)),
+        ("fetch", (None, True, True, True)),
         ("dashboard", "first-strategy"),
-        ("fetch", (None, True, True)),
+        ("fetch", (None, True, True, True)),
         ("dashboard", "second-strategy"),
         ("tracker", "strategies/registry.json"),
     ]

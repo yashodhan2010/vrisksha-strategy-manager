@@ -1,0 +1,1 @@
+{"strategy_id": "income_v1", "slug": "income", "name": "Income", "rebalance_schedule": {"type": "quarterly_first_trading_day", "quarter_start_months": [1, 4, 7, 10], "timezone": "Asia/Kolkata"}}

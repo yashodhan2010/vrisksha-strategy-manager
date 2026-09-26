@@ -1,0 +1,4 @@
+date,benchmark,return,equity_curve
+2024-01-01,NIFTY Gsec Composite,0.0,1.0
+2024-01-02,NIFTY Gsec Composite,0.10000000000000009,1.1
+2024-01-03,NIFTY Gsec Composite,-0.09999999999999998,0.99

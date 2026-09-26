@@ -1,0 +1,2 @@
+strategy_id,as_of_date,symbol,company_name,exchange,isin,sector,marketcap_bucket,target_weight,reference_price,entry_date,notes
+target_strategy_v1,2026-08-21,BBB,Beta Ltd,NSE,INE000B01001,Financial Services,,1.0,210.0,2026-08-11,Selected by model rank 1.

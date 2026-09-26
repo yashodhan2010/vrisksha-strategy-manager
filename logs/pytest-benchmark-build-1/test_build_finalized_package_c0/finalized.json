@@ -1,0 +1,48 @@
+{
+  "engine_notes": [
+    "This config is intended to be applied programmatically before running the finalized backtest.",
+    "buffer_pct is applied as a holding-retention rank buffer around the target top-N selection."
+  ],
+  "schema_version": "1.0.0",
+  "selected_at": "2026-09-26T06:34:17+00:00",
+  "selection": {
+    "objective": "cagr",
+    "rank_column": "rank_by_cagr",
+    "row_index": 0
+  },
+  "source_results_path": "C:\\Users\\Yashodhan\\OneDrive\\Documents\\Algo\\vrisksha-strategy-manager\\logs\\pytest-benchmark-build-1\\test_build_finalized_package_c0\\trials.csv",
+  "source_row": {
+    "beta_weight": 0.15,
+    "buffer_pct": 60.0,
+    "cagr": 0.1,
+    "high_cutoff_pct": 20.0,
+    "momentum_weight": 0.7,
+    "rank_by_cagr": 1.0,
+    "rebalances_per_month": 1.0,
+    "sector_cap_pct": 0.0,
+    "top_n": 2.0,
+    "volatility_weight": 0.15
+  },
+  "strategy_id": "test_strategy_v1",
+  "strategy_name": "Test Strategy",
+  "strategy_parameters": {
+    "BACKTEST_REBALANCES_PER_MONTH": 1,
+    "BUFFER_PCT": 60.0,
+    "HIGH_52W_THRESHOLD": 0.8,
+    "MAX_SECTOR_WEIGHT": 1.0,
+    "MAX_STOCK_WEIGHT": 0.5,
+    "MIN_12M_RETURN": -1.0,
+    "MIN_AVG_MOMENTUM_RETURN": 0.0,
+    "PRICE_EMA_DAYS": 200,
+    "RANKING_BETA_WEIGHT": 0.15,
+    "RANKING_MOMENTUM_WEIGHT": 0.7,
+    "RANKING_VOLATILITY_WEIGHT": 0.15,
+    "REQUIRE_PRICE_ABOVE_EMA": false,
+    "SAFE_ASSET_FALLBACK_SYMBOL": "",
+    "SAFE_ASSET_SYMBOL": "LIQUIDBEES",
+    "STRATEGY_ALLOCATION_MODE": "TOP_N_EQUAL",
+    "STRATEGY_RANKING_METHOD": "AVERAGE_RANK",
+    "STRATEGY_TOP_N": 2
+  },
+  "strategy_slug": "test-strategy"
+}

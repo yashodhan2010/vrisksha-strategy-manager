@@ -1,0 +1,4 @@
+strategy_id,rebalance_date,symbol,company_name,action,old_weight,new_weight,old_reference_price,new_reference_price,rationale
+low_drawdown_dual_momentum_nifty500_v1,2026-08-21,AAA,Alpha Ltd,ADDED,0.0,0.0107142857,,110.0,Rebalanced according to the Strategy Research Factory model rules.
+low_drawdown_dual_momentum_nifty500_v1,2026-08-21,BBB,Beta Ltd,ADDED,0.0,0.6642857143,,95.0,Rebalanced according to the Strategy Research Factory model rules.
+low_drawdown_dual_momentum_nifty500_v1,2026-08-21,CCC,Cash Sleeve,ADDED,0.0,0.325,,1000.0,Rebalanced according to the Strategy Research Factory model rules.

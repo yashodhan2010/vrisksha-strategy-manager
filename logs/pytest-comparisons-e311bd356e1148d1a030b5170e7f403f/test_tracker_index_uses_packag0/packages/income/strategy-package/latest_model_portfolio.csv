@@ -1,0 +1,2 @@
+strategy_id,as_of_date,symbol,company_name,exchange,isin,sector,marketcap_bucket,target_weight,reference_price,entry_date,notes
+income,2024-01-02,AAA,Alpha,NSE,,ETF,,1.0,101,2024-01-01,test

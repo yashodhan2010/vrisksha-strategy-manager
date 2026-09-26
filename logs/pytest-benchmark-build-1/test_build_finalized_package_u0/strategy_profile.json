@@ -1,0 +1,16 @@
+
+        {
+          "strategy_id": "test_strategy_v1",
+          "slug": "test-strategy",
+          "name": "Test Strategy",
+          "optimization": {
+            "results_path": "C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-benchmark-build-1/test_build_finalized_package_u0/trials.csv",
+            "finalized_config_path": "C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-benchmark-build-1/test_build_finalized_package_u0/finalized.json",
+            "objective": "net_return_to_drawdown",
+            "rank_column": "rank_by_net_return_to_drawdown"
+          },
+          "package": {
+            "output_dir": "C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-benchmark-build-1/test_build_finalized_package_u0/package"
+          }
+        }
+        

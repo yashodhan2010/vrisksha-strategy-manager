@@ -1,0 +1,1 @@
+2026-09-26 12:04:02,572 ERROR app.market_data Historical data fetch failed: No runtime universe JSON is available. Create data/reference/nifty500_universe.xlsx from the example workbook and run python -m app.main sync-universe.

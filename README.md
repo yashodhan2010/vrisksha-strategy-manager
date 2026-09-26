@@ -62,6 +62,12 @@ Run these from the repository root.
 
 ## Current Strategy Returns Tracker
 
+Full strategy packages and model-portfolio update packages also include live
+performance files in the package folder itself. See
+[the live performance package contract](docs/live-performance-package.md) for
+filenames, availability metadata, calculation limitations, and website composite
+import rules.
+
 To refresh the local all-strategy returns tracker, run:
 
 ```bash

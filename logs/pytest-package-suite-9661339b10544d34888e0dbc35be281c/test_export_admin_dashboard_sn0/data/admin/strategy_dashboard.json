@@ -1,0 +1,76 @@
+{
+  "as_of_date": "2026-09-24",
+  "content_policy": {
+    "broker_secrets_included": false,
+    "holdings_rows_included": false,
+    "performance_metrics_included": false,
+    "subscriber_logic_included": false
+  },
+  "generated_at": "2026-09-24T15:21:42+05:30",
+  "schema_version": "1.0.0",
+  "source_registry": "C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/strategies/registry.json",
+  "strategies": [
+    {
+      "benchmark": "NIFTY 500 TRI",
+      "catalogue": {},
+      "category_labels": [
+        "Momentum"
+      ],
+      "commands": {
+        "build_finalized_package": "python -m app.main build-finalized-package --strategy-profile C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/strategies/sample-strategy/strategy_profile.json --start-date 2016-01-01 --end-date YYYY-MM-DD --initial-capital 1000000 --selenium-token",
+        "build_model_portfolio_update": "python -m app.main build-model-portfolio-update --strategy-profile C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/strategies/sample-strategy/strategy_profile.json --selenium-token",
+        "export_admin_dashboard": "python -m app.main export-admin-dashboard",
+        "local_model_portfolio_update_no_fetch": "python -m app.main build-model-portfolio-update --strategy-profile C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/strategies/sample-strategy/strategy_profile.json --no-fetch-history",
+        "open_admin_dashboard": "streamlit run dashboards/admin_app.py",
+        "refresh_finalized_parameters": "python -m app.main refresh-finalized-parameters --strategy-profile C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/strategies/sample-strategy/strategy_profile.json",
+        "validate_strategies": "python -m app.main validate-strategies"
+      },
+      "distribution": {
+        "events_file_exists": false,
+        "events_path": "C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/data/reference/sample_distributions.csv",
+        "frequency": "quarterly",
+        "mode": "income_distribution"
+      },
+      "file_status": {
+        "finalized_config_exists": true,
+        "model_update_exists": true,
+        "optimization_results_exists": true,
+        "profile_exists": true,
+        "strategy_package_exists": false
+      },
+      "finalized_config_path": "C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/data/output/finalized/sample_strategy.json",
+      "last_successful_run": {
+        "date": "2026-07-20",
+        "generated_at": null,
+        "run_id": 7,
+        "type": "model_portfolio_update"
+      },
+      "latest_model_portfolio_as_of": "2026-07-20",
+      "latest_model_portfolio_exists": true,
+      "latest_model_portfolio_path": "C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/data/output/packages/sample-strategy/model-portfolio-update/latest_model_portfolio.csv",
+      "model_portfolio_update_dir": "C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/data/output/packages/sample-strategy/model-portfolio-update",
+      "name": "Sample Strategy",
+      "next_due_date": "2026-10-12",
+      "package_output_dir": "C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/data/output/packages/sample-strategy/strategy-package",
+      "portfolio_objective": "Grow my Wealth",
+      "profile_path": "C:/Users/Yashodhan/OneDrive/Documents/Algo/vrisksha-strategy-manager/logs/pytest-package-suite-9661339b10544d34888e0dbc35be281c/test_export_admin_dashboard_sn0/strategies/sample-strategy/strategy_profile.json",
+      "public_name": "Sample Public Strategy",
+      "rebalance_schedule": {
+        "target_days": [
+          11,
+          21
+        ],
+        "timezone": "Asia/Kolkata",
+        "type": "monthly_target_days"
+      },
+      "slug": "sample-strategy",
+      "strategy_id": "sample_strategy_v1",
+      "universe": "NIFTY 500"
+    }
+  ],
+  "validation": {
+    "issues": [],
+    "ok": true,
+    "profile_count": 1
+  }
+}

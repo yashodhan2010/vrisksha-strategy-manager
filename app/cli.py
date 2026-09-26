@@ -263,6 +263,7 @@ def _ensure_history_for_finalized_run(args: argparse.Namespace, start_date: date
         end_date=end_date,
         include_benchmark=True,
         include_safe_asset=True,
+        include_benchmark_comparisons=not getattr(args, "no_benchmark_comparisons", False),
     )
     print(
         f"Historical data ready: {result.stored_rows} rows stored "
@@ -799,6 +800,7 @@ def cmd_run_backtest(args: argparse.Namespace) -> int:
             symbols=args.symbols if args.symbols else None,
             include_benchmark=not args.no_benchmark,
             include_safe_asset=not args.no_safe_asset,
+            include_benchmark_comparisons=not args.no_benchmark_comparisons,
         )
         print(
             f"Historical data ready: {fetch_result.stored_rows} rows stored "
@@ -868,6 +870,7 @@ def cmd_fetch_history(args: argparse.Namespace) -> int:
             symbols=symbols,
             include_benchmark=not args.no_benchmark,
             include_safe_asset=not args.no_safe_asset,
+            include_benchmark_comparisons=not args.no_benchmark_comparisons,
         )
     except (FileNotFoundError, ImportError, ValueError) as exc:
         logger.error("Historical data fetch failed: %s", exc)
@@ -943,6 +946,7 @@ def cmd_build_model_portfolio_update(args: argparse.Namespace) -> int:
                 symbols=args.symbols if args.symbols else None,
                 include_benchmark=not args.no_benchmark,
                 include_safe_asset=not args.no_safe_asset,
+                include_benchmark_comparisons=not getattr(args, "no_benchmark_comparisons", False),
             )
             print(
                 f"Historical data refreshed: {fetch_result.stored_rows} rows stored "
@@ -1038,6 +1042,7 @@ def cmd_export_live_performance_tracker(args: argparse.Namespace) -> int:
                     symbols=getattr(args, "symbols", None) or None,
                     include_benchmark=not bool(getattr(args, "no_benchmark", False)),
                     include_safe_asset=not bool(getattr(args, "no_safe_asset", False)),
+                    include_benchmark_comparisons=not bool(getattr(args, "no_benchmark_comparisons", False)),
                 )
                 print(
                     f"Historical data refreshed for {profile.get('slug')}: "
@@ -1156,6 +1161,7 @@ def cmd_auto_daily_run(args: argparse.Namespace) -> int:
             symbols=args.symbols if args.symbols else None,
             include_benchmark=not args.no_benchmark,
             include_safe_asset=not args.no_safe_asset,
+            include_benchmark_comparisons=not args.no_benchmark_comparisons,
         )
         print(
             f"Historical data refreshed: {fetch_result.stored_rows} rows stored "
@@ -1264,6 +1270,7 @@ def build_parser() -> argparse.ArgumentParser:
     finalized_package.add_argument("--timeout-seconds", type=int, default=config.SELENIUM_LOGIN_TIMEOUT_SECONDS)
     finalized_package.add_argument("--no-fetch-history", action="store_true")
     finalized_package.add_argument("--force-fetch-history", action="store_true")
+    finalized_package.add_argument("--no-benchmark-comparisons", action="store_true")
     finalized_package.set_defaults(func=cmd_finalized_package)
 
     run_backtest = subparsers.add_parser("run-backtest")
@@ -1274,6 +1281,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_backtest.add_argument("--symbols", nargs="*")
     run_backtest.add_argument("--no-benchmark", action="store_true")
     run_backtest.add_argument("--no-safe-asset", action="store_true")
+    run_backtest.add_argument("--no-benchmark-comparisons", action="store_true")
     run_backtest.add_argument("--request-token")
     run_backtest.add_argument("--force", action="store_true", help="Fetch and run even if a completed matching scenario exists.")
     run_backtest.set_defaults(func=cmd_run_backtest)
@@ -1284,6 +1292,7 @@ def build_parser() -> argparse.ArgumentParser:
     fetch_history.add_argument("--symbols", nargs="*")
     fetch_history.add_argument("--no-benchmark", action="store_true")
     fetch_history.add_argument("--no-safe-asset", action="store_true")
+    fetch_history.add_argument("--no-benchmark-comparisons", action="store_true")
     fetch_history.add_argument("--request-token")
     fetch_history.set_defaults(func=cmd_fetch_history)
 
@@ -1305,6 +1314,7 @@ def build_parser() -> argparse.ArgumentParser:
     model_update.add_argument("--no-fetch-history", action="store_true")
     model_update.add_argument("--no-benchmark", action="store_true")
     model_update.add_argument("--no-safe-asset", action="store_true")
+    model_update.add_argument("--no-benchmark-comparisons", action="store_true")
     model_update.set_defaults(func=cmd_build_model_portfolio_update)
 
     live_dashboard = subparsers.add_parser("export-live-performance-dashboard")
@@ -1322,6 +1332,7 @@ def build_parser() -> argparse.ArgumentParser:
     live_tracker.add_argument("--timeout-seconds", type=int, default=config.SELENIUM_LOGIN_TIMEOUT_SECONDS)
     live_tracker.add_argument("--no-benchmark", action="store_true")
     live_tracker.add_argument("--no-safe-asset", action="store_true")
+    live_tracker.add_argument("--no-benchmark-comparisons", action="store_true")
     live_tracker.set_defaults(func=cmd_export_live_performance_tracker)
 
     subparsers.add_parser("kite-login-url").set_defaults(func=cmd_kite_login_url)
@@ -1344,6 +1355,7 @@ def build_parser() -> argparse.ArgumentParser:
     auto_daily.add_argument("--symbols", nargs="*")
     auto_daily.add_argument("--no-benchmark", action="store_true")
     auto_daily.add_argument("--no-safe-asset", action="store_true")
+    auto_daily.add_argument("--no-benchmark-comparisons", action="store_true")
     auto_daily.set_defaults(func=cmd_auto_daily_run)
     return parser
 

@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-09-26T11:44:38+05:30",
+  "strategies": [
+    {
+      "attribution": [],
+      "backtest": [],
+      "benchmark": [],
+      "current_holdings": [],
+      "daily": [],
+      "data_quality": {
+        "live_rebalance_count": 2,
+        "tracked_symbols": 1
+      },
+      "drawdowns": [],
+      "manifest": {
+        "distribution_events_path": "",
+        "distributions_included": false,
+        "latest_live_date": "2024-01-03",
+        "live_inception_date": "2024-01-01",
+        "name": "Dual Momentum",
+        "public_name": "Bamboo Canopy",
+        "report_source": "live_rebalance",
+        "slug": "dual-momentum",
+        "strategy_id": "dual_momentum_nifty500_v1"
+      },
+      "metrics": {
+        "annualized_return": 0.1,
+        "max_drawdown": -0.01,
+        "total_return": 0.1
+      },
+      "profile_path": "C:\\Users\\Yashodhan\\OneDrive\\Documents\\Algo\\vrisksha-strategy-manager\\logs\\pytest-comparisons-3641e2b3427240f791ea49367b0b75e5\\test_export_live_performance_t0\\dual.json",
+      "rebalance_history": [],
+      "warnings": []
+    },
+    {
+      "attribution": [],
+      "backtest": [],
+      "benchmark": [],
+      "current_holdings": [],
+      "daily": [],
+      "data_quality": {
+        "latest_price_date": null,
+        "latest_rebalance_date": null,
+        "live_inception_date": null,
+        "live_rebalance_count": 0,
+        "missing_price_symbols": [],
+        "stale_price_symbols": [],
+        "tracked_symbols": 0
+      },
+      "drawdowns": [],
+      "manifest": {
+        "benchmark": "",
+        "distribution_events_path": "",
+        "distributions_included": false,
+        "generated_at": "2026-09-26T11:44:38+05:30",
+        "internal_only": true,
+        "latest_live_date": null,
+        "live_inception_date": null,
+        "metrics": {
+          "annualized_return": null,
+          "benchmark_total_return": null,
+          "day_count": 0,
+          "excess_return": null,
+          "max_drawdown": null,
+          "total_return": null,
+          "win_rate": null
+        },
+        "name": "Income",
+        "public_name": "Income",
+        "report_source": "missing",
+        "report_type": "internal_live_performance",
+        "slug": "diversified-asset-income",
+        "strategy_id": "diversified_asset_income_v1",
+        "target_portfolio_value": 1000000.0,
+        "warning_count": 1
+      },
+      "metrics": {
+        "annualized_return": null,
+        "benchmark_total_return": null,
+        "day_count": 0,
+        "excess_return": null,
+        "max_drawdown": null,
+        "total_return": null,
+        "win_rate": null
+      },
+      "profile_path": "C:\\Users\\Yashodhan\\OneDrive\\Documents\\Algo\\vrisksha-strategy-manager\\logs\\pytest-comparisons-3641e2b3427240f791ea49367b0b75e5\\test_export_live_performance_t0\\income.json",
+      "rebalance_history": [],
+      "warnings": [
+        "No live-performance artifact has been generated for this strategy yet."
+      ]
+    }
+  ]
+}

@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+LIVE_PERFORMANCE_FILES = [
+    "live_manifest.json",
+    "live_metrics.json",
+    "live_nav.csv",
+    "live_benchmark.csv",
+    "live_drawdowns.csv",
+]
+
 PACKAGE_FILES = [
     "manifest.json",
     "backtest_metrics.json",
@@ -18,6 +26,7 @@ PACKAGE_FILES = [
     "methodology_internal.md",
     "disclosures.md",
     "import_notes.md",
+    *LIVE_PERFORMANCE_FILES,
 ]
 
 CSV_HEADERS = {

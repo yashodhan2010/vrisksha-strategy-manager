@@ -1,0 +1,26 @@
+{
+  "benchmark": "NIFTY 500 TRI",
+  "distribution_events_path": "",
+  "distributions_included": false,
+  "generated_at": "2026-09-24T15:21:59+05:30",
+  "internal_only": true,
+  "latest_live_date": "2024-01-03",
+  "live_inception_date": "2024-01-01",
+  "metrics": {
+    "annualized_return": 54877141.00651303,
+    "benchmark_total_return": 0.02,
+    "day_count": 3,
+    "excess_return": 0.0825,
+    "max_drawdown": 0.0,
+    "total_return": 0.1025,
+    "win_rate": 1.0
+  },
+  "name": "Momentum - Bamboo Canopy Edition",
+  "public_name": "Bamboo Canopy",
+  "report_source": "live_rebalance",
+  "report_type": "internal_live_performance",
+  "slug": "dual-momentum",
+  "strategy_id": "dual_momentum_nifty500_v1",
+  "target_portfolio_value": 100000.0,
+  "warning_count": 0
+}

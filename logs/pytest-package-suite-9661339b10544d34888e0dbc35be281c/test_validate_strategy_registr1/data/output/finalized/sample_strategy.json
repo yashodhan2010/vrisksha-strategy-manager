@@ -1,0 +1,1 @@
+{"strategy_id": "sample_a", "strategy_slug": "sample-strategy", "selection": {"objective": "cagr", "rank_column": "rank_by_cagr"}}
