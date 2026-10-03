@@ -28,7 +28,7 @@
       "debt": true,
       "gold": true
     },
-    "note": "Dual momentum ranked on 3, 6, and 12 month average momentum score. Equal-weight positions. Rebalanced monthly."
+    "note": "Dual momentum ranked on 3, 6, and 12 month average momentum score. Equal-weight positions. Rebalanced quarterly."
   },
   "category_labels": [
     "Momentum",
@@ -60,8 +60,8 @@
     "max_stock_weight": 1.0
   },
   "rebalance_schedule": {
-    "type": "monthly_target_days",
-    "target_days": [1],
+    "type": "quarterly_first_trading_day",
+    "quarter_start_months": [1, 4, 7, 10],
     "timezone": "Asia/Kolkata"
   },
   "distribution": {

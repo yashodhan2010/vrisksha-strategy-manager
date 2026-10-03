@@ -69,7 +69,7 @@ BENCHMARK_COMPARISON_SPECS = (
 class NseIndicesClient:
     """Small NSE Indices historical-data client for benchmark-only series."""
 
-    base_url = "https://niftyindices.com"
+    base_url = "https://www.niftyindices.com"
 
     def __init__(self, timeout_seconds: int = 30, session: requests.Session | None = None) -> None:
         self.timeout_seconds = timeout_seconds
@@ -96,15 +96,17 @@ class NseIndicesClient:
 
     def _request_index_series(self, method: str, index_name: str, start_date: date, end_date: date) -> pd.DataFrame:
         self._prime_session()
-        cinfo = {
-            "name": index_name,
-            "startDate": _nse_date(start_date),
-            "endDate": _nse_date(end_date),
-            "indexName": index_name,
-        }
+        cinfo = (
+            "{"
+            f"'name':'{index_name}',"
+            f"'startDate':'{_nse_date(start_date)}',"
+            f"'endDate':'{_nse_date(end_date)}',"
+            f"'indexName':'{index_name}'"
+            "}"
+        )
         response = self.session.post(
             f"{self.base_url}/Backpage.aspx/{method}",
-            json={"cinfo": json.dumps(cinfo, separators=(",", ":"))},
+            json={"cinfo": cinfo},
             timeout=self.timeout_seconds,
         )
         response.raise_for_status()
